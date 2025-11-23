@@ -442,6 +442,7 @@
             const grid = document.getElementById('userGrid');
             grid.innerHTML = '';
             allUsers.sort((a,b) => a.name.localeCompare(b.name)).forEach(u => {
+                // 🔥 관리자 모드일 때만 삭제 버튼(X) 표시
                 const deleteBtn = isAdminMode ? `<div class="delete-btn" onclick="deleteUser('${u.user_id}', '${u.name}'); event.stopPropagation();">X</div>` : '';
                 
                 const div = document.createElement('div');
@@ -611,7 +612,7 @@
         function openGuide() { document.getElementById('guideModal').style.display = 'flex'; }
         function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
 
-        // 🔥 관리자 기능 (비밀번호 제거)
+        // 🔥 관리자 기능 (비밀번호 없이 바로 토글)
         function toggleAdminMode() {
             isAdminMode = !isAdminMode; // 토글
             
@@ -642,12 +643,20 @@
         }
 
         async function adminReset(type) {
-            const pw = prompt("관리자 비밀번호를 입력하세요:");
-            if (pw !== 'admin0000') return alert("비번 틀림");
+            // 🔥 비밀번호 입력 창 텍스트에서 힌트 제거
+            let pw = "";
+            if(type === 'all') {
+                pw = prompt("💀 시즌 완전 초기화 비밀번호를 입력하세요:");
+                if(pw !== 'admin0000') return alert("비번 틀림");
+            } else {
+                pw = prompt("관리자 비밀번호를 입력하세요:");
+                if(pw !== 'aground') return alert("비번 틀림");
+            }
+
             if (!confirm(`정말로 [${type}] 데이터를 초기화하시겠습니까?`)) return;
 
             let updates = {};
-            if (type === 'weekly') updates = { weekly_received: 0, weekly_given: 0 };
+            if (type === 'weekly') updates = { weekly_received: 0, weekly_given: 0, daily_received: 0, daily_given: 0 };
             else if (type === 'monthly') updates = { monthly_received: 0, monthly_given: 0 };
             else if (type === 'all') updates = { received: 0, given: 0, weekly_received: 0, weekly_given: 0, monthly_received: 0, monthly_given: 0, daily_received: 0, daily_given: 0 };
 
@@ -656,8 +665,21 @@
                 await supabase.from('pending_tokens').delete().neq('id', 0);
                 await supabase.from('activities').delete().neq('id', 0);
                 document.getElementById('activityFeed').innerHTML = '<div style="text-align:center; padding:20px;">활동 내역이 없습니다.</div>';
-                if(currentUser) { currentUser.received=0; currentUser.given=0; loadMyData(); }
             }
+
+            // 🔥 즉시 게이지 초기화 (내 화면)
+            if (currentUser) {
+                if(type === 'weekly') {
+                    currentUser.weekly_given = 0; currentUser.daily_given = 0;
+                } else if(type === 'monthly') {
+                    currentUser.monthly_given = 0; 
+                } else if(type === 'all') {
+                    currentUser.received=0; currentUser.given=0; 
+                    currentUser.weekly_given=0; currentUser.daily_given=0;
+                }
+                updateMyUI();
+            }
+
             alert("초기화 완료"); fetchUsers();
         }
 
