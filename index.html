@@ -205,15 +205,14 @@
         }
         .user-select-card:hover, .user-select-card.selected { border-color: #1a237e; background: #f5f5f5; }
         
-        /* 🔥 삭제 버튼 스타일 (수정됨: display:none 제거) */
+        /* 🔥 삭제 버튼 스타일 */
         .delete-btn {
             position: absolute; top: -8px; right: -8px;
             background: #e53935; color: white; width: 24px; height: 24px;
             border-radius: 50%; font-size: 14px; line-height: 24px;
             text-align: center; cursor: pointer; transition: 0.2s;
             box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-            z-index: 10;
-            font-weight: bold;
+            z-index: 10; font-weight: bold;
         }
         .delete-btn:hover { background: #b71c1c; transform: scale(1.1); }
         
@@ -443,17 +442,19 @@
             const grid = document.getElementById('userGrid');
             grid.innerHTML = '';
             allUsers.sort((a,b) => a.name.localeCompare(b.name)).forEach(u => {
-                // 🔥 관리자 모드일 때만 삭제 버튼(X) 표시
                 const deleteBtn = isAdminMode ? `<div class="delete-btn" onclick="deleteUser('${u.user_id}', '${u.name}'); event.stopPropagation();">X</div>` : '';
                 
                 const div = document.createElement('div');
                 div.className = 'user-select-card';
-                // 관리자 모드일 때 카드 테두리 표시 (시각적 피드백)
                 if(isAdminMode) div.style.border = "2px solid #ff9800";
                 
                 div.innerHTML = `${deleteBtn}<div style="font-size:1.2em; font-weight:bold;">${u.name}</div><div style="font-size:0.8em; color:#666;">${u.product}</div>`;
                 
-                div.onclick = () => { selectLoginUser(u); };
+                // 🔥 클릭 이벤트 분기 (관리자 모드면 수정, 아니면 로그인 선택)
+                div.onclick = () => {
+                    if(isAdminMode) editUser(u.user_id, u.name, u.product);
+                    else selectLoginUser(u);
+                };
                 grid.appendChild(div);
             });
         }
@@ -610,36 +611,34 @@
         function openGuide() { document.getElementById('guideModal').style.display = 'flex'; }
         function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
 
-        // 관리자 기능
+        // 🔥 관리자 기능 (비밀번호 제거)
         function toggleAdminMode() {
-            if(!isAdminMode) {
-                const pw = prompt("관리자 비밀번호를 입력하세요:");
-                if(pw === 'admin0000') {
-                    isAdminMode = true;
-                    document.getElementById('adminToggleBtn').innerText = "✅ 완료";
-                    document.getElementById('adminToggleBtn').classList.add('active');
-                    renderUserSelection();
-                } else {
-                    alert("비밀번호가 틀렸습니다.");
-                }
+            isAdminMode = !isAdminMode; // 토글
+            
+            const btn = document.getElementById('adminToggleBtn');
+            if(isAdminMode) {
+                btn.innerText = "✅ 완료";
+                btn.classList.add('active');
             } else {
-                isAdminMode = false;
-                document.getElementById('adminToggleBtn').innerText = "⚙️ 관리";
-                document.getElementById('adminToggleBtn').classList.remove('active');
-                renderUserSelection();
+                btn.innerText = "⚙️ 관리";
+                btn.classList.remove('active');
             }
+            renderUserSelection();
         }
 
         async function deleteUser(id, name) {
             if(!confirm(`정말로 ${name} 님을 삭제하시겠습니까?`)) return;
-            
-            // 🔥 삭제 전 2차 비밀번호 확인 (안전장치)
-            const pw = prompt(`[${name}] 님을 영구 삭제하려면 관리자 비밀번호를 입력하세요:`);
-            if(pw !== 'admin0000') { alert("비밀번호가 틀렸습니다. 삭제 취소됨."); return; }
-
             await supabase.from('user_data').delete().eq('user_id', id);
             await supabase.from('pending_tokens').delete().eq('to_user_id', id);
             alert("삭제되었습니다."); fetchUsers();
+        }
+
+        // 🔥 정보 수정 기능
+        async function editUser(id, oldName, oldProd) {
+            const newName = prompt("이름 수정:", oldName); if(newName===null) return;
+            const newProd = prompt("직업 수정:", oldProd); if(newProd===null) return;
+            await supabase.from('user_data').update({name:newName, product:newProd}).eq('user_id', id);
+            alert("수정되었습니다."); fetchUsers();
         }
 
         async function adminReset(type) {
