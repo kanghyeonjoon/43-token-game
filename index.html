@@ -355,6 +355,7 @@
             <button class="admin-btn" style="background:#5c6bc0; color:white;" onclick="adminReset('weekly')">주간 초기화</button>
             <button class="admin-btn" style="background:#3949ab; color:white;" onclick="adminReset('monthly')">월간 초기화</button>
             <button class="admin-btn" style="background:#d32f2f; color:white;" onclick="adminReset('all')">💀 시즌 완전 초기화</button>
+            <button class="admin-btn" style="background:#4caf50; color:white; margin-top:10px;" onclick="downloadBackupData()">📥 데이터 백업 (다운로드)</button>
         </div>
     </div>
 
@@ -385,7 +386,7 @@
         let allUsers = [];
         let currentRankType = 'weekly';
         let selectedAmt = 0;
-        let isAdminMode = false; // 관리자 모드
+        let isAdminMode = false;
 
         const levels = [
             { min: 0, name: '새싹', emoji: '🌱' },
@@ -442,7 +443,6 @@
             const grid = document.getElementById('userGrid');
             grid.innerHTML = '';
             allUsers.sort((a,b) => a.name.localeCompare(b.name)).forEach(u => {
-                // 🔥 관리자 모드일 때만 삭제 버튼(X) 표시
                 const deleteBtn = isAdminMode ? `<div class="delete-btn" onclick="deleteUser('${u.user_id}', '${u.name}'); event.stopPropagation();">X</div>` : '';
                 
                 const div = document.createElement('div');
@@ -451,7 +451,6 @@
                 
                 div.innerHTML = `${deleteBtn}<div style="font-size:1.2em; font-weight:bold;">${u.name}</div><div style="font-size:0.8em; color:#666;">${u.product}</div>`;
                 
-                // 🔥 클릭 이벤트 분기 (관리자 모드면 수정, 아니면 로그인 선택)
                 div.onclick = () => {
                     if(isAdminMode) editUser(u.user_id, u.name, u.product);
                     else selectLoginUser(u);
@@ -612,23 +611,21 @@
         function openGuide() { document.getElementById('guideModal').style.display = 'flex'; }
         function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
 
-        // 🔥 관리자 기능 (비밀번호 없이 바로 토글)
+        // 관리자 기능
         function toggleAdminMode() {
-            isAdminMode = !isAdminMode; // 토글
-            
+            isAdminMode = !isAdminMode;
             const btn = document.getElementById('adminToggleBtn');
-            if(isAdminMode) {
-                btn.innerText = "✅ 완료";
-                btn.classList.add('active');
-            } else {
-                btn.innerText = "⚙️ 관리";
-                btn.classList.remove('active');
-            }
+            if(isAdminMode) { btn.innerText = "✅ 완료"; btn.classList.add('active'); } 
+            else { btn.innerText = "⚙️ 관리"; btn.classList.remove('active'); }
             renderUserSelection();
         }
 
         async function deleteUser(id, name) {
             if(!confirm(`정말로 ${name} 님을 삭제하시겠습니까?`)) return;
+            // 🔥 2차 비밀번호 확인
+            const pw = prompt(`[${name}] 님을 영구 삭제하려면 관리자 비밀번호를 입력하세요:`);
+            if(pw !== 'admin0000') { alert("비밀번호가 틀렸습니다. 삭제 취소됨."); return; }
+
             await supabase.from('user_data').delete().eq('user_id', id);
             await supabase.from('pending_tokens').delete().eq('to_user_id', id);
             alert("삭제되었습니다."); fetchUsers();
@@ -643,7 +640,6 @@
         }
 
         async function adminReset(type) {
-            // 🔥 비밀번호 입력 창 텍스트에서 힌트 제거
             let pw = "";
             if(type === 'all') {
                 pw = prompt("💀 시즌 완전 초기화 비밀번호를 입력하세요:");
@@ -681,6 +677,26 @@
             }
 
             alert("초기화 완료"); fetchUsers();
+        }
+
+        // 🔥 데이터 백업 기능
+        async function downloadBackupData() {
+            const pw = prompt("관리자 비밀번호를 입력하세요:");
+            if (pw !== 'admin0000') return alert("비번 틀림");
+
+            const { data: users } = await supabase.from('user_data').select('*');
+            const { data: pendings } = await supabase.from('pending_tokens').select('*');
+            const { data: activities } = await supabase.from('activities').select('*');
+
+            const backupData = { users, pendings, activities, date: new Date().toISOString() };
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AG43_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         init();
