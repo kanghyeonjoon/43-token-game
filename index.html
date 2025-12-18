@@ -789,6 +789,21 @@
             color: #555;
             margin-bottom: 20px;
         }
+
+        /* 로딩/에러 메시지 */
+        .loading-msg {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error-msg {
+            text-align: center;
+            padding: 20px;
+            color: #d32f2f;
+            background: #ffebee;
+            border-radius: 10px;
+            margin: 10px;
+        }
     </style>
 </head>
 
@@ -817,7 +832,9 @@
                     <h3 style="margin:0;">👤 참가자 선택</h3>
                     <button class="manage-btn" id="adminToggleBtn" onclick="toggleAdminMode()">⚙️ 관리</button>
                 </div>
-                <div id="userGrid" class="user-selection"></div>
+                <div id="userGrid" class="user-selection">
+                    <div class="loading-msg">⏳ 데이터 로딩 중...</div>
+                </div>
                 <button class="btn btn-primary" id="startBtn" onclick="startGame()" disabled
                     style="margin-top:25px;">선택한 계정으로 시작</button>
                 <p style="margin-top:20px; font-size:0.9em; color:#666; cursor:pointer; text-decoration:underline;"
@@ -1053,15 +1070,28 @@
     </div>
 
     <script>
+        // ⚠️⚠️⚠️ 중요: 아래 SUPABASE_KEY를 올바른 anon key로 교체하세요! ⚠️⚠️⚠️
+        // Supabase 대시보드 → Settings → API → Project API keys → anon public
+        // 올바른 형식: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' (긴 JWT 토큰)
+        
         const SUPABASE_URL = 'https://kyicedypelnrnctkvicq.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5aWNlZHlwZWxucm5jdGt2aWNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgzMDIsImV4cCI6MjA3OTQ4NDMwMn0.F-VjGyl14XQ-TLrTswi_3Ehbe1XezpRmHTkz4lJ2sT8';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase;
+        
+        // Supabase 초기화 (에러 처리 포함)
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log("✅ Supabase 클라이언트 생성됨");
+        } catch (e) {
+            console.error("❌ Supabase 초기화 실패:", e);
+            document.getElementById('userGrid').innerHTML = '<div class="error-msg">⚠️ 데이터베이스 연결 실패. 관리자에게 문의하세요.</div>';
+        }
 
         let currentUser = null;
         let allUsers = [];
-        let currentRankType = 'weekly'; // weekly, monthly, total
-        let currentRankMode = 'energy'; // energy (received), token (given)
+        let currentRankType = 'weekly';
+        let currentRankMode = 'energy';
         let selectedAmt = 0;
         let isAdminMode = false;
 
@@ -1074,11 +1104,26 @@
         ];
 
         async function init() {
-            // 1. 시스템 설정 로드 및 자동 리셋 체크 (가장 먼저 실행)
-            await checkSystemAutoReset();
+            console.log("🚀 init() 시작");
+            
+            try {
+                await checkSystemAutoReset();
+                console.log("✅ checkSystemAutoReset 완료");
+            } catch (e) {
+                console.error("❌ checkSystemAutoReset 실패:", e);
+            }
 
-            await fetchUsers();
+            try {
+                await fetchUsers();
+                console.log("✅ fetchUsers 완료");
+            } catch (e) {
+                console.error("❌ fetchUsers 실패:", e);
+                document.getElementById('userGrid').innerHTML = '<div class="error-msg">⚠️ 유저 데이터 로드 실패<br>Supabase API 키를 확인하세요.</div>';
+                return;
+            }
+            
             setupRealtime();
+            
             const savedId = localStorage.getItem('ag43_user_id');
             if (savedId) {
                 const user = allUsers.find(u => u.user_id === savedId);
@@ -1108,11 +1153,28 @@
         }
 
         async function fetchUsers(silent = false) {
-            const { data, error } = await supabase.from('user_data').select('*').neq('user_id', 'SYSTEM_CONFIG'); // 시스템 계정 제외
-            if (error) { console.error(error); return; }
-            allUsers = data;
+            console.log("🔄 fetchUsers 호출됨");
+            
+            const { data, error } = await supabase.from('user_data').select('*').neq('user_id', 'SYSTEM_CONFIG');
+            
+            console.log("📦 Supabase 응답:", { data, error });
+            
+            if (error) { 
+                console.error("❌ Supabase 에러:", error);
+                if (!silent) {
+                    document.getElementById('userGrid').innerHTML = `<div class="error-msg">⚠️ DB 오류: ${error.message}<br><br>💡 Supabase API 키가 올바른지 확인하세요.</div>`;
+                }
+                return; 
+            }
+            
+            allUsers = data || [];
+            console.log("👥 로드된 유저 수:", allUsers.length);
+            
             if (!silent) renderUserSelection();
-            renderRanking(); renderDropdown(); updateEcosystem();
+            renderRanking(); 
+            renderDropdown(); 
+            updateEcosystem();
+            
             if (currentUser) {
                 const updatedMe = allUsers.find(u => u.user_id === currentUser.user_id);
                 if (updatedMe) { currentUser = updatedMe; updateMyUI(); }
@@ -1121,6 +1183,12 @@
 
         function renderUserSelection() {
             const grid = document.getElementById('userGrid');
+            
+            if (allUsers.length === 0) {
+                grid.innerHTML = '<div class="loading-msg">👋 등록된 참가자가 없습니다.<br>아래 "새로 등록하기"를 눌러 시작하세요!</div>';
+                return;
+            }
+            
             grid.innerHTML = '';
             allUsers.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
                 const deleteBtn = isAdminMode ? `<div class="delete-btn" onclick="deleteUser('${u.user_id}', '${u.name}'); event.stopPropagation();">X</div>` : '';
@@ -1140,38 +1208,41 @@
         }
 
         async function checkSystemAutoReset() {
-            // 시스템 설정 가져오기 (없으면 생성)
             let { data: config, error } = await supabase.from('user_data').select('*').eq('user_id', 'SYSTEM_CONFIG').single();
 
+            if (error && error.code !== 'PGRST116') {
+                console.error("시스템 설정 로드 에러:", error);
+            }
+
             if (!config) {
-                // 초기 설정 생성
                 const initConfig = {
                     user_id: 'SYSTEM_CONFIG',
                     name: 'SYSTEM',
-                    product: JSON.stringify({ daily: 0, weekly: 0, monthly: 0 }), // 리셋 타임스탬프 저장용
-                    received: 10000 // 목표 금액 (만원 단위) 기본값 1억
+                    product: JSON.stringify({ daily: 0, weekly: 0, monthly: 0 }),
+                    received: 10000
                 };
                 await supabase.from('user_data').insert(initConfig);
                 config = initConfig;
             } else if (!config.product) {
-                // 기존 레거시 호환
                 await supabase.from('user_data').update({
                     product: JSON.stringify({ daily: 0, weekly: 0, monthly: 0 })
                 }).eq('user_id', 'SYSTEM_CONFIG');
                 config.product = JSON.stringify({ daily: 0, weekly: 0, monthly: 0 });
             }
 
-            // Global Goal 설정
             const goal = config.received || 10000;
             document.getElementById('targetGoalDisplay').innerText = (goal / 10000) >= 1 ? `${goal / 10000}억` : `${goal}만`;
             ecosystemGoalAmount = goal;
 
-            // 시간 체크 로직
             const now = new Date();
-            const timestamps = JSON.parse(config.product);
+            let timestamps;
+            try {
+                timestamps = JSON.parse(config.product);
+            } catch (e) {
+                timestamps = { daily: 0, weekly: 0, monthly: 0 };
+            }
 
-            // 1. 일일 리셋 (매일 00:00)
-            const todayStr = now.toDateString(); // "Sun Dec 08 2025" 형식
+            const todayStr = now.toDateString();
             if (timestamps.daily !== todayStr) {
                 console.log("🔄 일일 자동 리셋 실행");
                 await supabase.from('user_data').update({ daily_given: 0, daily_received: 0 }).neq('user_id', 'SYSTEM_CONFIG');
@@ -1179,39 +1250,35 @@
                 await updateConfigTimestamps(timestamps);
             }
 
-            // 2. 주간 리셋 (매주 월요일 00:00)
-            const currentWeek = getWeekKey(now); // "2025-W49"
+            const currentWeek = getWeekKey(now);
             if (timestamps.weekly !== currentWeek) {
                 console.log("🔄 주간 자동 리셋 실행 (월요일)");
                 await supabase.from('user_data').update({ weekly_given: 0, weekly_received: 0 }).neq('user_id', 'SYSTEM_CONFIG');
                 timestamps.weekly = currentWeek;
                 await updateConfigTimestamps(timestamps);
             }
-
-            // 3. 월간 리셋 로직 제거됨 (유저 요청)
-            // if (timestamps.monthly !== currentMonth) { ... }
         }
 
         async function updateConfigTimestamps(ts) {
             await supabase.from('user_data').update({ product: JSON.stringify(ts) }).eq('user_id', 'SYSTEM_CONFIG');
         }
 
-        // 헬퍼: 주간 키 (월요일 기준)
         function getWeekKey(d) {
             const date = new Date(d.getTime());
             date.setHours(0, 0, 0, 0);
-            // Thursday in current week decides the year.
             date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
             const week1 = new Date(date.getFullYear(), 0, 4);
             const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
             return `${date.getFullYear()}-W${weekNum}`;
         }
+        
         function getMonthKey(d) {
             return `${d.getFullYear()}-${d.getMonth() + 1}`;
         }
 
         let ecosystemGoalAmount = 10000;
         let tempUser = null;
+        
         function selectLoginUser(user) {
             tempUser = user;
             document.querySelectorAll('.user-select-card').forEach(el => el.classList.remove('selected'));
@@ -1225,10 +1292,7 @@
             if (!tempUser) return;
             currentUser = tempUser;
             localStorage.setItem('ag43_user_id', currentUser.user_id);
-
-            // 🔥 날짜 변경 체크 및 리셋
             await checkAndResetDaily();
-
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'block';
             loadMyData(); loadActivities();
@@ -1238,17 +1302,10 @@
         async function checkAndResetDaily() {
             const todayStr = new Date().toDateString();
             const lastActive = localStorage.getItem('ag43_last_active_date');
-
-            // 마지막 접속 날짜가 오늘과 다르면 리셋 로직 실행
             if (lastActive !== todayStr) {
                 console.log("새로운 날이 되었습니다. 일일 목표를 리셋합니다.");
-
-                // 실제 DB 업데이트 (나의 일일 데이터 0으로)
-                // 주의: 여러 기기에서 접속 시 중복 실행될 수 있으나, 0으로 세팅하는 것이므로 멱등성 보장됨
-                // 더 정확하게 하려면 서버 사이드 Cron이 필요하지만, 여기선 클라이언트 드리븐으로 처리
                 if (currentUser) {
                     await supabase.from('user_data').update({ daily_given: 0, daily_received: 0 }).eq('user_id', currentUser.user_id);
-                    // 로컬 반영
                     currentUser.daily_given = 0;
                     currentUser.daily_received = 0;
                 }
@@ -1265,11 +1322,11 @@
 
         async function loadMyData() {
             const { data: pendings } = await supabase.from('pending_tokens').select('*').eq('to_user_id', currentUser.user_id);
-            const totalPending = pendings.reduce((sum, item) => sum + item.amount, 0);
+            const totalPending = (pendings || []).reduce((sum, item) => sum + item.amount, 0);
             document.getElementById('pendingAmount').innerText = `${totalPending}만원`;
             document.getElementById('receiveBtn').disabled = totalPending === 0;
             const listDiv = document.getElementById('pendingList');
-            listDiv.innerHTML = pendings.map(p => `<div>• ${p.from_name}님: ${p.amount}만원 "${p.note}"</div>`).join('');
+            listDiv.innerHTML = (pendings || []).map(p => `<div>• ${p.from_name}님: ${p.amount}만원 "${p.note}"</div>`).join('');
             updateMyUI();
         }
 
@@ -1325,7 +1382,7 @@
             if (!confirm("모든 토큰을 수령하시겠습니까?")) return;
             try {
                 const { data: pendings } = await supabase.from('pending_tokens').select('*').eq('to_user_id', currentUser.user_id);
-                const total = pendings.reduce((sum, p) => sum + p.amount, 0);
+                const total = (pendings || []).reduce((sum, p) => sum + p.amount, 0);
                 await supabase.from('pending_tokens').delete().eq('to_user_id', currentUser.user_id);
                 const updates = { received: (currentUser.received || 0) + total, weekly_received: (currentUser.weekly_received || 0) + total, daily_received: (currentUser.daily_received || 0) + total, monthly_received: (currentUser.monthly_received || 0) + total };
                 await supabase.from('user_data').update(updates).eq('user_id', currentUser.user_id);
@@ -1335,6 +1392,7 @@
         }
 
         function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+        
         function renderDropdown() {
             const list = document.getElementById('userDropdown'); list.innerHTML = '';
             allUsers.filter(u => u.user_id !== currentUser?.user_id).forEach(u => {
@@ -1344,6 +1402,7 @@
                 list.appendChild(item);
             });
         }
+        
         function selectAmount(amt) { selectedAmt = amt; document.getElementById('customAmount').value = ''; document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected')); event.target.classList.add('selected'); }
         function switchTab(type) { currentRankType = type; document.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderRanking(); }
 
@@ -1357,15 +1416,12 @@
         function renderRanking() {
             const list = document.getElementById('rankingList'); list.innerHTML = '';
 
-            // 정렬 키 결정
             let sortKey = 'given';
             if (currentRankMode === 'energy') {
-                // Energy Maker (발행/Given) - User Request Modified
                 if (currentRankType === 'weekly') sortKey = 'weekly_given';
                 else if (currentRankType === 'monthly') sortKey = 'monthly_given';
                 else sortKey = 'given';
             } else {
-                // Token Maker (획득/Received) - User Request Modified
                 if (currentRankType === 'weekly') sortKey = 'weekly_received';
                 else if (currentRankType === 'monthly') sortKey = 'monthly_received';
                 else sortKey = 'received';
@@ -1375,7 +1431,7 @@
 
             sorted.forEach((u, idx) => {
                 const val = u[sortKey] || 0;
-                if (val === 0 && idx > 2) return; // 0원이고 4등 밖이면 숨김 (깔끔하게)
+                if (val === 0 && idx > 2) return;
 
                 const div = document.createElement('div'); div.className = 'rank-item';
                 let medal = idx + 1; if (idx === 0) medal = '🥇'; if (idx === 1) medal = '🥈'; if (idx === 2) medal = '🥉';
@@ -1393,13 +1449,8 @@
             });
         }
 
-        // 주간 리뷰 기능
         function openWeeklyReview() {
             document.getElementById('reviewModal').style.display = 'flex';
-
-            // 주간 데이터 계산 (이미 allUsers에 있음)
-
-            // 1. Energy Maker (Weekly Given) - 발행왕
             const topEnergy = [...allUsers].sort((a, b) => (b.weekly_given || 0) - (a.weekly_given || 0)).slice(0, 3);
             document.getElementById('reviewEnergyRank').innerHTML = topEnergy.map((u, i) =>
                 `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
@@ -1407,7 +1458,6 @@
                 </div>`
             ).join('');
 
-            // 2. Token Maker (Weekly Received) - 획득왕
             const topToken = [...allUsers].sort((a, b) => (b.weekly_received || 0) - (a.weekly_received || 0)).slice(0, 3);
             document.getElementById('reviewTokenRank').innerHTML = topToken.map((u, i) =>
                 `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">
@@ -1415,8 +1465,6 @@
                 </div>`
             ).join('');
 
-            // 3. 이번 주 총 유통 가치 (발행 기준)
-            // User requested to see "Weekly Issued Amount"
             const weeklyTotal = allUsers.reduce((sum, u) => sum + (u.weekly_given || 0), 0);
             document.getElementById('reviewTotalEco').innerText = `${weeklyTotal.toLocaleString()}만원`;
         }
@@ -1428,6 +1476,7 @@
             if (data && data.length > 0) data.forEach(addActivityToFeed);
             else feed.innerHTML = '<div style="text-align:center; padding:20px;">활동 내역이 없습니다.</div>';
         }
+        
         async function addActivityToFeed(act) {
             const feed = document.getElementById('activityFeed');
             if (feed.innerText.includes('활동 내역이 없습니다')) feed.innerHTML = '';
@@ -1437,12 +1486,9 @@
             div.style.borderBottom = '1px dashed #eee';
             div.style.display = 'flex';
             div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center'; // 정렬 개선
+            div.style.alignItems = 'center';
 
             const time = new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            // 삭제 버튼 (관리자 모드일 때만 보이게 하거나, 항상 보이고 클릭 시 비번)
-            // 편의상 항상 렌더링하되 작게 표시하고, 클릭 시 관리자 비번 확인
             const delBtn = `<span onclick="deleteActivity(${act.id})" style="color:#aaa; cursor:pointer; font-size:0.8em; margin-left:10px;">[x]</span>`;
 
             div.innerHTML = `<span><span style="color:#999; margin-right:5px;">[${time}]</span> ${act.message}</span> ${delBtn}`;
@@ -1452,27 +1498,43 @@
         async function deleteActivity(id) {
             const pw = prompt("활동 내역을 삭제하려면 관리자 비밀번호를 입력하세요:");
             if (pw !== 'aground') return alert("비번 틀림");
-
             if (!confirm("이 활동 내역을 정말 삭제하시겠습니까?")) return;
-
             await supabase.from('activities').delete().eq('id', id);
             alert("삭제되었습니다.");
-            loadActivities(); // 새로고침
+            loadActivities();
         }
 
-        function toggleRegister() { const list = document.getElementById('userListArea'); const reg = document.getElementById('registerArea'); if (list.style.display === 'none') { list.style.display = 'block'; reg.style.display = 'none'; } else { list.style.display = 'none'; reg.style.display = 'block'; } }
+        function toggleRegister() { 
+            const list = document.getElementById('userListArea'); 
+            const reg = document.getElementById('registerArea'); 
+            if (list.style.display === 'none') { 
+                list.style.display = 'block'; 
+                reg.style.display = 'none'; 
+            } else { 
+                list.style.display = 'none'; 
+                reg.style.display = 'block'; 
+            } 
+        }
+        
         async function registerUser() {
-            const name = document.getElementById('regName').value; const product = document.getElementById('regProduct').value;
+            const name = document.getElementById('regName').value; 
+            const product = document.getElementById('regProduct').value;
             if (!name || !product) return alert("정보를 입력해주세요.");
             const newId = 'user_' + Date.now();
-            await supabase.from('user_data').insert({ user_id: newId, name, product });
-            alert("등록 완료!"); toggleRegister(); fetchUsers();
+            const { error } = await supabase.from('user_data').insert({ user_id: newId, name, product });
+            if (error) {
+                console.error("등록 에러:", error);
+                alert("등록 실패: " + error.message);
+                return;
+            }
+            alert("등록 완료!"); 
+            toggleRegister(); 
+            fetchUsers();
         }
 
         function openGuide() { document.getElementById('guideModal').style.display = 'flex'; }
         function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
 
-        // 관리자 기능
         function toggleAdminMode() {
             isAdminMode = !isAdminMode;
             const btn = document.getElementById('adminToggleBtn');
@@ -1483,7 +1545,6 @@
 
         async function deleteUser(id, name) {
             if (!confirm(`정말로 ${name} 님을 삭제하시겠습니까?`)) return;
-            // 🔥 2차 비밀번호 확인
             const pw = prompt(`[${name}] 님을 영구 삭제하려면 관리자 비밀번호를 입력하세요:`);
             if (pw !== 'admin0000') { alert("비밀번호가 틀렸습니다. 삭제 취소됨."); return; }
 
@@ -1492,7 +1553,6 @@
             alert("삭제되었습니다."); fetchUsers();
         }
 
-        // 🔥 정보 수정 기능
         function toggleGoalEdit() {
             const div = document.getElementById('adminGoalParams');
             div.style.display = div.style.display === 'none' ? 'block' : 'none';
@@ -1538,7 +1598,6 @@
                 document.getElementById('activityFeed').innerHTML = '<div style="text-align:center; padding:20px;">활동 내역이 없습니다.</div>';
             }
 
-            // 🔥 즉시 게이지 초기화 (내 화면)
             if (currentUser) {
                 if (type === 'weekly') {
                     currentUser.weekly_given = 0; currentUser.daily_given = 0;
@@ -1554,7 +1613,6 @@
             alert("초기화 완료"); fetchUsers();
         }
 
-        // 🔥 데이터 백업 기능
         async function downloadBackupData() {
             const pw = prompt("관리자 비밀번호를 입력하세요:");
             if (pw !== 'admin0000') return alert("비번 틀림");
@@ -1574,7 +1632,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // 🔥 통화량 조절 기능 (Admin)
         let editingUserId = null;
 
         function openCurrencyControl() {
@@ -1626,12 +1683,11 @@
             await supabase.from('user_data').update(updates).eq('user_id', editingUserId);
             alert("저장되었습니다.");
             closeCurrencyControl();
-            fetchUsers(true); // 데이터 리로드
+            fetchUsers(true);
         }
 
         init();
     </script>
 </body>
-
 
 </html>
