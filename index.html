@@ -408,10 +408,10 @@
                     <div class="form-group">
                         <label class="form-label">금액 선택 (만원) - 무제한 🚀</label>
                         <div class="amount-grid">
-                            <div class="amount-btn" onclick="selectAmount(5)">5만</div>
-                            <div class="amount-btn" onclick="selectAmount(10)">10만</div>
-                            <div class="amount-btn" onclick="selectAmount(20)">20만</div>
-                            <div class="amount-btn" onclick="selectAmount(50)">50만</div>
+                            <div class="amount-btn" onclick="selectAmount(5, event)">5만</div>
+                            <div class="amount-btn" onclick="selectAmount(10, event)">10만</div>
+                            <div class="amount-btn" onclick="selectAmount(20, event)">20만</div>
+                            <div class="amount-btn" onclick="selectAmount(50, event)">50만</div>
                         </div>
                         <input type="number" id="customAmount" placeholder="직접 입력 (무제한)" style="margin-top:12px;">
                     </div>
@@ -585,7 +585,7 @@
             const progress = Math.min(100, (score / nextScore) * 100); document.getElementById('expBar').style.width = `${progress}%`;
             document.getElementById('expPercent').innerText = `${Math.round(progress)}%`; document.getElementById('nextLevelText').innerText = `다음 레벨까지 ${nextScore - score}만원`;
             const dailyGiven = currentUser.daily_given || 0, weeklyGiven = currentUser.weekly_given || 0;
-            const dailyProg = Math.min(100, (dailyGiven / 100) * 100), weeklyProg = Math.min(100, (weeklyGiven / 100) * 100);
+            const dailyProg = Math.min(100, (dailyGiven / 100) * 100), weeklyProg = Math.min(100, (weeklyGiven / 1000) * 100);
             document.getElementById('dailyBar').style.width = `${dailyProg}%`; document.getElementById('dailyText').innerText = `${dailyGiven}만`;
             document.getElementById('weeklyBar').style.width = `${weeklyProg}%`; document.getElementById('weeklyText').innerText = `${weeklyGiven}만`;
         }
@@ -609,6 +609,12 @@
                 alert(`${amount}만원 발행 완료! 🚀`);
                 document.getElementById('message').value = ''; document.getElementById('customAmount').value = ''; selectedAmt = 0;
                 document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                // 발행 후 currentUser 데이터 즉시 갱신
+                currentUser.given = (currentUser.given || 0) + amount;
+                currentUser.weekly_given = (currentUser.weekly_given || 0) + amount;
+                currentUser.daily_given = (currentUser.daily_given || 0) + amount;
+                currentUser.monthly_given = (currentUser.monthly_given || 0) + amount;
+                updateMyUI();
             } catch (err) { console.error(err); alert("오류 발생"); }
         }
 
@@ -627,7 +633,7 @@
 
         function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
         function renderDropdown() { const list = document.getElementById('userDropdown'); list.innerHTML = ''; allUsers.filter(u => u.user_id !== currentUser?.user_id).forEach(u => { const item = document.createElement('div'); item.className = 'dropdown-item'; item.innerHTML = `<div class="dropdown-item-name">${u.name}</div><div class="dropdown-item-product">${u.product}</div>`; item.onclick = () => { document.getElementById('targetUserId').value = u.user_id; document.getElementById('targetName').innerText = u.name; list.classList.remove('show'); }; list.appendChild(item); }); }
-        function selectAmount(amt) { selectedAmt = amt; document.getElementById('customAmount').value = ''; document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected')); event.target.classList.add('selected'); console.log('선택된 금액:', amt); }
+        function selectAmount(amt, e) { selectedAmt = amt; document.getElementById('customAmount').value = ''; document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected')); if (e && e.target) e.target.classList.add('selected'); console.log('선택된 금액:', amt); }
         function switchTab(type) { currentRankType = type; document.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderRanking(); }
         function switchRankMode(mode) { currentRankMode = mode; document.getElementById('btn-energy').classList.toggle('active', mode === 'energy'); document.getElementById('btn-token').classList.toggle('active', mode === 'token'); renderRanking(); }
 
