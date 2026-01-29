@@ -446,6 +446,7 @@
             <div class="admin-title">🛠️ 운영진 메뉴</div>
             <div class="admin-buttons">
                 <button class="admin-btn" onclick="toggleGoalEdit()">🎯 목표 설정</button>
+                <button class="admin-btn" onclick="openEcosystemEdit()">🌏 총 유통량 조절</button>
                 <button class="admin-btn" onclick="adminReset('weekly')">📅 주간 초기화</button>
                 <button class="admin-btn" onclick="openCurrencyControl()">💸 통화량 조절</button>
                 <button class="admin-btn danger" onclick="adminReset('all')">💀 시즌 초기화</button>
@@ -491,12 +492,34 @@
                 </div>
             </div>
             <div id="currencyEditArea" style="display:none;">
-                <div class="form-group"><label class="form-label">누적 수령액</label><input type="number" id="editTotalReceived"></div>
+                <div class="form-group"><label class="form-label">누적 수령액 (총 유통량에 반영)</label><input type="number" id="editTotalReceived"></div>
                 <div class="form-group"><label class="form-label">월간 수령액</label><input type="number" id="editMonthlyReceived"></div>
+                <div class="form-group"><label class="form-label">주간 수령액</label><input type="number" id="editWeeklyReceived"></div>
                 <div class="form-group"><label class="form-label">누적 발행액</label><input type="number" id="editTotalGiven"></div>
                 <div class="form-group"><label class="form-label">월간 발행액</label><input type="number" id="editMonthlyGiven"></div>
-                <button class="btn btn-primary" onclick="saveCurrencyChanges()">💾 저장</button>
+                <div class="form-group"><label class="form-label">주간 발행액</label><input type="number" id="editWeeklyGiven"></div>
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn btn-primary" onclick="saveCurrencyChanges()" style="flex:1;">💾 저장</button>
+                    <button class="btn" onclick="resetUserToZero()" style="flex:1; background:var(--danger); color:white;">🗑️ 전체 0으로</button>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="ecosystemModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeEcosystemEdit()">×</button>
+            <div class="modal-title">🌏 총 유통량 조절</div>
+            <div class="form-group">
+                <label class="form-label">현재 총 유통량</label>
+                <div id="currentEcosystemDisplay" style="font-size:1.5rem; font-weight:700; color:var(--accent-primary); margin-bottom:16px;">0만원</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">새로운 총 유통량 (만원)</label>
+                <input type="number" id="newEcosystemValue" placeholder="예: 5000">
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:20px;">⚠️ 모든 유저의 누적 수령액을 비율에 맞게 조정합니다.</p>
+            <button class="btn btn-primary" onclick="saveEcosystemValue()">💾 저장</button>
         </div>
     </div>
 
@@ -585,7 +608,7 @@
             const progress = Math.min(100, (score / nextScore) * 100); document.getElementById('expBar').style.width = `${progress}%`;
             document.getElementById('expPercent').innerText = `${Math.round(progress)}%`; document.getElementById('nextLevelText').innerText = `다음 레벨까지 ${nextScore - score}만원`;
             const dailyGiven = currentUser.daily_given || 0, weeklyGiven = currentUser.weekly_given || 0;
-            const dailyProg = Math.min(100, (dailyGiven / 100) * 100), weeklyProg = Math.min(100, (weeklyGiven / 1000) * 100);
+            const dailyProg = Math.min(100, (dailyGiven / 1000) * 100), weeklyProg = Math.min(100, (weeklyGiven / 1000) * 100);
             document.getElementById('dailyBar').style.width = `${dailyProg}%`; document.getElementById('dailyText').innerText = `${dailyGiven}만`;
             document.getElementById('weeklyBar').style.width = `${weeklyProg}%`; document.getElementById('weeklyText').innerText = `${weeklyGiven}만`;
         }
@@ -675,8 +698,13 @@
         function closeCurrencyControl() { document.getElementById('currencyModal').style.display = 'none'; editingUserId = null; document.getElementById('currencyEditArea').style.display = 'none'; document.getElementById('adminTargetName').innerText = "선택하세요"; }
         function toggleAdminUserDropdown() { document.getElementById('adminUserDropdown').classList.toggle('show'); }
         function renderAdminUserDropdown() { const list = document.getElementById('adminUserDropdown'); list.innerHTML = ''; allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').forEach(u => { const item = document.createElement('div'); item.className = 'dropdown-item'; item.innerHTML = `<div class="dropdown-item-name">${u.name}</div>`; item.onclick = () => { selectUserForCurrencyEdit(u); list.classList.remove('show'); }; list.appendChild(item); }); }
-        function selectUserForCurrencyEdit(user) { editingUserId = user.user_id; document.getElementById('adminTargetName').innerText = user.name; document.getElementById('currencyEditArea').style.display = 'block'; document.getElementById('editTotalReceived').value = user.received || 0; document.getElementById('editMonthlyReceived').value = user.monthly_received || 0; document.getElementById('editTotalGiven').value = user.given || 0; document.getElementById('editMonthlyGiven').value = user.monthly_given || 0; }
-        async function saveCurrencyChanges() { if (!editingUserId) return; const updates = { received: parseInt(document.getElementById('editTotalReceived').value) || 0, monthly_received: parseInt(document.getElementById('editMonthlyReceived').value) || 0, given: parseInt(document.getElementById('editTotalGiven').value) || 0, monthly_given: parseInt(document.getElementById('editMonthlyGiven').value) || 0 }; await sbClient.from('user_data').update(updates).eq('user_id', editingUserId); alert("저장되었습니다."); closeCurrencyControl(); fetchUsers(true); }
+        function selectUserForCurrencyEdit(user) { editingUserId = user.user_id; document.getElementById('adminTargetName').innerText = user.name; document.getElementById('currencyEditArea').style.display = 'block'; document.getElementById('editTotalReceived').value = user.received || 0; document.getElementById('editMonthlyReceived').value = user.monthly_received || 0; document.getElementById('editWeeklyReceived').value = user.weekly_received || 0; document.getElementById('editTotalGiven').value = user.given || 0; document.getElementById('editMonthlyGiven').value = user.monthly_given || 0; document.getElementById('editWeeklyGiven').value = user.weekly_given || 0; }
+        async function saveCurrencyChanges() { if (!editingUserId) return; const updates = { received: parseInt(document.getElementById('editTotalReceived').value) || 0, monthly_received: parseInt(document.getElementById('editMonthlyReceived').value) || 0, weekly_received: parseInt(document.getElementById('editWeeklyReceived').value) || 0, given: parseInt(document.getElementById('editTotalGiven').value) || 0, monthly_given: parseInt(document.getElementById('editMonthlyGiven').value) || 0, weekly_given: parseInt(document.getElementById('editWeeklyGiven').value) || 0 }; await sbClient.from('user_data').update(updates).eq('user_id', editingUserId); alert("저장되었습니다."); closeCurrencyControl(); fetchUsers(true); }
+        async function resetUserToZero() { if (!editingUserId) return; if (!confirm("이 유저의 모든 수치를 0으로 초기화하시겠습니까?")) return; document.getElementById('editTotalReceived').value = 0; document.getElementById('editMonthlyReceived').value = 0; document.getElementById('editWeeklyReceived').value = 0; document.getElementById('editTotalGiven').value = 0; document.getElementById('editMonthlyGiven').value = 0; document.getElementById('editWeeklyGiven').value = 0; }
+
+        function openEcosystemEdit() { const pw = prompt("관리자 비밀번호:"); if (pw !== 'admin0000') return alert("접근 불가"); const total = allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').reduce((sum, u) => sum + (u.received || 0), 0); document.getElementById('currentEcosystemDisplay').innerText = `${total.toLocaleString()}만원`; document.getElementById('newEcosystemValue').value = total; document.getElementById('ecosystemModal').style.display = 'flex'; }
+        function closeEcosystemEdit() { document.getElementById('ecosystemModal').style.display = 'none'; }
+        async function saveEcosystemValue() { const newTotal = parseInt(document.getElementById('newEcosystemValue').value) || 0; const currentTotal = allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').reduce((sum, u) => sum + (u.received || 0), 0); if (currentTotal === 0) { alert("현재 유통량이 0이라 비율 조정이 불가합니다."); return; } const ratio = newTotal / currentTotal; if (!confirm(`총 유통량을 ${currentTotal.toLocaleString()}만원 → ${newTotal.toLocaleString()}만원으로 변경합니다.\n모든 유저의 누적 수령액이 ${(ratio * 100).toFixed(1)}% 비율로 조정됩니다.`)) return; for (const user of allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG')) { const newReceived = Math.round((user.received || 0) * ratio); await sbClient.from('user_data').update({ received: newReceived }).eq('user_id', user.user_id); } alert("총 유통량이 수정되었습니다."); closeEcosystemEdit(); fetchUsers(true); }
 
         document.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-wrapper')) { document.querySelectorAll('.dropdown-list').forEach(d => d.classList.remove('show')); } });
         init();
