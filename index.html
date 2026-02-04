@@ -1,133 +1,47 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>AG 43기 가치 토큰 GAME</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #f8fafc;
-            --bg-secondary: #f1f5f9;
-            --bg-card: rgba(255, 255, 255, 0.85);
-            --bg-elevated: rgba(255, 255, 255, 0.95);
-            --border-subtle: rgba(0, 0, 0, 0.06);
-            --border-default: rgba(0, 0, 0, 0.1);
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --accent-primary: #6366f1;
-            --accent-secondary: #818cf8;
-            --accent-tertiary: #4f46e5;
-            --accent-glow: rgba(99, 102, 241, 0.15);
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --bg-primary: #f8fafc; --bg-card: rgba(255, 255, 255, 0.85); --border-subtle: rgba(0, 0, 0, 0.06);
+            --border-default: rgba(0, 0, 0, 0.1); --text-primary: #1e293b; --text-secondary: #475569; --text-muted: #94a3b8;
+            --accent-primary: #6366f1; --accent-secondary: #818cf8; --accent-glow: rgba(99, 102, 241, 0.15);
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
             --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-            --gradient-secondary: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
             --gradient-gold: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            --gradient-fresh: linear-gradient(135deg, #34d399 0%, #14b8a6 100%);
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
-            --shadow-glow: 0 0 60px rgba(99, 102, 241, 0.15);
-            --shadow-color: 0 8px 30px rgba(99, 102, 241, 0.2);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
-            --transition-fast: 0.15s ease;
+            --gradient-legend: linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #ef4444 70%, #ec4899 100%);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08); --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+            --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px;
             --transition-base: 0.25s ease;
-            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Noto Sans KR', 'Outfit', -apple-system, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            line-height: 1.6;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .bg-pattern {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden;
-            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 30%, #fce7f3 60%, #ecfeff 100%);
-        }
-        .bg-pattern::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(217, 70, 239, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 70%, rgba(20, 184, 166, 0.08) 0%, transparent 40%);
-            animation: bgFloat 25s ease-in-out infinite;
-        }
-        .grid-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
-            background-size: 80px 80px;
-            mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
-        }
-        .floating-shapes { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
-        .shape { position: absolute; opacity: 0.7; }
-        .shape-circle { border-radius: 50%; border: 2px solid; }
-        .shape-square { border: 2px solid; border-radius: 6px; }
-        .shape-ring { border-radius: 50%; border: 3px solid; background: transparent !important; }
-        .shape-diamond { transform: rotate(45deg); border: 2px solid; }
-        .shape-1 { width: 80px; height: 80px; top: 10%; left: 5%; border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.08); animation: float1 18s ease-in-out infinite; }
-        .shape-2 { width: 30px; height: 30px; top: 20%; right: 10%; border-color: rgba(20, 184, 166, 0.5); background: rgba(20, 184, 166, 0.15); animation: float2 15s ease-in-out infinite; }
-        .shape-3 { width: 60px; height: 60px; top: 60%; left: 8%; border-color: rgba(236, 72, 153, 0.4); animation: float3 20s ease-in-out infinite; }
-        .shape-4 { width: 25px; height: 25px; top: 75%; right: 15%; border-color: rgba(139, 92, 246, 0.5); background: rgba(139, 92, 246, 0.15); animation: float4 17s ease-in-out infinite; }
-        .shape-5 { width: 45px; height: 45px; top: 40%; right: 5%; border-color: rgba(6, 182, 212, 0.45); background: rgba(6, 182, 212, 0.1); animation: float5 22s ease-in-out infinite; }
-        .shape-7 { width: 100px; height: 100px; top: 30%; left: 80%; border-color: rgba(99, 102, 241, 0.25); animation: float7 24s ease-in-out infinite; }
-        .shape-10 { width: 35px; height: 35px; top: 70%; left: 70%; border-color: rgba(244, 114, 182, 0.4); background: rgba(244, 114, 182, 0.1); animation: float10 18s ease-in-out infinite; }
-        .shape-11 { width: 40px; height: 40px; top: 5%; left: 40%; border-color: rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.08); animation: float11 20s ease-in-out infinite; }
-        .shape-12 { width: 50px; height: 50px; top: 90%; right: 30%; border-color: rgba(56, 189, 248, 0.4); animation: float12 23s ease-in-out infinite; }
-
-        @keyframes float1 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-20px, 80px) rotate(180deg); } }
-        @keyframes float2 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-40px, 60px) rotate(180deg); } }
-        @keyframes float3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(50px, -40px) scale(1.1); } }
-        @keyframes float4 { 0%, 100% { transform: translate(0, 0) rotate(45deg); } 50% { transform: translate(20px, -80px) rotate(225deg); } }
-        @keyframes float5 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-60px, 40px); } }
-        @keyframes float7 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-80px, 50px) rotate(180deg); } }
-        @keyframes float10 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-40px, -30px) scale(0.9); } }
-        @keyframes float11 { 0%, 100% { transform: translate(0, 0) rotate(45deg); } 50% { transform: translate(50px, 70px) rotate(225deg); } }
-        @keyframes float12 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(20px, -70px); } }
-        @keyframes bgFloat { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-30px, -30px) rotate(5deg); } }
-
+        body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        
+        .bg-pattern { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 30%, #fce7f3 60%, #ecfeff 100%); }
+        
         .container { max-width: 1200px; margin: 0 auto; padding: 24px; padding-bottom: 100px; }
-
         .header { text-align: center; margin-bottom: 40px; padding-top: 20px; }
-        .header h1 {
-            font-family: 'Outfit', sans-serif; font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em;
-            background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px;
-        }
+        .header h1 { font-family: 'Outfit', sans-serif; font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 800;
+            background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
         .header-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-        .header-btn {
-            display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: white; backdrop-filter: blur(10px);
+        .header-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: white;
             border: 1px solid var(--border-default); border-radius: var(--radius-lg); color: var(--text-secondary);
-            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: var(--transition-base); box-shadow: var(--shadow-sm);
-        }
-        .header-btn:hover { background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%); color: var(--accent-primary); border-color: rgba(99, 102, 241, 0.3); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15); }
+            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: var(--transition-base); }
+        .header-btn:hover { background: rgba(99, 102, 241, 0.08); color: var(--accent-primary); transform: translateY(-3px); }
 
-        .ecosystem-card {
-            background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 40px 32px;
-            margin-bottom: 32px; text-align: center; position: relative; overflow: hidden; box-shadow: var(--shadow-md);
-        }
-        .ecosystem-card::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 60%; height: 3px; background: var(--gradient-primary); border-radius: 3px; }
-        .ecosystem-card::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 50%; height: 80px; background: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 70%); pointer-events: none; }
+        .ecosystem-card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl); padding: 40px 32px; margin-bottom: 32px; text-align: center; position: relative; }
+        .ecosystem-card::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 60%; height: 3px; background: var(--gradient-primary); border-radius: 3px; }
         .eco-label { font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-        .eco-value { font-family: 'Outfit', sans-serif; font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2; }
+        .eco-value { font-family: 'Outfit', sans-serif; font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 800;
+            background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .eco-target { margin-top: 12px; font-size: 0.9rem; color: var(--text-secondary); }
         .eco-target span { color: var(--accent-secondary); font-weight: 600; }
 
@@ -135,191 +49,191 @@
         @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr 1fr; } .main-grid > div:nth-child(3) { grid-column: 1 / -1; } }
         @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
 
-        .card {
-            background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 28px;
-            transition: var(--transition-base); box-shadow: var(--shadow-md);
-        }
-        .card:hover { border-color: rgba(99, 102, 241, 0.2); box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12); transform: translateY(-2px); }
-        .card-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
-        .card-title-icon { width: 32px; height: 32px; background: var(--accent-glow); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-xl); padding: 28px; transition: var(--transition-base); box-shadow: var(--shadow-md); }
+        .card:hover { border-color: rgba(99, 102, 241, 0.2); transform: translateY(-2px); }
+        .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .card-title-icon { width: 32px; height: 32px; background: var(--accent-glow); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 1rem; }
 
         .profile-card { text-align: center; position: relative; }
-        .profile-card::before { content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 3px; background: var(--gradient-primary); border-radius: 3px; }
-        .profile-emoji { font-size: 4.5rem; margin-bottom: 16px; filter: drop-shadow(0 8px 20px rgba(99, 102, 241, 0.25)); animation: emojiFloat 4s ease-in-out infinite; }
+        .profile-card::before { content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 3px;
+            background: var(--gradient-primary); border-radius: 3px; }
+        .profile-emoji { font-size: 4.5rem; margin-bottom: 16px; animation: emojiFloat 4s ease-in-out infinite; }
         @keyframes emojiFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .profile-name { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
-        .profile-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 100px; font-size: 0.85rem; font-weight: 600; color: var(--accent-primary); box-shadow: 0 2px 10px rgba(99, 102, 241, 0.1); }
+        .profile-name { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 10px; }
+        .profile-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 100px; font-size: 0.85rem; font-weight: 600; color: var(--accent-primary); }
+        
+        /* 레벨별 뱃지 스타일 */
+        .profile-badge.level-6 { background: linear-gradient(135deg, rgba(0, 188, 212, 0.15), rgba(6, 182, 212, 0.1)); border-color: rgba(0, 188, 212, 0.4); color: #0891b2; }
+        .profile-badge.level-7 { background: linear-gradient(135deg, rgba(233, 30, 99, 0.15), rgba(236, 72, 153, 0.1)); border-color: rgba(233, 30, 99, 0.4); color: #db2777; }
+        .profile-badge.level-8 { background: linear-gradient(135deg, rgba(96, 125, 139, 0.15), rgba(71, 85, 105, 0.1)); border-color: rgba(96, 125, 139, 0.4); color: #475569; }
+        .profile-badge.level-9 { background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1)); border-color: rgba(168, 85, 247, 0.4); color: #7c3aed; }
+        .profile-badge.level-10 { background: var(--gradient-legend); border-color: rgba(251, 191, 36, 0.6); color: white;
+            animation: legendGlow 2s ease-in-out infinite alternate; box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
+        @keyframes legendGlow { from { box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); } to { box-shadow: 0 0 30px rgba(251, 191, 36, 0.6); } }
+
         .progress-section { margin-top: 24px; }
         .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
-        .progress-bar { height: 6px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--gradient-primary); border-radius: 100px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-bar { height: 6px; background: rgba(255,255,255,0.95); border-radius: 100px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--gradient-primary); border-radius: 100px; transition: width 0.8s; }
         .next-level-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; }
 
         .mission-box { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border-subtle); }
         .mission-item { margin-bottom: 20px; }
-        .mission-item:last-child { margin-bottom: 0; }
         .mission-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px; }
-        .mission-label span:first-child { color: var(--text-secondary); }
-        .mission-label span:last-child { color: var(--text-muted); font-weight: 500; }
-        .mission-bar { height: 4px; background: var(--bg-elevated); border-radius: 100px; overflow: hidden; }
-        .mission-fill { height: 100%; border-radius: 100px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .mission-bar { height: 4px; background: rgba(255,255,255,0.95); border-radius: 100px; overflow: hidden; }
+        .mission-fill { height: 100%; border-radius: 100px; transition: width 0.8s; }
         .mission-fill.daily { background: var(--success); }
         .mission-fill.weekly { background: var(--warning); }
 
-        .pending-card { background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border-color: rgba(245, 158, 11, 0.25); margin-top: 20px; position: relative; overflow: hidden; }
+        .pending-card { background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+            border-color: rgba(245, 158, 11, 0.25); margin-top: 20px; position: relative; }
         .pending-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient-gold); }
         .pending-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .pending-icon { width: 36px; height: 36px; background: rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .pending-icon { width: 36px; height: 36px; background: rgba(245, 158, 11, 0.2); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
         .pending-title { font-size: 0.9rem; font-weight: 600; color: var(--warning); }
         .pending-amount { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700; color: var(--warning); margin-bottom: 12px; }
         .pending-list { font-size: 0.8rem; color: var(--text-muted); max-height: 80px; overflow-y: auto; margin-bottom: 16px; }
-        .pending-list::-webkit-scrollbar { width: 4px; }
-        .pending-list::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 100px; }
 
-        .btn { width: 100%; padding: 14px 24px; border-radius: var(--radius-md); border: none; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: var(--transition-base); display: inline-flex; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; }
+        .btn { width: 100%; padding: 14px 24px; border-radius: var(--radius-md); border: none; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; transition: var(--transition-base); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background: var(--gradient-primary); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35); }
-        .btn-primary::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent); transition: 0.5s; }
-        .btn-primary:hover::before { left: 100%; }
         .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4); }
-        .btn-primary:active { transform: translateY(-1px); }
         .btn-receive { background: var(--gradient-gold); color: #1a1a1a; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35); }
-        .btn-receive:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(245, 158, 11, 0.45); }
+        .btn-receive:hover { transform: translateY(-3px); }
         .btn-receive:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
 
         .form-group { margin-bottom: 24px; }
         .form-label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 10px; }
         .amount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .amount-btn { padding: 14px 8px; background: white; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-secondary); font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: var(--transition-base); }
-        .amount-btn:hover { border-color: rgba(99, 102, 241, 0.4); color: var(--accent-primary); background: rgba(99, 102, 241, 0.05); transform: translateY(-2px); }
-        .amount-btn.selected { background: var(--gradient-primary); border-color: transparent; color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35); }
+        .amount-btn { padding: 14px 8px; background: white; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+            color: var(--text-secondary); font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: var(--transition-base); }
+        .amount-btn:hover { border-color: rgba(99, 102, 241, 0.4); color: var(--accent-primary); transform: translateY(-2px); }
+        .amount-btn.selected { background: var(--gradient-primary); border-color: transparent; color: white; }
 
-        input[type="number"], input[type="text"], textarea { width: 100%; padding: 14px 16px; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; transition: var(--transition-base); outline: none; }
+        input[type="number"], input[type="text"], textarea { width: 100%; padding: 14px 16px; background: white;
+            border: 1px solid var(--border-default); border-radius: var(--radius-md); font-family: inherit; font-size: 0.9rem; outline: none; }
         input:focus, textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
-        input::placeholder, textarea::placeholder { color: var(--text-muted); }
         textarea { resize: none; min-height: 100px; }
 
         .dropdown-wrapper { position: relative; z-index: 50; }
-        .dropdown-btn { width: 100%; padding: 14px 16px; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: var(--transition-base); }
-        .dropdown-btn:hover { border-color: rgba(99, 102, 241, 0.3); }
-        .dropdown-arrow { color: var(--text-muted); transition: var(--transition-base); }
-        .dropdown-list { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-md); max-height: 240px; overflow-y: auto; z-index: 1000; display: none; box-shadow: var(--shadow-lg); }
-        .dropdown-list.show { display: block; animation: dropdownFade 0.2s ease; }
-        @keyframes dropdownFade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        .dropdown-item { padding: 14px 16px; cursor: pointer; transition: var(--transition-fast); border-bottom: 1px solid var(--border-subtle); }
-        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-btn { width: 100%; padding: 14px 16px; background: white; border: 1px solid var(--border-default);
+            border-radius: var(--radius-md); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-list { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: white;
+            border: 1px solid var(--border-default); border-radius: var(--radius-md); max-height: 240px; overflow-y: auto;
+            z-index: 1000; display: none; box-shadow: var(--shadow-lg); }
+        .dropdown-list.show { display: block; }
+        .dropdown-item { padding: 14px 16px; cursor: pointer; border-bottom: 1px solid var(--border-subtle); }
         .dropdown-item:hover { background: rgba(99, 102, 241, 0.05); }
         .dropdown-item-name { font-weight: 600; margin-bottom: 2px; }
         .dropdown-item-product { font-size: 0.8rem; color: var(--text-muted); }
 
         .rank-toggle { display: flex; background: #f1f5f9; padding: 4px; border-radius: var(--radius-md); margin-bottom: 20px; }
-        .rank-toggle-btn { flex: 1; padding: 10px 12px; background: transparent; border: none; border-radius: var(--radius-sm); color: var(--text-muted); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: var(--transition-base); }
-        .rank-toggle-btn.active { background: white; color: var(--accent-primary); box-shadow: var(--shadow-sm); }
+        .rank-toggle-btn { flex: 1; padding: 10px 12px; background: transparent; border: none; border-radius: 8px;
+            color: var(--text-muted); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .rank-toggle-btn.active { background: white; color: var(--accent-primary); }
         .rank-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-        .rank-tab { flex: 1; padding: 10px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-family: inherit; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: var(--transition-base); }
-        .rank-tab:hover { color: var(--text-secondary); }
+        .rank-tab { flex: 1; padding: 10px; background: transparent; border: none; border-bottom: 2px solid transparent;
+            color: var(--text-muted); font-size: 0.85rem; font-weight: 500; cursor: pointer; }
         .rank-tab.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
         .rank-list { max-height: 280px; overflow-y: auto; }
-        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 12px; border-radius: var(--radius-md); margin-bottom: 8px; background: white; transition: var(--transition-base); border: 1px solid transparent; box-shadow: var(--shadow-sm); }
-        .rank-item:hover { background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.03) 100%); border-color: rgba(99, 102, 241, 0.15); transform: translateX(4px); }
+        .rank-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 12px;
+            border-radius: var(--radius-md); margin-bottom: 8px; background: white; border: 1px solid transparent; }
+        .rank-item:hover { background: rgba(99, 102, 241, 0.06); border-color: rgba(99, 102, 241, 0.15); transform: translateX(4px); }
         .rank-left { display: flex; align-items: center; gap: 12px; }
         .rank-medal { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: var(--text-muted); }
-        .rank-medal.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.3rem; }
-        .rank-medal.silver { background: linear-gradient(135deg, #e5e7eb, #9ca3af); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.2rem; }
-        .rank-medal.bronze { background: linear-gradient(135deg, #d97706, #b45309); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.1rem; }
+        .rank-medal.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.3rem; }
+        .rank-medal.silver { background: linear-gradient(135deg, #e5e7eb, #9ca3af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.2rem; }
+        .rank-medal.bronze { background: linear-gradient(135deg, #d97706, #b45309); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.1rem; }
         .rank-info-name { font-weight: 600; font-size: 0.9rem; }
         .rank-info-product { font-size: 0.75rem; color: var(--text-muted); }
         .rank-value { font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--accent-secondary); }
 
         .activity-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border-subtle); }
-        .activity-title { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .activity-title { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 16px; }
         .activity-feed { max-height: 200px; overflow-y: auto; }
-        .activity-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.85rem; }
-        .activity-item:last-child { border-bottom: none; }
+        .activity-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.85rem; }
         .activity-time { color: var(--text-muted); font-size: 0.75rem; margin-right: 8px; }
-        .activity-delete { color: var(--text-muted); font-size: 0.75rem; cursor: pointer; opacity: 0; transition: var(--transition-fast); }
-        .activity-item:hover .activity-delete { opacity: 1; }
-        .activity-delete:hover { color: var(--danger); }
 
-        .admin-section { margin-top: 48px; padding: 24px; background: white; border: 1px dashed var(--border-default); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
+        .admin-section { margin-top: 48px; padding: 24px; background: white; border: 1px dashed var(--border-default); border-radius: var(--radius-xl); }
         .admin-title { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-align: center; margin-bottom: 20px; }
         .admin-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .admin-btn { padding: 10px 18px; background: #f8fafc; border: 1px solid var(--border-default); border-radius: var(--radius-md); color: var(--text-secondary); font-family: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: var(--transition-base); }
+        .admin-btn { padding: 10px 18px; background: #f8fafc; border: 1px solid var(--border-default); border-radius: var(--radius-md);
+            color: var(--text-secondary); font-size: 0.8rem; font-weight: 500; cursor: pointer; }
         .admin-btn:hover { background: white; border-color: rgba(99, 102, 241, 0.3); color: var(--accent-primary); }
         .admin-btn.danger { border-color: rgba(239, 68, 68, 0.3); color: var(--danger); }
-        .admin-btn.danger:hover { background: rgba(239, 68, 68, 0.05); }
         .admin-btn.success { border-color: rgba(16, 185, 129, 0.3); color: var(--success); }
-        .admin-btn.success:hover { background: rgba(16, 185, 129, 0.05); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-card { width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; background: white; border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 32px; position: relative; animation: modalSlide 0.3s ease; box-shadow: var(--shadow-lg); }
-        @keyframes modalSlide { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .modal-close { position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; background: #f1f5f9; border: none; border-radius: var(--radius-sm); color: var(--text-muted); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition-fast); }
-        .modal-close:hover { background: #e2e8f0; color: var(--text-primary); }
-        .modal-title { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; background: white;
+            border-radius: var(--radius-xl); padding: 32px; position: relative; }
+        .modal-close { position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; background: #f1f5f9;
+            border: none; border-radius: 8px; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+        .modal-title { font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;
+            background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .modal-list { list-style: none; }
         .modal-list li { padding: 12px 0; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); font-size: 0.9rem; }
         .modal-list li strong { color: var(--text-primary); }
 
-        .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent; overflow-y: auto; padding: 20px; }
+        .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .login-container { width: 100%; max-width: 520px; text-align: center; }
-        .login-title { font-family: 'Outfit', sans-serif; font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; line-height: 1.2; animation: titleGlow 3s ease-in-out infinite alternate; }
-        @keyframes titleGlow { from { filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.3)); } to { filter: drop-shadow(0 0 25px rgba(217, 70, 239, 0.35)); } }
+        .login-title { font-family: 'Outfit', sans-serif; font-size: clamp(2.2rem, 7vw, 3.5rem); font-weight: 800;
+            background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px; }
         .login-subtitle { color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 40px; }
-        .login-card { background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--border-default); border-radius: var(--radius-xl); padding: 36px; box-shadow: var(--shadow-lg); }
+        .login-card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border-default);
+            border-radius: var(--radius-xl); padding: 36px; box-shadow: var(--shadow-lg); }
         .login-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .login-card-title { font-size: 1.1rem; font-weight: 600; }
-        .manage-btn { padding: 6px 12px; background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-muted); font-family: inherit; font-size: 0.75rem; cursor: pointer; transition: var(--transition-base); }
+        .manage-btn { padding: 6px 12px; background: transparent; border: 1px solid var(--border-subtle);
+            border-radius: 8px; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; }
         .manage-btn:hover, .manage-btn.active { border-color: var(--warning); color: var(--warning); }
         .user-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         @media (max-width: 480px) { .user-grid { grid-template-columns: 1fr; } }
-        .user-card { background: white; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px; cursor: pointer; transition: var(--transition-base); position: relative; text-align: center; }
-        .user-card:hover { border-color: rgba(99, 102, 241, 0.3); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15); }
-        .user-card.selected { border-color: var(--accent-primary); background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%); box-shadow: 0 0 25px rgba(99, 102, 241, 0.2); }
+        .user-card { background: white; border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+            padding: 18px; cursor: pointer; transition: var(--transition-base); position: relative; text-align: center; }
+        .user-card:hover { border-color: rgba(99, 102, 241, 0.3); transform: translateY(-4px); }
+        .user-card.selected { border-color: var(--accent-primary); background: rgba(99, 102, 241, 0.08); }
         .user-card-name { font-weight: 600; margin-bottom: 4px; }
         .user-card-product { font-size: 0.8rem; color: var(--text-muted); }
-        .user-delete-btn { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: var(--danger); border: none; border-radius: 50%; color: white; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition-fast); }
-        .user-delete-btn:hover { transform: scale(1.1); }
-        .login-register-link { color: var(--text-muted); font-size: 0.9rem; cursor: pointer; margin-top: 16px; transition: var(--transition-fast); }
+        .user-delete-btn { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: var(--danger);
+            border: none; border-radius: 50%; color: white; font-size: 0.8rem; cursor: pointer; }
+        .login-register-link { color: var(--text-muted); font-size: 0.9rem; cursor: pointer; margin-top: 16px; }
         .login-register-link:hover { color: var(--accent-secondary); }
 
         .loading-msg { text-align: center; padding: 40px 20px; color: var(--text-muted); }
         .error-msg { text-align: center; padding: 20px; color: var(--danger); background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-md); }
 
-        .review-section { background: #f8fafc; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
-        .review-section h3 { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px; }
-        .review-rank-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.9rem; }
-        .review-rank-item:last-child { border-bottom: none; }
-        .review-total { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.08) 100%); border-radius: var(--radius-md); padding: 20px; text-align: center; }
-        .review-total-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
-        .review-total-value { font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; background: var(--gradient-gold); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .level-info-grid { display: grid; gap: 12px; margin-top: 20px; }
+        .level-info-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: var(--radius-md); }
+        .level-info-item.current { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08)); border: 1px solid rgba(99, 102, 241, 0.3); }
+        .level-info-emoji { font-size: 1.8rem; }
+        .level-info-details { flex: 1; }
+        .level-info-name { font-weight: 600; font-size: 0.9rem; }
+        .level-info-req { font-size: 0.75rem; color: var(--text-muted); }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 100px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .levelup-celebration { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8);
+            display: flex; align-items: center; justify-content: center; z-index: 10000; animation: celebrationFade 0.5s ease; }
+        @keyframes celebrationFade { from { opacity: 0; } to { opacity: 1; } }
+        .levelup-content { text-align: center; animation: celebrationPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        @keyframes celebrationPop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .levelup-emoji { font-size: 8rem; margin-bottom: 20px; animation: emojiSpin 1s ease-out; }
+        @keyframes emojiSpin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        .levelup-text { font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; color: white; margin-bottom: 10px; }
+        .levelup-level { font-size: 1.5rem; color: #fbbf24; font-weight: 600; }
 
-        #adminGoalParams { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle); }
+        #adminGoalParams { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: none; }
         #adminGoalParams input { width: 120px; padding: 8px 12px; margin-right: 10px; }
-        #currencyEditArea { margin-top: 20px; padding: 20px; background: #f8fafc; border-radius: var(--radius-md); }
+        #currencyEditArea { margin-top: 20px; padding: 20px; background: #f8fafc; border-radius: var(--radius-md); display: none; }
     </style>
 </head>
-
 <body>
-    <div class="bg-pattern">
-        <div class="grid-overlay"></div>
-        <div class="floating-shapes">
-            <div class="shape shape-circle shape-1"></div>
-            <div class="shape shape-square shape-2"></div>
-            <div class="shape shape-ring shape-3"></div>
-            <div class="shape shape-diamond shape-4"></div>
-            <div class="shape shape-circle shape-5"></div>
-            <div class="shape shape-ring shape-7"></div>
-            <div class="shape shape-circle shape-10"></div>
-            <div class="shape shape-diamond shape-11"></div>
-            <div class="shape shape-ring shape-12"></div>
-        </div>
-    </div>
+    <div class="bg-pattern"></div>
 
     <div id="loginScreen" class="login-screen">
         <div class="login-container">
@@ -349,7 +263,7 @@
             <h1>AG 43기 가치 토큰 GAME</h1>
             <div class="header-actions">
                 <button class="header-btn" onclick="openGuide()">📖 가이드</button>
-                <button class="header-btn" onclick="openWeeklyReview()">📊 주간 리뷰</button>
+                <button class="header-btn" onclick="openLevelInfo()">🏆 레벨 정보</button>
                 <button class="header-btn" onclick="logout()">🔓 로그아웃</button>
             </div>
         </div>
@@ -358,10 +272,7 @@
             <div class="eco-label">🌏 AG 43기 생태계 총 유통량</div>
             <div class="eco-value" id="totalEcosystem">0만원</div>
             <div class="eco-target">🎯 목표: <span id="targetGoalDisplay">1억</span> 달성까지 <span id="remainTarget">0</span>만원 남음</div>
-            <div id="adminGoalParams" style="display:none;">
-                <input type="number" id="newGoalInput" placeholder="새 목표 금액 (만)">
-                <button class="manage-btn" onclick="saveNewGoal()">저장</button>
-            </div>
+            <div id="adminGoalParams"><input type="number" id="newGoalInput" placeholder="새 목표 (만)"><button class="manage-btn" onclick="saveNewGoal()">저장</button></div>
         </div>
 
         <div class="main-grid">
@@ -401,22 +312,22 @@
                         <label class="form-label">누구의 가치를 인정하나요?</label>
                         <input type="hidden" id="targetUserId">
                         <div class="dropdown-wrapper">
-                            <div class="dropdown-btn" onclick="toggleDropdown()"><span id="targetName">선택하세요</span><span class="dropdown-arrow">▼</span></div>
+                            <div class="dropdown-btn" onclick="toggleDropdown()"><span id="targetName">선택하세요</span><span>▼</span></div>
                             <div class="dropdown-list" id="userDropdown"></div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">금액 선택 (만원) - 무제한 🚀</label>
+                        <label class="form-label">금액 선택 (만원)</label>
                         <div class="amount-grid">
-                            <div class="amount-btn" onclick="selectAmount(5, event)">5만</div>
-                            <div class="amount-btn" onclick="selectAmount(10, event)">10만</div>
-                            <div class="amount-btn" onclick="selectAmount(20, event)">20만</div>
-                            <div class="amount-btn" onclick="selectAmount(50, event)">50만</div>
+                            <div class="amount-btn" onclick="selectAmount(5,event)">5만</div>
+                            <div class="amount-btn" onclick="selectAmount(10,event)">10만</div>
+                            <div class="amount-btn" onclick="selectAmount(20,event)">20만</div>
+                            <div class="amount-btn" onclick="selectAmount(50,event)">50만</div>
                         </div>
-                        <input type="number" id="customAmount" placeholder="직접 입력 (무제한)" style="margin-top:12px;">
+                        <input type="number" id="customAmount" placeholder="직접 입력" style="margin-top:12px;">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">어떤 점이 훌륭했나요? (칭찬 릴레이)</label>
+                        <label class="form-label">어떤 점이 훌륭했나요?</label>
                         <textarea id="message" placeholder="칭찬해주세요! ✨"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">🪙 토큰 발행하기</button>
@@ -446,11 +357,9 @@
             <div class="admin-title">🛠️ 운영진 메뉴</div>
             <div class="admin-buttons">
                 <button class="admin-btn" onclick="toggleGoalEdit()">🎯 목표 설정</button>
-                <button class="admin-btn" onclick="openEcosystemEdit()">🌏 총 유통량 조절</button>
                 <button class="admin-btn" onclick="adminReset('weekly')">📅 주간 초기화</button>
-                <button class="admin-btn" onclick="openCurrencyControl()">💸 통화량 조절</button>
                 <button class="admin-btn danger" onclick="adminReset('all')">💀 시즌 초기화</button>
-                <button class="admin-btn success" onclick="downloadBackupData()">📥 데이터 백업</button>
+                <button class="admin-btn success" onclick="downloadBackupData()">📥 백업</button>
             </div>
         </div>
     </div>
@@ -463,251 +372,223 @@
                 <li><strong>필수 미션:</strong> 가치 인정 토큰 발행하기</li>
                 <li><strong>시즌 목표:</strong> 43기 생태계 통화량 1억 이상 달성! 🚀</li>
                 <li>받은 토큰은 "감사히 받기" 버튼을 눌러 수령하세요!</li>
-                <li><strong>💡 발행 한도 없음:</strong> 원하는 만큼 자유롭게 발행하세요!</li>
+                <li><strong>🏆 레벨 시스템:</strong> 토큰을 받으면 경험치가 올라갑니다! (10레벨까지)</li>
             </ul>
             <button class="btn btn-primary" onclick="closeGuide()" style="margin-top:24px;">Game Start 🔥</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="reviewModal">
+    <div class="modal-overlay" id="levelModal">
         <div class="modal-card">
-            <button class="modal-close" onclick="closeWeeklyReview()">×</button>
-            <div class="modal-title">📅 주간 리포트</div>
-            <div class="review-section"><h3>💖 Energy Maker (Top 3)</h3><div id="reviewEnergyRank"></div></div>
-            <div class="review-section"><h3>🪙 Token Maker (Top 3)</h3><div id="reviewTokenRank"></div></div>
-            <div class="review-total"><div class="review-total-label">이번 주 총 유통 가치</div><div class="review-total-value" id="reviewTotalEco">0만원</div></div>
-            <button class="btn btn-primary" onclick="closeWeeklyReview()" style="margin-top:24px;">계속 달려봐요 🚀</button>
+            <button class="modal-close" onclick="closeLevelInfo()">×</button>
+            <div class="modal-title">🏆 레벨 시스템</div>
+            <p style="color:var(--text-secondary);margin-bottom:16px;font-size:0.9rem;">토큰을 받아 경험치를 쌓고 레벨업하세요!</p>
+            <div class="level-info-grid" id="levelInfoGrid"></div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="currencyModal">
-        <div class="modal-card">
-            <button class="modal-close" onclick="closeCurrencyControl()">×</button>
-            <div class="modal-title">💸 통화량 조절</div>
-            <div class="form-group">
-                <label class="form-label">대상 유저 선택</label>
-                <div class="dropdown-wrapper">
-                    <div class="dropdown-btn" onclick="toggleAdminUserDropdown()"><span id="adminTargetName">선택하세요</span><span class="dropdown-arrow">▼</span></div>
-                    <div class="dropdown-list" id="adminUserDropdown"></div>
-                </div>
-            </div>
-            <div id="currencyEditArea" style="display:none;">
-                <div class="form-group"><label class="form-label">누적 수령액 (총 유통량에 반영)</label><input type="number" id="editTotalReceived"></div>
-                <div class="form-group"><label class="form-label">월간 수령액</label><input type="number" id="editMonthlyReceived"></div>
-                <div class="form-group"><label class="form-label">주간 수령액</label><input type="number" id="editWeeklyReceived"></div>
-                <div class="form-group"><label class="form-label">누적 발행액</label><input type="number" id="editTotalGiven"></div>
-                <div class="form-group"><label class="form-label">월간 발행액</label><input type="number" id="editMonthlyGiven"></div>
-                <div class="form-group"><label class="form-label">주간 발행액</label><input type="number" id="editWeeklyGiven"></div>
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="btn btn-primary" onclick="saveCurrencyChanges()" style="flex:1;">💾 저장</button>
-                    <button class="btn" onclick="resetUserToZero()" style="flex:1; background:var(--danger); color:white;">🗑️ 전체 0으로</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<script>
+const SUPABASE_URL = 'https://kyicedypelnrnctkvicq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5aWNlZHlwZWxucm5jdGt2aWNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgzMDIsImV4cCI6MjA3OTQ4NDMwMn0.F-VjGyl14XQ-TLrTswi_3Ehbe1XezpRmHTkz4lJ2sT8';
+let sbClient;
+try { sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { document.getElementById('userGrid').innerHTML = '<div class="error-msg">연결 실패</div>'; }
 
-    <div class="modal-overlay" id="ecosystemModal">
-        <div class="modal-card">
-            <button class="modal-close" onclick="closeEcosystemEdit()">×</button>
-            <div class="modal-title">🌏 총 유통량 조절</div>
-            <div class="form-group">
-                <label class="form-label">현재 총 유통량</label>
-                <div id="currentEcosystemDisplay" style="font-size:1.5rem; font-weight:700; color:var(--accent-primary); margin-bottom:16px;">0만원</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">새로운 총 유통량 (만원)</label>
-                <input type="number" id="newEcosystemValue" placeholder="예: 5000">
-            </div>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:20px;">⚠️ 모든 유저의 누적 수령액을 비율에 맞게 조정합니다.</p>
-            <button class="btn btn-primary" onclick="saveEcosystemValue()">💾 저장</button>
-        </div>
-    </div>
+let currentUser = null, allUsers = [], currentRankType = 'weekly', currentRankMode = 'energy', selectedAmt = 0, isAdminMode = false, ecosystemGoalAmount = 10000, tempUser = null;
 
-    <script>
-        const SUPABASE_URL = 'https://kyicedypelnrnctkvicq.supabase.co';
-        const KEY_PART1 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5aWNlZHlwZWxucm5jdGt2aWNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MDgzMDIsImV4cCI6MjA3OTQ4NDMwMn0';
-        const KEY_PART2 = '.F-VjGyl14XQ-TLrTswi_3Ehbe1XezpRmHTkz4lJ2sT8';
-        const SUPABASE_KEY = KEY_PART1 + KEY_PART2;
-        let sbClient;
-        try { sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); console.log("✅ 연결 성공"); } catch (e) { console.error(e); document.getElementById('userGrid').innerHTML = '<div class="error-msg">⚠️ 연결 실패. 새로고침 해주세요.</div>'; }
+// ⭐ 확장된 레벨 시스템 (10단계)
+const levels = [
+    { min: 0, name: '새싹', emoji: '🌱', desc: '여정의 시작' },
+    { min: 100, name: '성장', emoji: '🌿', desc: '싹이 트다' },
+    { min: 300, name: '숙련', emoji: '🌳', desc: '뿌리를 내리다' },
+    { min: 500, name: '전문', emoji: '💼', desc: '전문성 인정' },
+    { min: 1000, name: '마스터', emoji: '👑', desc: '분야의 왕' },
+    { min: 2000, name: '설계자', emoji: '🏗️', desc: '시스템을 구축하다' },
+    { min: 3500, name: '촉매자', emoji: '🔥', desc: '변화를 점화하다' },
+    { min: 5000, name: '항해사', emoji: '🧭', desc: '방향을 제시하다' },
+    { min: 7500, name: '현자', emoji: '🦉', desc: '지혜를 나누다' },
+    { min: 10000, name: '전설', emoji: '⭐', desc: '살아있는 레전드' }
+];
 
-        let currentUser = null, allUsers = [], currentRankType = 'weekly', currentRankMode = 'energy', selectedAmt = 0, isAdminMode = false;
-        const levels = [{ min: 0, name: '새싹', emoji: '🌱' }, { min: 100, name: '성장', emoji: '🌿' }, { min: 300, name: '숙련', emoji: '🌳' }, { min: 500, name: '전문', emoji: '💼' }, { min: 1000, name: '마스터', emoji: '👑' }];
+async function init() {
+    try {
+        await checkSystemAutoReset(); await fetchUsers(); setupRealtime();
+        const savedId = localStorage.getItem('ag43_user_id');
+        if (savedId) { const user = allUsers.find(u => u.user_id === savedId); if (user) { tempUser = user; startGame(false); } else { document.getElementById('loginScreen').style.display = 'flex'; } }
+        else { document.getElementById('loginScreen').style.display = 'flex'; }
+    } catch (err) { document.getElementById('userGrid').innerHTML = '<div class="error-msg">데이터 로드 실패</div>'; }
+}
 
-        async function init() {
-            try { await checkSystemAutoReset(); await fetchUsers(); setupRealtime();
-                const savedId = localStorage.getItem('ag43_user_id');
-                if (savedId) { const user = allUsers.find(u => u.user_id === savedId); if (user) { tempUser = user; startGame(false); } else { document.getElementById('loginScreen').style.display = 'flex'; } }
-                else { document.getElementById('loginScreen').style.display = 'flex'; }
-            } catch (err) { console.error(err); document.getElementById('userGrid').innerHTML = '<div class="error-msg">⚠️ 데이터를 불러올 수 없습니다.</div>'; }
-        }
+function setupRealtime() {
+    sbClient.channel('public:user_data').on('postgres_changes', { event: '*', schema: 'public', table: 'user_data' }, () => fetchUsers(true)).subscribe();
+    sbClient.channel('public:activities').on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, (payload) => { loadActivities(); if (payload.eventType === 'INSERT' && currentUser && (payload.new.user_id === currentUser.user_id || payload.new.message.includes(currentUser.name))) loadMyData(); }).subscribe();
+}
 
-        function setupRealtime() {
-            sbClient.channel('public:user_data').on('postgres_changes', { event: '*', schema: 'public', table: 'user_data' }, () => { fetchUsers(true); }).subscribe();
-            sbClient.channel('public:activities').on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, (payload) => { loadActivities(); if (payload.eventType === 'INSERT' && currentUser && (payload.new.user_id === currentUser.user_id || payload.new.message.includes(currentUser.name))) { loadMyData(); } }).subscribe();
-        }
+async function fetchUsers(silent = false) {
+    const { data, error } = await sbClient.from('user_data').select('*').neq('user_id', 'SYSTEM_CONFIG');
+    if (error) return; allUsers = data || [];
+    if (!silent) renderUserSelection(); renderRanking(); renderDropdown(); updateEcosystem();
+    if (currentUser) { const u = allUsers.find(u => u.user_id === currentUser.user_id); if (u) { currentUser = u; updateMyUI(); } }
+}
 
-        async function fetchUsers(silent = false) {
-            const { data, error } = await sbClient.from('user_data').select('*').neq('user_id', 'SYSTEM_CONFIG');
-            if (error) { console.error(error); return; } allUsers = data || [];
-            if (!silent) renderUserSelection(); renderRanking(); renderDropdown(); updateEcosystem();
-            if (currentUser) { const updatedMe = allUsers.find(u => u.user_id === currentUser.user_id); if (updatedMe) { currentUser = updatedMe; updateMyUI(); } }
-        }
+function renderUserSelection() {
+    const grid = document.getElementById('userGrid');
+    if (allUsers.length === 0) { grid.innerHTML = '<div class="loading-msg">👋 등록된 참가자가 없습니다.</div>'; return; }
+    grid.innerHTML = '';
+    allUsers.sort((a,b) => a.name.localeCompare(b.name)).forEach(u => {
+        const div = document.createElement('div'); div.className = 'user-card';
+        if (isAdminMode) div.style.borderColor = 'var(--warning)';
+        let deleteBtn = isAdminMode ? `<button class="user-delete-btn" onclick="deleteUser('${u.user_id}','${u.name}');event.stopPropagation();">×</button>` : '';
+        div.innerHTML = `${deleteBtn}<div class="user-card-name">${u.name}</div><div class="user-card-product">${u.product}</div>`;
+        div.onclick = () => { if (isAdminMode) editUser(u.user_id, u.name, u.product); else selectLoginUser(u, div); };
+        grid.appendChild(div);
+    });
+}
 
-        function renderUserSelection() {
-            const grid = document.getElementById('userGrid');
-            if (allUsers.length === 0) { grid.innerHTML = '<div class="loading-msg">👋 등록된 참가자가 없습니다.<br>아래 "새로 등록하기"를 눌러 시작하세요!</div>'; return; }
-            grid.innerHTML = '';
-            allUsers.sort((a, b) => a.name.localeCompare(b.name)).forEach(u => {
-                const div = document.createElement('div'); div.className = 'user-card';
-                if (isAdminMode) div.style.borderColor = 'var(--warning)';
-                let deleteBtn = isAdminMode ? `<button class="user-delete-btn" onclick="deleteUser('${u.user_id}', '${u.name}'); event.stopPropagation();">×</button>` : '';
-                div.innerHTML = `${deleteBtn}<div class="user-card-name">${u.name}</div><div class="user-card-product">${u.product}</div>`;
-                div.onclick = () => { if (isAdminMode) { editUser(u.user_id, u.name, u.product); } else { selectLoginUser(u, div); } };
-                grid.appendChild(div);
-            });
-        }
+async function checkSystemAutoReset() {
+    let { data: config } = await sbClient.from('user_data').select('*').eq('user_id', 'SYSTEM_CONFIG').single();
+    if (!config) { const init = { user_id: 'SYSTEM_CONFIG', name: 'SYSTEM', product: JSON.stringify({ daily: 0, weekly: 0 }), received: 10000 }; await sbClient.from('user_data').insert(init); config = init; }
+    const goal = config.received || 10000; document.getElementById('targetGoalDisplay').innerText = (goal/10000)>=1 ? `${goal/10000}억` : `${goal}만`; ecosystemGoalAmount = goal;
+    const now = new Date(); let ts; try { ts = JSON.parse(config.product); } catch(e) { ts = { daily: 0, weekly: 0 }; }
+    const todayStr = now.toDateString(); if (ts.daily !== todayStr) { await sbClient.from('user_data').update({ daily_given: 0, daily_received: 0 }).neq('user_id', 'SYSTEM_CONFIG'); ts.daily = todayStr; await sbClient.from('user_data').update({ product: JSON.stringify(ts) }).eq('user_id', 'SYSTEM_CONFIG'); }
+}
 
-        async function checkSystemAutoReset() {
-            let { data: config } = await sbClient.from('user_data').select('*').eq('user_id', 'SYSTEM_CONFIG').single();
-            if (!config) { const initConfig = { user_id: 'SYSTEM_CONFIG', name: 'SYSTEM', product: JSON.stringify({ daily: 0, weekly: 0, monthly: 0 }), received: 10000 }; await sbClient.from('user_data').insert(initConfig); config = initConfig; }
-            else if (!config.product) { await sbClient.from('user_data').update({ product: JSON.stringify({ daily: 0, weekly: 0, monthly: 0 }) }).eq('user_id', 'SYSTEM_CONFIG'); config.product = JSON.stringify({ daily: 0, weekly: 0, monthly: 0 }); }
-            const goal = config.received || 10000; document.getElementById('targetGoalDisplay').innerText = (goal / 10000) >= 1 ? `${goal / 10000}억` : `${goal}만`; ecosystemGoalAmount = goal;
-            const now = new Date(); let timestamps; try { timestamps = JSON.parse(config.product); } catch (e) { timestamps = { daily: 0, weekly: 0, monthly: 0 }; }
-            const todayStr = now.toDateString(); if (timestamps.daily !== todayStr) { await sbClient.from('user_data').update({ daily_given: 0, daily_received: 0 }).neq('user_id', 'SYSTEM_CONFIG'); timestamps.daily = todayStr; await updateConfigTimestamps(timestamps); }
-            const currentWeek = getWeekKey(now); if (timestamps.weekly !== currentWeek) { await sbClient.from('user_data').update({ weekly_given: 0, weekly_received: 0 }).neq('user_id', 'SYSTEM_CONFIG'); timestamps.weekly = currentWeek; await updateConfigTimestamps(timestamps); }
-        }
+function selectLoginUser(user, el) { tempUser = user; document.querySelectorAll('.user-card').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); document.getElementById('startBtn').disabled = false; document.getElementById('startBtn').innerText = `[${user.name}] 님으로 시작하기`; }
 
-        async function updateConfigTimestamps(ts) { await sbClient.from('user_data').update({ product: JSON.stringify(ts) }).eq('user_id', 'SYSTEM_CONFIG'); }
-        function getWeekKey(d) { const date = new Date(d.getTime()); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7); const week1 = new Date(date.getFullYear(), 0, 4); const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7); return `${date.getFullYear()}-W${weekNum}`; }
+async function startGame(showGuide = true) { if (!tempUser) return; currentUser = tempUser; localStorage.setItem('ag43_user_id', currentUser.user_id); document.getElementById('loginScreen').style.display = 'none'; document.getElementById('gameScreen').style.display = 'block'; loadMyData(); loadActivities(); if (showGuide) openGuide(); }
 
-        let ecosystemGoalAmount = 10000, tempUser = null;
+function logout() { if (confirm("로그아웃?")) { localStorage.removeItem('ag43_user_id'); location.reload(); } }
 
-        function selectLoginUser(user, element) { tempUser = user; document.querySelectorAll('.user-card').forEach(el => el.classList.remove('selected')); element.classList.add('selected'); const btn = document.getElementById('startBtn'); btn.disabled = false; btn.innerText = `[${user.name}] 님으로 시작하기`; }
+async function loadMyData() {
+    const { data: pendings } = await sbClient.from('pending_tokens').select('*').eq('to_user_id', currentUser.user_id);
+    const total = (pendings || []).reduce((s, p) => s + p.amount, 0);
+    document.getElementById('pendingAmount').innerText = `${total}만원`; document.getElementById('receiveBtn').disabled = total === 0;
+    document.getElementById('pendingList').innerHTML = (pendings || []).map(p => `<div style="padding:4px 0;border-bottom:1px solid var(--border-subtle);">• ${p.from_name}님: ${p.amount}만원</div>`).join('');
+    updateMyUI();
+}
 
-        async function startGame(showGuide = true) { if (!tempUser) return; currentUser = tempUser; localStorage.setItem('ag43_user_id', currentUser.user_id); await checkAndResetDaily(); document.getElementById('loginScreen').style.display = 'none'; document.getElementById('gameScreen').style.display = 'block'; loadMyData(); loadActivities(); if (showGuide) openGuide(); }
+function updateMyUI() {
+    if (!currentUser) return;
+    const score = currentUser.received || 0;
+    let myLvl = levels[0], myLvlIdx = 0;
+    for (let i = 0; i < levels.length; i++) { if (score >= levels[i].min) { myLvl = levels[i]; myLvlIdx = i; } }
+    document.getElementById('myEmoji').innerText = myLvl.emoji;
+    document.getElementById('myName').innerText = currentUser.name;
+    const badge = document.getElementById('myLevel');
+    badge.innerText = `Lv.${myLvlIdx+1} ${myLvl.name}`;
+    badge.className = 'profile-badge';
+    if (myLvlIdx >= 5) badge.classList.add(`level-${myLvlIdx+1}`);
+    
+    let progress, nextText;
+    if (myLvlIdx === levels.length - 1) { progress = 100; nextText = '🎉 최고 레벨 달성!'; }
+    else { const prevMin = levels[myLvlIdx].min, nextMin = levels[myLvlIdx+1].min; progress = Math.min(100, ((score-prevMin)/(nextMin-prevMin))*100); nextText = `다음 레벨까지 ${nextMin-score}만원`; }
+    document.getElementById('expBar').style.width = `${progress}%`;
+    document.getElementById('expPercent').innerText = `${Math.round(progress)}%`;
+    document.getElementById('nextLevelText').innerText = nextText;
+    
+    const dg = currentUser.daily_given||0, wg = currentUser.weekly_given||0;
+    document.getElementById('dailyBar').style.width = `${Math.min(100,(dg/1000)*100)}%`; document.getElementById('dailyText').innerText = `${dg}만`;
+    document.getElementById('weeklyBar').style.width = `${Math.min(100,(wg/1000)*100)}%`; document.getElementById('weeklyText').innerText = `${wg}만`;
+}
 
-        async function checkAndResetDaily() { const todayStr = new Date().toDateString(); const lastActive = localStorage.getItem('ag43_last_active_date'); if (lastActive !== todayStr) { if (currentUser) { await sbClient.from('user_data').update({ daily_given: 0, daily_received: 0 }).eq('user_id', currentUser.user_id); currentUser.daily_given = 0; currentUser.daily_received = 0; } localStorage.setItem('ag43_last_active_date', todayStr); } }
+function updateEcosystem() { const total = allUsers.filter(u=>u.user_id!=='SYSTEM_CONFIG').reduce((s,u)=>s+(u.received||0),0); document.getElementById('totalEcosystem').innerText = `${total.toLocaleString()}만원`; const remain = ecosystemGoalAmount - total; document.getElementById('remainTarget').innerText = remain > 0 ? remain.toLocaleString() : "달성 완료! 🎉"; }
 
-        function logout() { if (confirm("로그아웃 하시겠습니까?")) { localStorage.removeItem('ag43_user_id'); location.reload(); } }
+function checkLevelUp(oldScore, newScore) {
+    let oldLv = 0, newLv = 0;
+    for (let i = 0; i < levels.length; i++) { if (oldScore >= levels[i].min) oldLv = i; if (newScore >= levels[i].min) newLv = i; }
+    if (newLv > oldLv) showLevelUpCelebration(levels[newLv], newLv + 1);
+}
 
-        async function loadMyData() {
-            const { data: pendings } = await sbClient.from('pending_tokens').select('*').eq('to_user_id', currentUser.user_id);
-            const totalPending = (pendings || []).reduce((sum, item) => sum + item.amount, 0);
-            document.getElementById('pendingAmount').innerText = `${totalPending}만원`; document.getElementById('receiveBtn').disabled = totalPending === 0;
-            document.getElementById('pendingList').innerHTML = (pendings || []).map(p => `<div style="padding:4px 0; border-bottom:1px solid var(--border-subtle);">• ${p.from_name}님: ${p.amount}만원 "${p.note}"</div>`).join('');
-            updateMyUI();
-        }
+function showLevelUpCelebration(level, num) {
+    const overlay = document.createElement('div'); overlay.className = 'levelup-celebration';
+    overlay.innerHTML = `<div class="levelup-content"><div class="levelup-emoji">${level.emoji}</div><div class="levelup-text">🎉 LEVEL UP!</div><div class="levelup-level">Lv.${num} ${level.name}</div></div>`;
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 4000);
+}
 
-        function updateMyUI() {
-            if (!currentUser) return;
-            const score = currentUser.received || 0; let myLvl = levels[0], nextScore = 100;
-            for (let i = 0; i < levels.length; i++) { if (score >= levels[i].min) { myLvl = levels[i]; nextScore = levels[i + 1] ? levels[i + 1].min : score; } }
-            document.getElementById('myEmoji').innerText = myLvl.emoji; document.getElementById('myName').innerText = currentUser.name;
-            document.getElementById('myLevel').innerText = `Lv.${levels.indexOf(myLvl) + 1} ${myLvl.name}`;
-            const progress = Math.min(100, (score / nextScore) * 100); document.getElementById('expBar').style.width = `${progress}%`;
-            document.getElementById('expPercent').innerText = `${Math.round(progress)}%`; document.getElementById('nextLevelText').innerText = `다음 레벨까지 ${nextScore - score}만원`;
-            const dailyGiven = currentUser.daily_given || 0, weeklyGiven = currentUser.weekly_given || 0;
-            const dailyProg = Math.min(100, (dailyGiven / 1000) * 100), weeklyProg = Math.min(100, (weeklyGiven / 1000) * 100);
-            document.getElementById('dailyBar').style.width = `${dailyProg}%`; document.getElementById('dailyText').innerText = `${dailyGiven}만`;
-            document.getElementById('weeklyBar').style.width = `${weeklyProg}%`; document.getElementById('weeklyText').innerText = `${weeklyGiven}만`;
-        }
+async function issueToken(e) {
+    e.preventDefault();
+    const targetId = document.getElementById('targetUserId').value;
+    const customVal = document.getElementById('customAmount').value;
+    const amount = customVal ? parseInt(customVal) : selectedAmt;
+    const msg = document.getElementById('message').value;
+    if (!targetId) return alert("대상을 선택하세요!");
+    if (!amount || amount <= 0) return alert("금액을 선택하세요!");
+    try {
+        await sbClient.from('pending_tokens').insert({ to_user_id: targetId, from_user_id: currentUser.user_id, from_name: currentUser.name, amount, note: msg });
+        await sbClient.from('user_data').update({ given: (currentUser.given||0)+amount, weekly_given: (currentUser.weekly_given||0)+amount, daily_given: (currentUser.daily_given||0)+amount, monthly_given: (currentUser.monthly_given||0)+amount }).eq('user_id', currentUser.user_id);
+        const targetName = document.getElementById('targetName').innerText;
+        await sbClient.from('activities').insert({ user_id: currentUser.user_id, message: `${currentUser.name}님이 ${targetName}님에게 ${amount}만원 발행!` });
+        alert(`${amount}만원 발행 완료!`);
+        document.getElementById('message').value = ''; document.getElementById('customAmount').value = ''; selectedAmt = 0;
+        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+        currentUser.given = (currentUser.given||0)+amount; currentUser.weekly_given = (currentUser.weekly_given||0)+amount; currentUser.daily_given = (currentUser.daily_given||0)+amount;
+        updateMyUI();
+    } catch(err) { alert("오류 발생"); }
+}
 
-        function updateEcosystem() { const total = allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').reduce((sum, u) => sum + (u.received || 0), 0); document.getElementById('totalEcosystem').innerText = `${total.toLocaleString()}만원`; const remain = ecosystemGoalAmount - total; document.getElementById('remainTarget').innerText = remain > 0 ? remain.toLocaleString() : "달성 완료! 🎉"; }
+async function receiveAll() {
+    if (!confirm("모든 토큰을 수령하시겠습니까?")) return;
+    try {
+        const { data: pendings } = await sbClient.from('pending_tokens').select('*').eq('to_user_id', currentUser.user_id);
+        const total = (pendings || []).reduce((s,p)=>s+p.amount, 0);
+        const oldScore = currentUser.received || 0;
+        await sbClient.from('pending_tokens').delete().eq('to_user_id', currentUser.user_id);
+        await sbClient.from('user_data').update({ received: oldScore+total, weekly_received: (currentUser.weekly_received||0)+total, daily_received: (currentUser.daily_received||0)+total, monthly_received: (currentUser.monthly_received||0)+total }).eq('user_id', currentUser.user_id);
+        await sbClient.from('activities').insert({ user_id: currentUser.user_id, message: `${currentUser.name}님이 ${total}만원을 감사히 수령했습니다! 💰` });
+        checkLevelUp(oldScore, oldScore+total);
+        alert(`${total}만원 수령 완료!`);
+        currentUser.received = oldScore+total;
+        loadMyData();
+    } catch(err) { alert("오류 발생"); }
+}
 
-        async function issueToken(e) {
-            e.preventDefault();
-            const targetId = document.getElementById('targetUserId').value;
-            const customVal = document.getElementById('customAmount').value;
-            const amount = customVal ? parseInt(customVal) : selectedAmt;
-            const msg = document.getElementById('message').value;
-            if (!targetId) return alert("대상을 선택해주세요!");
-            if (!amount || amount <= 0) return alert("금액을 선택하거나 입력해주세요!");
-            try {
-                await sbClient.from('pending_tokens').insert({ to_user_id: targetId, from_user_id: currentUser.user_id, from_name: currentUser.name, amount: amount, note: msg });
-                const updates = { given: (currentUser.given || 0) + amount, weekly_given: (currentUser.weekly_given || 0) + amount, daily_given: (currentUser.daily_given || 0) + amount, monthly_given: (currentUser.monthly_given || 0) + amount };
-                await sbClient.from('user_data').update(updates).eq('user_id', currentUser.user_id);
-                const targetName = document.getElementById('targetName').innerText;
-                await sbClient.from('activities').insert({ user_id: currentUser.user_id, message: `${currentUser.name}님이 ${targetName}님에게 ${amount}만원 발행! "${msg}"` });
-                alert(`${amount}만원 발행 완료! 🚀`);
-                document.getElementById('message').value = ''; document.getElementById('customAmount').value = ''; selectedAmt = 0;
-                document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-                // 발행 후 currentUser 데이터 즉시 갱신
-                currentUser.given = (currentUser.given || 0) + amount;
-                currentUser.weekly_given = (currentUser.weekly_given || 0) + amount;
-                currentUser.daily_given = (currentUser.daily_given || 0) + amount;
-                currentUser.monthly_given = (currentUser.monthly_given || 0) + amount;
-                updateMyUI();
-            } catch (err) { console.error(err); alert("오류 발생"); }
-        }
+function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+function renderDropdown() { const list = document.getElementById('userDropdown'); list.innerHTML = ''; allUsers.filter(u => u.user_id !== currentUser?.user_id).forEach(u => { const item = document.createElement('div'); item.className = 'dropdown-item'; item.innerHTML = `<div class="dropdown-item-name">${u.name}</div><div class="dropdown-item-product">${u.product}</div>`; item.onclick = () => { document.getElementById('targetUserId').value = u.user_id; document.getElementById('targetName').innerText = u.name; list.classList.remove('show'); }; list.appendChild(item); }); }
+function selectAmount(amt, e) { selectedAmt = amt; document.getElementById('customAmount').value = ''; document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected')); if (e?.target) e.target.classList.add('selected'); }
+function switchTab(type) { currentRankType = type; document.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderRanking(); }
+function switchRankMode(mode) { currentRankMode = mode; document.getElementById('btn-energy').classList.toggle('active', mode==='energy'); document.getElementById('btn-token').classList.toggle('active', mode==='token'); renderRanking(); }
 
-        async function receiveAll() {
-            if (!confirm("모든 토큰을 수령하시겠습니까?")) return;
-            try {
-                const { data: pendings } = await sbClient.from('pending_tokens').select('*').eq('to_user_id', currentUser.user_id);
-                const total = (pendings || []).reduce((sum, p) => sum + p.amount, 0);
-                await sbClient.from('pending_tokens').delete().eq('to_user_id', currentUser.user_id);
-                const updates = { received: (currentUser.received || 0) + total, weekly_received: (currentUser.weekly_received || 0) + total, daily_received: (currentUser.daily_received || 0) + total, monthly_received: (currentUser.monthly_received || 0) + total };
-                await sbClient.from('user_data').update(updates).eq('user_id', currentUser.user_id);
-                await sbClient.from('activities').insert({ user_id: currentUser.user_id, message: `${currentUser.name}님이 ${total}만원을 감사히 수령했습니다! 💰` });
-                alert(`${total}만원 수령 완료!`); loadMyData();
-            } catch (err) { console.error(err); alert("오류 발생"); }
-        }
+function renderRanking() {
+    const list = document.getElementById('rankingList'); list.innerHTML = '';
+    let sortKey = currentRankMode==='energy' ? (currentRankType==='weekly'?'weekly_given':currentRankType==='monthly'?'monthly_given':'given') : (currentRankType==='weekly'?'weekly_received':currentRankType==='monthly'?'monthly_received':'received');
+    const sorted = [...allUsers].sort((a,b) => (b[sortKey]||0) - (a[sortKey]||0));
+    sorted.forEach((u, idx) => { const val = u[sortKey]||0; if (val === 0 && idx > 2) return;
+        const div = document.createElement('div'); div.className = 'rank-item'; let medalClass = '', medal = idx + 1;
+        if (idx === 0) { medal = '🥇'; medalClass = 'gold'; } else if (idx === 1) { medal = '🥈'; medalClass = 'silver'; } else if (idx === 2) { medal = '🥉'; medalClass = 'bronze'; }
+        div.innerHTML = `<div class="rank-left"><span class="rank-medal ${medalClass}">${medal}</span><div><div class="rank-info-name">${u.name}</div><div class="rank-info-product">${u.product}</div></div></div><div class="rank-value">${val.toLocaleString()}만</div>`;
+        list.appendChild(div);
+    });
+}
 
-        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
-        function renderDropdown() { const list = document.getElementById('userDropdown'); list.innerHTML = ''; allUsers.filter(u => u.user_id !== currentUser?.user_id).forEach(u => { const item = document.createElement('div'); item.className = 'dropdown-item'; item.innerHTML = `<div class="dropdown-item-name">${u.name}</div><div class="dropdown-item-product">${u.product}</div>`; item.onclick = () => { document.getElementById('targetUserId').value = u.user_id; document.getElementById('targetName').innerText = u.name; list.classList.remove('show'); }; list.appendChild(item); }); }
-        function selectAmount(amt, e) { selectedAmt = amt; document.getElementById('customAmount').value = ''; document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected')); if (e && e.target) e.target.classList.add('selected'); console.log('선택된 금액:', amt); }
-        function switchTab(type) { currentRankType = type; document.querySelectorAll('.rank-tab').forEach(b => b.classList.remove('active')); document.getElementById(`tab-${type}`).classList.add('active'); renderRanking(); }
-        function switchRankMode(mode) { currentRankMode = mode; document.getElementById('btn-energy').classList.toggle('active', mode === 'energy'); document.getElementById('btn-token').classList.toggle('active', mode === 'token'); renderRanking(); }
+function openLevelInfo() {
+    document.getElementById('levelModal').style.display = 'flex';
+    const grid = document.getElementById('levelInfoGrid');
+    const score = currentUser?.received || 0;
+    let currentLvl = 0; for (let i = 0; i < levels.length; i++) { if (score >= levels[i].min) currentLvl = i; }
+    grid.innerHTML = levels.map((lvl, idx) => {
+        const isCurrent = idx === currentLvl, isUnlocked = score >= lvl.min;
+        return `<div class="level-info-item ${isCurrent?'current':''}" style="${!isUnlocked?'opacity:0.5;':''}"><div class="level-info-emoji">${lvl.emoji}</div><div class="level-info-details"><div class="level-info-name">Lv.${idx+1} ${lvl.name} ${isCurrent?'← 현재':''}</div><div class="level-info-req">${lvl.min===0?'시작':`${lvl.min.toLocaleString()}만원 이상`} · ${lvl.desc}</div></div></div>`;
+    }).join('');
+}
+function closeLevelInfo() { document.getElementById('levelModal').style.display = 'none'; }
 
-        function renderRanking() {
-            const list = document.getElementById('rankingList'); list.innerHTML = '';
-            let sortKey = 'given';
-            if (currentRankMode === 'energy') { if (currentRankType === 'weekly') sortKey = 'weekly_given'; else if (currentRankType === 'monthly') sortKey = 'monthly_given'; else sortKey = 'given'; }
-            else { if (currentRankType === 'weekly') sortKey = 'weekly_received'; else if (currentRankType === 'monthly') sortKey = 'monthly_received'; else sortKey = 'received'; }
-            const sorted = [...allUsers].sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0));
-            sorted.forEach((u, idx) => { const val = u[sortKey] || 0; if (val === 0 && idx > 2) return;
-                const div = document.createElement('div'); div.className = 'rank-item'; let medalClass = '', medal = idx + 1;
-                if (idx === 0) { medal = '🥇'; medalClass = 'gold'; } else if (idx === 1) { medal = '🥈'; medalClass = 'silver'; } else if (idx === 2) { medal = '🥉'; medalClass = 'bronze'; }
-                div.innerHTML = `<div class="rank-left"><span class="rank-medal ${medalClass}">${medal}</span><div><div class="rank-info-name">${u.name}</div><div class="rank-info-product">${u.product}</div></div></div><div class="rank-value">${val.toLocaleString()}만</div>`;
-                list.appendChild(div);
-            });
-        }
+async function loadActivities() { const { data } = await sbClient.from('activities').select('*').order('created_at', { ascending: false }).limit(20); const feed = document.getElementById('activityFeed'); feed.innerHTML = ''; if (data?.length) data.forEach(a => { const div = document.createElement('div'); div.className = 'activity-item'; const time = new Date(a.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); div.innerHTML = `<span><span class="activity-time">[${time}]</span> ${a.message}</span>`; feed.appendChild(div); }); else feed.innerHTML = '<div class="loading-msg">활동 내역이 없습니다.</div>'; }
 
-        function openWeeklyReview() { document.getElementById('reviewModal').style.display = 'flex'; const topEnergy = [...allUsers].sort((a, b) => (b.weekly_given || 0) - (a.weekly_given || 0)).slice(0, 3); document.getElementById('reviewEnergyRank').innerHTML = topEnergy.map((u, i) => `<div class="review-rank-item"><span>${i + 1}위 <strong>${u.name}</strong></span><span style="color:var(--warning);font-weight:600;">${u.weekly_given || 0}만</span></div>`).join(''); const topToken = [...allUsers].sort((a, b) => (b.weekly_received || 0) - (a.weekly_received || 0)).slice(0, 3); document.getElementById('reviewTokenRank').innerHTML = topToken.map((u, i) => `<div class="review-rank-item"><span>${i + 1}위 <strong>${u.name}</strong></span><span style="color:var(--accent-secondary);font-weight:600;">${u.weekly_received || 0}만</span></div>`).join(''); const weeklyTotal = allUsers.reduce((sum, u) => sum + (u.weekly_given || 0), 0); document.getElementById('reviewTotalEco').innerText = `${weeklyTotal.toLocaleString()}만원`; }
-        function closeWeeklyReview() { document.getElementById('reviewModal').style.display = 'none'; }
+function toggleRegister() { const list = document.getElementById('userListArea'), reg = document.getElementById('registerArea'); if (list.style.display === 'none') { list.style.display = 'block'; reg.style.display = 'none'; } else { list.style.display = 'none'; reg.style.display = 'block'; } }
+async function registerUser() { const name = document.getElementById('regName').value, product = document.getElementById('regProduct').value; if (!name || !product) return alert("정보를 입력하세요."); const newId = 'user_' + Date.now(); await sbClient.from('user_data').insert({ user_id: newId, name, product }); alert("등록 완료!"); toggleRegister(); fetchUsers(); }
+function openGuide() { document.getElementById('guideModal').style.display = 'flex'; }
+function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
+function toggleAdminMode() { isAdminMode = !isAdminMode; const btn = document.getElementById('adminToggleBtn'); btn.innerText = isAdminMode ? "✅ 완료" : "⚙️ 관리"; btn.classList.toggle('active', isAdminMode); renderUserSelection(); }
+async function deleteUser(id, name) { if (!confirm(`${name} 삭제?`)) return; const pw = prompt("관리자 비밀번호:"); if (pw !== 'admin0000') return alert("비번 틀림"); await sbClient.from('user_data').delete().eq('user_id', id); await sbClient.from('pending_tokens').delete().eq('to_user_id', id); alert("삭제됨"); fetchUsers(); }
+function toggleGoalEdit() { const div = document.getElementById('adminGoalParams'); div.style.display = div.style.display === 'none' ? 'block' : 'none'; }
+async function saveNewGoal() { const val = parseInt(document.getElementById('newGoalInput').value); if (!val || val <= 0) return alert("올바른 금액을 입력하세요"); await sbClient.from('user_data').update({ received: val }).eq('user_id', 'SYSTEM_CONFIG'); alert("목표 수정됨"); location.reload(); }
+async function editUser(id, oldName, oldProd) { const newName = prompt("이름:", oldName); if (newName === null) return; const newProd = prompt("직업:", oldProd); if (newProd === null) return; await sbClient.from('user_data').update({ name: newName, product: newProd }).eq('user_id', id); alert("수정됨"); fetchUsers(); }
+async function adminReset(type) { const pw = prompt("관리자 비밀번호:"); if (type==='all' && pw!=='admin0000') return alert("비번 틀림"); if (type!=='all' && pw!=='aground') return alert("비번 틀림"); if (!confirm(`[${type}] 초기화?`)) return; let updates = {}; if (type==='weekly') updates = { weekly_received:0, weekly_given:0, daily_received:0, daily_given:0 }; else if (type==='all') updates = { received:0, given:0, weekly_received:0, weekly_given:0, monthly_received:0, monthly_given:0, daily_received:0, daily_given:0 }; await sbClient.from('user_data').update(updates).neq('user_id','xxxx'); if (type==='all') { await sbClient.from('pending_tokens').delete().neq('id',0); await sbClient.from('activities').delete().neq('id',0); } alert("초기화 완료"); fetchUsers(); }
+async function downloadBackupData() { const pw = prompt("관리자 비밀번호:"); if (pw !== 'admin0000') return alert("비번 틀림"); const { data: users } = await sbClient.from('user_data').select('*'); const { data: pendings } = await sbClient.from('pending_tokens').select('*'); const { data: activities } = await sbClient.from('activities').select('*'); const backup = { users, pendings, activities, date: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `AG43_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); }
 
-        async function loadActivities() { const { data } = await sbClient.from('activities').select('*').order('created_at', { ascending: false }).limit(20); const feed = document.getElementById('activityFeed'); feed.innerHTML = ''; if (data && data.length > 0) { data.forEach(addActivityToFeed); } else { feed.innerHTML = '<div class="loading-msg">활동 내역이 없습니다.</div>'; } }
-        function addActivityToFeed(act) { const feed = document.getElementById('activityFeed'); if (feed.innerText.includes('활동 내역이 없습니다')) feed.innerHTML = ''; const div = document.createElement('div'); div.className = 'activity-item'; const time = new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); div.innerHTML = `<span><span class="activity-time">[${time}]</span> ${act.message}</span><span class="activity-delete" onclick="deleteActivity(${act.id})">[삭제]</span>`; feed.prepend(div); }
-        async function deleteActivity(id) { const pw = prompt("활동 내역을 삭제하려면 관리자 비밀번호를 입력하세요:"); if (pw !== 'aground') return alert("비번 틀림"); if (!confirm("이 활동 내역을 정말 삭제하시겠습니까?")) return; await sbClient.from('activities').delete().eq('id', id); alert("삭제되었습니다."); loadActivities(); }
-
-        function toggleRegister() { const list = document.getElementById('userListArea'), reg = document.getElementById('registerArea'); if (list.style.display === 'none') { list.style.display = 'block'; reg.style.display = 'none'; } else { list.style.display = 'none'; reg.style.display = 'block'; } }
-        async function registerUser() { const name = document.getElementById('regName').value, product = document.getElementById('regProduct').value; if (!name || !product) return alert("정보를 입력해주세요."); const newId = 'user_' + Date.now(); await sbClient.from('user_data').insert({ user_id: newId, name, product }); alert("등록 완료!"); toggleRegister(); fetchUsers(); }
-        function openGuide() { document.getElementById('guideModal').style.display = 'flex'; }
-        function closeGuide() { document.getElementById('guideModal').style.display = 'none'; }
-        function toggleAdminMode() { isAdminMode = !isAdminMode; const btn = document.getElementById('adminToggleBtn'); if (isAdminMode) { btn.innerText = "✅ 완료"; btn.classList.add('active'); } else { btn.innerText = "⚙️ 관리"; btn.classList.remove('active'); } renderUserSelection(); }
-        async function deleteUser(id, name) { if (!confirm(`정말로 ${name} 님을 삭제하시겠습니까?`)) return; const pw = prompt(`[${name}] 님을 영구 삭제하려면 관리자 비밀번호를 입력하세요:`); if (pw !== 'admin0000') { alert("비밀번호가 틀렸습니다."); return; } await sbClient.from('user_data').delete().eq('user_id', id); await sbClient.from('pending_tokens').delete().eq('to_user_id', id); alert("삭제되었습니다."); fetchUsers(); }
-        function toggleGoalEdit() { const div = document.getElementById('adminGoalParams'); div.style.display = div.style.display === 'none' ? 'block' : 'none'; }
-        async function saveNewGoal() { const val = parseInt(document.getElementById('newGoalInput').value); if (!val || val <= 0) return alert("올바른 금액을 입력하세요"); await sbClient.from('user_data').update({ received: val }).eq('user_id', 'SYSTEM_CONFIG'); alert("목표 금액이 수정되었습니다."); location.reload(); }
-        async function editUser(id, oldName, oldProd) { const newName = prompt("이름 수정:", oldName); if (newName === null) return; const newProd = prompt("직업 수정:", oldProd); if (newProd === null) return; await sbClient.from('user_data').update({ name: newName, product: newProd }).eq('user_id', id); alert("수정되었습니다."); fetchUsers(); }
-        async function adminReset(type) { let pw = prompt("관리자 비밀번호를 입력하세요:"); if (type === 'all' && pw !== 'admin0000') return alert("비번 틀림"); if (type !== 'all' && pw !== 'aground') return alert("비번 틀림"); if (!confirm(`정말로 [${type}] 데이터를 초기화하시겠습니까?`)) return; let updates = {}; if (type === 'weekly') updates = { weekly_received: 0, weekly_given: 0, daily_received: 0, daily_given: 0 }; else if (type === 'monthly') updates = { monthly_received: 0, monthly_given: 0 }; else if (type === 'all') updates = { received: 0, given: 0, weekly_received: 0, weekly_given: 0, monthly_received: 0, monthly_given: 0, daily_received: 0, daily_given: 0 }; await sbClient.from('user_data').update(updates).neq('user_id', 'xxxx'); if (type === 'all') { await sbClient.from('pending_tokens').delete().neq('id', 0); await sbClient.from('activities').delete().neq('id', 0); document.getElementById('activityFeed').innerHTML = '<div class="loading-msg">활동 내역이 없습니다.</div>'; } if (currentUser) { currentUser.weekly_given = 0; currentUser.daily_given = 0; if (type === 'all') { currentUser.received = 0; currentUser.given = 0; } updateMyUI(); } alert("초기화 완료"); fetchUsers(); }
-        async function downloadBackupData() { const pw = prompt("관리자 비밀번호를 입력하세요:"); if (pw !== 'admin0000') return alert("비번 틀림"); const { data: users } = await sbClient.from('user_data').select('*'); const { data: pendings } = await sbClient.from('pending_tokens').select('*'); const { data: activities } = await sbClient.from('activities').select('*'); const backupData = { users, pendings, activities, date: new Date().toISOString() }; const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `AG43_Backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); }
-
-        let editingUserId = null;
-        function openCurrencyControl() { const pw = prompt("관리자 비밀번호:"); if (pw !== 'admin0000') return alert("접근 불가"); document.getElementById('currencyModal').style.display = 'flex'; renderAdminUserDropdown(); }
-        function closeCurrencyControl() { document.getElementById('currencyModal').style.display = 'none'; editingUserId = null; document.getElementById('currencyEditArea').style.display = 'none'; document.getElementById('adminTargetName').innerText = "선택하세요"; }
-        function toggleAdminUserDropdown() { document.getElementById('adminUserDropdown').classList.toggle('show'); }
-        function renderAdminUserDropdown() { const list = document.getElementById('adminUserDropdown'); list.innerHTML = ''; allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').forEach(u => { const item = document.createElement('div'); item.className = 'dropdown-item'; item.innerHTML = `<div class="dropdown-item-name">${u.name}</div>`; item.onclick = () => { selectUserForCurrencyEdit(u); list.classList.remove('show'); }; list.appendChild(item); }); }
-        function selectUserForCurrencyEdit(user) { editingUserId = user.user_id; document.getElementById('adminTargetName').innerText = user.name; document.getElementById('currencyEditArea').style.display = 'block'; document.getElementById('editTotalReceived').value = user.received || 0; document.getElementById('editMonthlyReceived').value = user.monthly_received || 0; document.getElementById('editWeeklyReceived').value = user.weekly_received || 0; document.getElementById('editTotalGiven').value = user.given || 0; document.getElementById('editMonthlyGiven').value = user.monthly_given || 0; document.getElementById('editWeeklyGiven').value = user.weekly_given || 0; }
-        async function saveCurrencyChanges() { if (!editingUserId) return; const updates = { received: parseInt(document.getElementById('editTotalReceived').value) || 0, monthly_received: parseInt(document.getElementById('editMonthlyReceived').value) || 0, weekly_received: parseInt(document.getElementById('editWeeklyReceived').value) || 0, given: parseInt(document.getElementById('editTotalGiven').value) || 0, monthly_given: parseInt(document.getElementById('editMonthlyGiven').value) || 0, weekly_given: parseInt(document.getElementById('editWeeklyGiven').value) || 0 }; await sbClient.from('user_data').update(updates).eq('user_id', editingUserId); alert("저장되었습니다."); closeCurrencyControl(); fetchUsers(true); }
-        async function resetUserToZero() { if (!editingUserId) return; if (!confirm("이 유저의 모든 수치를 0으로 초기화하시겠습니까?")) return; document.getElementById('editTotalReceived').value = 0; document.getElementById('editMonthlyReceived').value = 0; document.getElementById('editWeeklyReceived').value = 0; document.getElementById('editTotalGiven').value = 0; document.getElementById('editMonthlyGiven').value = 0; document.getElementById('editWeeklyGiven').value = 0; }
-
-        function openEcosystemEdit() { const pw = prompt("관리자 비밀번호:"); if (pw !== 'admin0000') return alert("접근 불가"); const total = allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').reduce((sum, u) => sum + (u.received || 0), 0); document.getElementById('currentEcosystemDisplay').innerText = `${total.toLocaleString()}만원`; document.getElementById('newEcosystemValue').value = total; document.getElementById('ecosystemModal').style.display = 'flex'; }
-        function closeEcosystemEdit() { document.getElementById('ecosystemModal').style.display = 'none'; }
-        async function saveEcosystemValue() { const newTotal = parseInt(document.getElementById('newEcosystemValue').value) || 0; const currentTotal = allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').reduce((sum, u) => sum + (u.received || 0), 0); if (currentTotal === 0) { alert("현재 유통량이 0이라 비율 조정이 불가합니다."); return; } const ratio = newTotal / currentTotal; if (!confirm(`총 유통량을 ${currentTotal.toLocaleString()}만원 → ${newTotal.toLocaleString()}만원으로 변경합니다.\n모든 유저의 누적 수령액이 ${(ratio * 100).toFixed(1)}% 비율로 조정됩니다.`)) return; for (const user of allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG')) { const newReceived = Math.round((user.received || 0) * ratio); await sbClient.from('user_data').update({ received: newReceived }).eq('user_id', user.user_id); } alert("총 유통량이 수정되었습니다."); closeEcosystemEdit(); fetchUsers(true); }
-
-        document.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-wrapper')) { document.querySelectorAll('.dropdown-list').forEach(d => d.classList.remove('show')); } });
-        init();
-    </script>
+document.addEventListener('click', e => { if (!e.target.closest('.dropdown-wrapper')) document.querySelectorAll('.dropdown-list').forEach(d => d.classList.remove('show')); });
+init();
+</script>
 </body>
 </html>
