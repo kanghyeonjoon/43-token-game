@@ -217,6 +217,14 @@
         .level-info-name { font-weight: 600; font-size: 0.9rem; }
         .level-info-req { font-size: 0.75rem; color: var(--text-muted); }
 
+        .review-section { background: #f8fafc; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; }
+        .review-section h3 { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px; }
+        .review-rank-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.9rem; }
+        .review-rank-item:last-child { border-bottom: none; }
+        .review-total { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08)); border-radius: var(--radius-md); padding: 20px; text-align: center; }
+        .review-total-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+        .review-total-value { font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 800; background: var(--gradient-gold); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
         .levelup-celebration { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8);
             display: flex; align-items: center; justify-content: center; z-index: 10000; animation: celebrationFade 0.5s ease; }
         @keyframes celebrationFade { from { opacity: 0; } to { opacity: 1; } }
@@ -264,6 +272,7 @@
             <div class="header-actions">
                 <button class="header-btn" onclick="openGuide()">📖 가이드</button>
                 <button class="header-btn" onclick="openLevelInfo()">🏆 레벨 정보</button>
+                <button class="header-btn" onclick="openWeeklyReview()">📊 주간 리뷰</button>
                 <button class="header-btn" onclick="logout()">🔓 로그아웃</button>
             </div>
         </div>
@@ -357,6 +366,7 @@
             <div class="admin-title">🛠️ 운영진 메뉴</div>
             <div class="admin-buttons">
                 <button class="admin-btn" onclick="toggleGoalEdit()">🎯 목표 설정</button>
+                <button class="admin-btn" onclick="openCurrencyControl()">💸 통화량 조절</button>
                 <button class="admin-btn" onclick="adminReset('weekly')">📅 주간 초기화</button>
                 <button class="admin-btn danger" onclick="adminReset('all')">💀 시즌 초기화</button>
                 <button class="admin-btn success" onclick="downloadBackupData()">📥 백업</button>
@@ -384,6 +394,43 @@
             <div class="modal-title">🏆 레벨 시스템</div>
             <p style="color:var(--text-secondary);margin-bottom:16px;font-size:0.9rem;">토큰을 받아 경험치를 쌓고 레벨업하세요!</p>
             <div class="level-info-grid" id="levelInfoGrid"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeWeeklyReview()">×</button>
+            <div class="modal-title">📅 주간 리포트</div>
+            <div class="review-section"><h3>💖 Energy Maker (Top 3)</h3><div id="reviewEnergyRank"></div></div>
+            <div class="review-section"><h3>🪙 Token Maker (Top 3)</h3><div id="reviewTokenRank"></div></div>
+            <div class="review-total"><div class="review-total-label">이번 주 총 유통 가치</div><div class="review-total-value" id="reviewTotalEco">0만원</div></div>
+            <button class="btn btn-primary" onclick="closeWeeklyReview()" style="margin-top:24px;">계속 달려봐요 🚀</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="currencyModal">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeCurrencyControl()">×</button>
+            <div class="modal-title">💸 통화량 조절</div>
+            <div class="form-group">
+                <label class="form-label">대상 유저 선택</label>
+                <div class="dropdown-wrapper">
+                    <div class="dropdown-btn" onclick="toggleAdminUserDropdown()"><span id="adminTargetName">선택하세요</span><span>▼</span></div>
+                    <div class="dropdown-list" id="adminUserDropdown"></div>
+                </div>
+            </div>
+            <div id="currencyEditArea">
+                <div class="form-group"><label class="form-label">누적 수령액 (총 유통량 반영)</label><input type="number" id="editTotalReceived"></div>
+                <div class="form-group"><label class="form-label">월간 수령액</label><input type="number" id="editMonthlyReceived"></div>
+                <div class="form-group"><label class="form-label">주간 수령액</label><input type="number" id="editWeeklyReceived"></div>
+                <div class="form-group"><label class="form-label">누적 발행액</label><input type="number" id="editTotalGiven"></div>
+                <div class="form-group"><label class="form-label">월간 발행액</label><input type="number" id="editMonthlyGiven"></div>
+                <div class="form-group"><label class="form-label">주간 발행액</label><input type="number" id="editWeeklyGiven"></div>
+                <div style="display:flex;gap:10px;margin-top:20px;">
+                    <button class="btn btn-primary" onclick="saveCurrencyChanges()" style="flex:1;">💾 저장</button>
+                    <button class="btn" onclick="resetUserToZero()" style="flex:1;background:var(--danger);color:white;">🗑️ 전체 0으로</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -572,6 +619,80 @@ function openLevelInfo() {
     }).join('');
 }
 function closeLevelInfo() { document.getElementById('levelModal').style.display = 'none'; }
+
+function openWeeklyReview() { 
+    document.getElementById('reviewModal').style.display = 'flex'; 
+    const topEnergy = [...allUsers].sort((a, b) => (b.weekly_given || 0) - (a.weekly_given || 0)).slice(0, 3); 
+    document.getElementById('reviewEnergyRank').innerHTML = topEnergy.map((u, i) => `<div class="review-rank-item"><span>${i + 1}위 <strong>${u.name}</strong></span><span style="color:var(--warning);font-weight:600;">${u.weekly_given || 0}만</span></div>`).join(''); 
+    const topToken = [...allUsers].sort((a, b) => (b.weekly_received || 0) - (a.weekly_received || 0)).slice(0, 3); 
+    document.getElementById('reviewTokenRank').innerHTML = topToken.map((u, i) => `<div class="review-rank-item"><span>${i + 1}위 <strong>${u.name}</strong></span><span style="color:var(--accent-secondary);font-weight:600;">${u.weekly_received || 0}만</span></div>`).join(''); 
+    const weeklyTotal = allUsers.reduce((sum, u) => sum + (u.weekly_given || 0), 0); 
+    document.getElementById('reviewTotalEco').innerText = `${weeklyTotal.toLocaleString()}만원`; 
+}
+function closeWeeklyReview() { document.getElementById('reviewModal').style.display = 'none'; }
+
+let editingUserId = null;
+function openCurrencyControl() { 
+    const pw = prompt("관리자 비밀번호:"); 
+    if (pw !== 'admin0000') return alert("접근 불가"); 
+    document.getElementById('currencyModal').style.display = 'flex'; 
+    document.getElementById('currencyEditArea').style.display = 'none';
+    renderAdminUserDropdown(); 
+}
+function closeCurrencyControl() { 
+    document.getElementById('currencyModal').style.display = 'none'; 
+    editingUserId = null; 
+    document.getElementById('currencyEditArea').style.display = 'none'; 
+    document.getElementById('adminTargetName').innerText = "선택하세요"; 
+}
+function toggleAdminUserDropdown() { document.getElementById('adminUserDropdown').classList.toggle('show'); }
+function renderAdminUserDropdown() { 
+    const list = document.getElementById('adminUserDropdown'); 
+    list.innerHTML = ''; 
+    allUsers.filter(u => u.user_id !== 'SYSTEM_CONFIG').forEach(u => { 
+        const item = document.createElement('div'); 
+        item.className = 'dropdown-item'; 
+        item.innerHTML = `<div class="dropdown-item-name">${u.name}</div><div class="dropdown-item-product">${u.product}</div>`; 
+        item.onclick = () => { selectUserForCurrencyEdit(u); list.classList.remove('show'); }; 
+        list.appendChild(item); 
+    }); 
+}
+function selectUserForCurrencyEdit(user) { 
+    editingUserId = user.user_id; 
+    document.getElementById('adminTargetName').innerText = user.name; 
+    document.getElementById('currencyEditArea').style.display = 'block'; 
+    document.getElementById('editTotalReceived').value = user.received || 0; 
+    document.getElementById('editMonthlyReceived').value = user.monthly_received || 0; 
+    document.getElementById('editWeeklyReceived').value = user.weekly_received || 0; 
+    document.getElementById('editTotalGiven').value = user.given || 0; 
+    document.getElementById('editMonthlyGiven').value = user.monthly_given || 0; 
+    document.getElementById('editWeeklyGiven').value = user.weekly_given || 0; 
+}
+async function saveCurrencyChanges() { 
+    if (!editingUserId) return alert("유저를 선택하세요"); 
+    const updates = { 
+        received: parseInt(document.getElementById('editTotalReceived').value) || 0, 
+        monthly_received: parseInt(document.getElementById('editMonthlyReceived').value) || 0, 
+        weekly_received: parseInt(document.getElementById('editWeeklyReceived').value) || 0, 
+        given: parseInt(document.getElementById('editTotalGiven').value) || 0, 
+        monthly_given: parseInt(document.getElementById('editMonthlyGiven').value) || 0, 
+        weekly_given: parseInt(document.getElementById('editWeeklyGiven').value) || 0 
+    }; 
+    await sbClient.from('user_data').update(updates).eq('user_id', editingUserId); 
+    alert("저장되었습니다."); 
+    closeCurrencyControl(); 
+    fetchUsers(true); 
+}
+function resetUserToZero() { 
+    if (!editingUserId) return; 
+    if (!confirm("이 유저의 모든 수치를 0으로 초기화?")) return; 
+    document.getElementById('editTotalReceived').value = 0; 
+    document.getElementById('editMonthlyReceived').value = 0; 
+    document.getElementById('editWeeklyReceived').value = 0; 
+    document.getElementById('editTotalGiven').value = 0; 
+    document.getElementById('editMonthlyGiven').value = 0; 
+    document.getElementById('editWeeklyGiven').value = 0; 
+}
 
 async function loadActivities() { const { data } = await sbClient.from('activities').select('*').order('created_at', { ascending: false }).limit(20); const feed = document.getElementById('activityFeed'); feed.innerHTML = ''; if (data?.length) data.forEach(a => { const div = document.createElement('div'); div.className = 'activity-item'; const time = new Date(a.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); div.innerHTML = `<span><span class="activity-time">[${time}]</span> ${a.message}</span>`; feed.appendChild(div); }); else feed.innerHTML = '<div class="loading-msg">활동 내역이 없습니다.</div>'; }
 
