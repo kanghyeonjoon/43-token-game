@@ -180,6 +180,25 @@ svg text{font-family:inherit}
 #gres button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 12px;font-size:12.5px}
 #gres button:hover{background:var(--pri-soft)}
 /* 도움말 */
+#aiBtn{position:fixed;right:22px;bottom:76px;width:48px;height:48px;border-radius:50%;background:var(--pri);color:#fff;border:0;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:90}
+#aiBadge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:99px;padding:0 6px;line-height:16px;display:none}
+#aiPanel{position:fixed;right:22px;bottom:134px;width:360px;max-width:calc(100vw - 34px);height:520px;max-height:70vh;background:var(--card);border:1px solid var(--line2);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.22);z-index:95;display:none;flex-direction:column;overflow:hidden}
+#aiPanel.on{display:flex}
+.ai-head{background:var(--pri);color:#fff;padding:12px 16px;font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.ai-head .st{font-size:10.5px;font-weight:600;opacity:.85;display:block}
+.ai-head button{margin-left:auto;background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:6px;padding:2px 10px;font-size:12px}
+#aiMsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
+.ai-msg,.me-msg{max-width:86%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.55;white-space:pre-wrap}
+.ai-msg{background:var(--card);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.ai-msg.alert{border-left:3px solid var(--red)}
+.me-msg{background:var(--pri);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.ai-msg .btn{margin-top:6px;margin-right:4px}
+.ai-chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--line)}
+.ai-chips button{border:1px solid var(--line2);background:var(--card);border-radius:99px;padding:4px 11px;font-size:11.5px;font-weight:600;color:var(--pri-deep)}
+.ai-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.ai-input input{flex:1;border:1px solid var(--line2);border-radius:99px;padding:8px 14px;font-size:12.5px;font-family:inherit}
+.ai-input button{background:var(--pri);color:#fff;border:0;border-radius:99px;padding:8px 16px;font-size:12.5px;font-weight:700}
+#roleBtn{border:1px solid var(--line2);background:var(--card);border-radius:99px;padding:4px 12px;font-size:11.5px;font-weight:700;color:var(--pri-deep)}
 #helpBtn{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--ink);color:#fff;border:0;font-size:18px;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.22);z-index:90}
 #helpModal{position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px}
 #helpModal.on{display:flex}
@@ -308,8 +327,9 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <span class="demo-tag" id="modeTag">DEMO · 가상 데이터</span>
     <div class="gsearch"><input id="gq" placeholder="환자 검색 — 이름·차트 ( / )" oninput="gSearch()" autocomplete="off"><div id="gres"></div></div>
     <div class="right">
+      <button id="roleBtn" onclick="toggleRole()" title="역할별로 보이는 메뉴가 달라집니다">👨‍⚕️ 원장 모드</button>
       <span class="clinic"><span id="tbClinic">병원</span> <span class="sub" id="tbSpec"></span></span>
-      <button class="bell" aria-label="알림" onclick="showAlerts()">🔔<span class="dot"></span><span class="cnt" id="bellCnt" style="display:none">0</span></button>
+      <button class="bell" aria-label="알림" onclick="openChat('alerts')">🔔<span class="dot"></span><span class="cnt" id="bellCnt" style="display:none">0</span></button>
     </div>
   </div>
   <div class="content">
@@ -338,6 +358,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
       <div class="tile"><div class="lbl">오늘 내원</div><div class="val num">7건</div><div class="delta flat">완료 4 · 예약 2 · 노쇼 1</div></div>
       <div class="tile alert"><div class="lbl">오늘 위기</div><div class="val num">1건</div><div class="delta down">즉시 전화 — 오늘의 액션 확인</div></div>
       <div class="tile"><div class="lbl">오늘 발송</div><div class="val num">4건</div><div class="delta flat">예약 대기 1건 (11:00)</div></div>
+      <div class="tile"><div class="lbl">오늘 매출</div><div class="val num" id="todayRev">—</div><div class="delta flat" id="todayRevSub">완료 수납 기준 · 객단가 포함</div></div>
     </div>
     <div class="sub" style="font-weight:700;color:var(--ink2);margin-bottom:6px">최근 30일 지표</div>
     <div class="tiles">
@@ -378,7 +399,17 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
         <div style="font-size:12px;color:var(--ink2);margin-top:6px">💡 SNS 유입이 3개월 연속 증가 — 유튜브·인스타 콘텐츠 효과가 나타나고 있습니다.</div></div>
       <div class="card"><h2>채널별 매출 기여</h2><div class="sub">최근 30일 프로그램 결제액 × 유입 채널 (처방 기록과 유입 채널을 연결해 집계)</div>
         <div class="blist" id="chartChRev"></div>
-        <div style="font-size:12px;color:var(--ink2);margin-top:8px">Report — 1인당 평균 결제액은 <b>[지인 소개]</b> 환자가 가장 높습니다(38만원/인). 유입 수는 네이버가 많지만, 소개 환자가 더 깊게 결제합니다.</div></div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:8px">Report — 1인당 평균 결제액은 <b>[지인 소개]</b> 환자가 가장 높습니다(38만원/인).</div>
+        <div class="tblwrap" style="margin-top:12px"><table class="num" style="min-width:0">
+          <thead><tr><th>채널</th><th>월 광고비</th><th>유입</th><th>유입당 비용(CAC)</th></tr></thead>
+          <tbody>
+            <tr><td>지인 소개</td><td>0원</td><td>5명</td><td><b style="color:var(--ok)">0원</b></td></tr>
+            <tr><td>카카오톡 채널</td><td>10만원</td><td>4명</td><td>2.5만원</td></tr>
+            <tr><td>네이버 검색</td><td>40만원</td><td>9명</td><td>4.4만원</td></tr>
+            <tr><td>유튜브</td><td>30만원</td><td>3명</td><td>10만원</td></tr>
+            <tr><td>인스타그램</td><td>20만원</td><td>2명</td><td>10만원</td></tr>
+          </tbody></table></div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:6px">💡 소개(CAC 0원)와 카카오톡이 가장 효율적 — SNS는 정착률(30~38%)까지 감안해 예산 재검토 대상입니다.</div></div>
     </div>
   </section>
 
@@ -475,7 +506,9 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
         <div id="p3Spark"></div>
         <div style="margin-top:12px" class="next-act" id="p3Next"></div></div>
       <div class="card" style="order:2"><h2>발송 타임라인</h2><div class="sub">최근 발송·반응</div><ul class="tl" id="p3Timeline"></ul></div>
-      <div class="card" style="order:1"><h2>진료 · 처방 기록</h2><div class="sub">방문 <b class="num" id="p3Visits">0</b>회 · 마지막 방문 <span id="p3Last"></span></div><ul class="tl" id="p3Records"></ul></div>
+      <div class="card" style="order:1"><h2>진료 · 처방 기록</h2><div class="sub">방문 <b class="num" id="p3Visits">0</b>회 · 마지막 방문 <span id="p3Last"></span></div>
+        <div class="next-act" id="p3Intake" style="margin-bottom:10px"></div>
+        <ul class="tl" id="p3Records"></ul></div>
     </div>
   </section>
 
@@ -652,6 +685,21 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 <div class="chart-tip" id="ctip"></div>
 <div id="toast"></div>
 
+<button id="aiBtn" onclick="openChat()" aria-label="AI 매니저">💬<span id="aiBadge">1</span></button>
+<div id="aiPanel" role="dialog" aria-label="AI 매니저 채팅">
+  <div class="ai-head">🤖 AI 매니저 <span><span class="st">오류·알림이 여기로 도착합니다 · 무엇이든 물어보세요</span></span><button onclick="document.getElementById('aiPanel').classList.remove('on')">닫기</button></div>
+  <div id="aiMsgs"></div>
+  <div class="ai-chips" id="aiChips"></div>
+  <div class="ai-input"><input id="aiIn" placeholder="예: 오늘 요약 / 위기 환자 / 김민정" onkeydown="if(event.key==='Enter'&&!event.isComposing)aiAsk()"><button onclick="aiAsk()">전송</button></div>
+</div>
+<div id="msgModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#aec3d5;border-radius:14px;padding:20px 16px;max-width:330px;width:100%">
+    <p style="font-size:11px;color:rgba(255,255,255,.9);margin:0 0 5px 4px" id="mmSender"></p>
+    <div class="bubble"><div class="strip" id="mmStrip">알림톡 도착</div><div class="bmsg" id="mmBody"></div><div class="bbtns" id="mmBtns"></div></div>
+    <button class="btn" style="width:100%;margin-top:12px;background:#fff" onclick="document.getElementById('msgModal').style.display='none'">닫기</button>
+  </div>
+</div>
+
 <button id="helpBtn" onclick="document.getElementById('helpModal').classList.add('on')" aria-label="도움말">?</button>
 <div id="helpModal" onclick="if(event.target===this)this.classList.remove('on')">
   <div class="help-card">
@@ -743,7 +791,8 @@ function finishSetup(){
 }
 function resetSetup(){
   if(!confirm('정말 초기화할까요?\n병원 설정과 오늘의 처리 기록이 삭제되며 되돌릴 수 없습니다.'))return;
-  localStorage.removeItem('careloop-cfg'); localStorage.removeItem(TODAY_KEY); location.reload();
+  localStorage.removeItem('careloop-cfg'); localStorage.removeItem(TODAY_KEY);
+  localStorage.removeItem('careloop-role'); localStorage.removeItem('careloop-db'); location.reload();
 }
 function editClinic(){
   const n=prompt('병원명을 입력하세요', cfg.name); if(!n)return;
@@ -818,6 +867,12 @@ function buildData(){
    {t:'15:30',p:'P04',item:SP.items[0],st:'예약',staff:'원장',crm:'—'},
    {t:'17:00',p:'P08',item:SP.items[2]||SP.items[0],st:'예약',staff:'원장',crm:'D+5 경과체크 예정(정보성)'},
   ];
+  P.forEach((p,i)=>{
+    p.intake={goal:p.pot>=3?'집중':p.pot<=-3?'최소':'표준',ins:i%2?'유':'무',
+      worry:p.pot>=2?[SP.worry[i%SP.worry.length]]:[],family:i%3===0?[SP.worry[(i+1)%SP.worry.length]]:[]};
+    p.phone='010'+String(41110001+i*137).slice(0,8);
+  });
+  VISITS_TODAY.forEach((v,i)=>{v.rev=[45000,52000,0,180000,45000,45000,60000][i]||45000;if(v.st==='노쇼')v.rev=0;});
   const C=cfg.name, D=cfg.doctor;
   TEMPLATES={};
   TEMPLATES[SP.seqName]=[
@@ -892,8 +947,11 @@ function updateTodayBadge(){
 function crisisResolve(id,btn){
   const p=pById(id); if(!p)return;
   if(!confirm(p.name+'님과 통화를 마치셨나요?\n위기 상태를 \'회복\'으로 바꾸고, 보류했던 안내 발송을 다시 켭니다.'))return;
+  const memo=prompt('통화 메모를 남겨주세요 (선택)','증상 확인, 복용 지속 안내')||'회복 확인';
   p.flags=p.flags.filter(fl=>fl!=='위기');
   p.next='회복 확인 — 다음 정기 안내부터 재개';
+  p.tl.unshift(['오늘','☎ 통화 완료 — '+memo+' (위기 해제·발송 재개)']);
+  aiSay(`💚 ${esc(p.name)}님 위기를 회복 처리했어요.\n메모: "${esc(memo)}"\n보류했던 안내 발송을 다시 켰고, 위기→회복 전환으로 기록했습니다.`);
   const q=btn&&btn.closest?btn.closest('.qitem'):null;
   if(q){const c=q.querySelector('input');if(c)c.checked=true;q.classList.add('done');const b=q.querySelector('button.btn');if(b)b.remove();saveToday();}
   updateTodayBadge(); renderPatients();
@@ -916,8 +974,16 @@ function visitDone(idx,st){
   const v=VISITS_TODAY[idx]; const p=pById(v.p);
   const msg=st==='완료'?p.name+'님을 완료 처리합니다.\n→ 내일 오전 자동 안내가 예약됩니다.':p.name+'님을 노쇼 처리합니다.\n→ 재예약 안내가 발송됩니다.';
   if(!confirm(msg))return;
-  v.st=st; renderVisits('전체');
+  v.st=st; renderVisits('전체'); updateTodayRev();
   toast(st==='완료'?`${p.name}님 완료 — ${SP.d1Name} D+1 발송이 예약되었습니다`:`${p.name}님 노쇼 처리 — 재예약 안내 발송`);
+  aiSay(st==='완료'?`✅ ${p.name}님 완료 처리했어요. 내일 오전 ${SP.d1Name}가 자동 발송됩니다.`:`📵 ${p.name}님을 노쇼 처리했어요. 재예약 안내를 보냈고, 미응답 시 내일 전화 항목을 만들게요.`);
+}
+function updateTodayRev(){
+  const el=document.getElementById('todayRev'); if(!el)return;
+  const done=VISITS_TODAY.filter(v=>v.st==='완료');
+  const sum=done.reduce((a,v)=>a+(v.rev||0),0);
+  el.textContent=(sum/10000).toFixed(0)+'만원';
+  document.getElementById('todayRevSub').textContent=`완료 ${done.length}건 · 객단가 ${done.length?Math.round(sum/done.length/1000)+'천원':'—'}`;
 }
 function renderCal(){
   const dows=['일','월','화','수','목','금','토'];
@@ -974,7 +1040,9 @@ function showPatient(id){
   document.getElementById('p3Next').innerHTML='<b>다음 예정 액션</b><br>'+p.next;
   document.getElementById('p3Visits').textContent=p.visits;
   document.getElementById('p3Last').textContent=p.last.slice(5).replace('-','/');
-  document.getElementById('p3Timeline').innerHTML=p.tl.length?p.tl.map(t=>`<li><span class="d num">${t[0]}</span><span>${t[1]}</span></li>`).join(''):'<li><span class="d">—</span><span>기록이 없습니다 (연동 준비 중)</span></li>';
+  document.getElementById('p3Timeline').innerHTML=p.tl.length?p.tl.map((t,ti)=>`<li><span class="d num">${esc(t[0])}</span><span>${esc(t[1])} <a href="#" style="font-size:11px" onclick="showMsgModalTl('${p.id}',${ti});return false">문안</a></span></li>`).join(''):'<li><span class="d">—</span><span>기록이 없습니다 (연동 준비 중)</span></li>';
+  const ik=p.intake||{};
+  document.getElementById('p3Intake').innerHTML=`<b>📋 문진표 원답변</b><br>치료 방향: <b>${ik.goal||'—'}</b> · 실손보험: ${ik.ins||'—'}<br>걱정되는 건강 문제: ${ik.worry&&ik.worry.length?ik.worry.join(', '):'없음'} · 가족력: ${ik.family&&ik.family.length?ik.family.join(', '):'없음'}`;
   document.getElementById('p3Records').innerHTML=p.rec.length?p.rec.map(t=>`<li><span class="d num">${t[0]}</span><span>${t[1]}</span></li>`).join(''):'<li><span class="d">—</span><span>기록이 없습니다 (연동 준비 중)</span></li>';
   sparkline('p3Spark',p.spark);
   sSel=p.id; if(document.getElementById('sList')){renderSendList();renderSendTpls();updateSendPreview();}
@@ -994,6 +1062,7 @@ function renderSendTpls(){
 }
 function updateSendPreview(){
   const el=document.getElementById('sPreview');
+  if(window._pending){el.innerHTML=`⏳ <b>${esc(window._pending.p)}</b>님에게 '${esc(window._pending.t)}' 발송 대기 중 — <b>5분 홀드</b> 후 실제 발송됩니다. <button class="btn sm" onclick="cancelSend()">지금 취소</button>`;return}
   if(sSel==null||sTpl==null){el.innerHTML='환자와 템플릿을 선택하면 발송 전 안전점검 결과가 표시됩니다.';return}
   const p=pById(sSel);
   const all=[];Object.values(TEMPLATES).forEach(l=>l.forEach(t=>all.push(t)));
@@ -1015,7 +1084,18 @@ function doSend(){
   if(p.consent==='N'&&t.ch!=='알림톡')guards.push('마케팅 미동의 — 광고성 발송 불가');
   if(guards.length){toast('⛔ 발송 차단 — '+guards.join(' · '));return}
   if(!confirm(`${p.name}님(차트 ${p.chart})에게\n'${t.n}' (${t.ch})를 보냅니다.\n\n발송 시점: ${document.getElementById('sWhen').value}\n계속할까요?`))return;
-  toast(`${p.name}님에게 발송 예약되었습니다 (가상) — 발송 전까지 취소할 수 있습니다`);
+  const el=document.getElementById('sPreview');
+  el.innerHTML=`⏳ <b>${p.name}</b>님에게 '${t.n}' 발송 대기 중 — <b>5분 홀드</b> 후 실제 발송됩니다. <button class="btn sm" onclick="cancelSend()">지금 취소</button>`;
+  window._pending={p:p.name,t:t.n};
+  toast(`${p.name}님에게 발송 예약 — 5분 내 취소 가능`);
+  aiSay(`📨 ${p.name}님에게 '${t.n}'(${t.ch}) 발송을 예약했어요. 5분 홀드 후 나갑니다 — 실수라면 개별 발송 화면에서 '지금 취소'를 눌러주세요.`);
+}
+function cancelSend(){
+  if(!window._pending)return;
+  document.getElementById('sPreview').innerHTML=`발송이 취소되었습니다.`;
+  aiSay(`↩ ${window._pending.p}님에게 예약했던 '${window._pending.t}' 발송을 취소했어요.`);
+  window._pending=null; toast('발송이 취소되었습니다');
+  setTimeout(updateSendPreview,1200);
 }
 /* 트래커 */
 function renderRx(){
@@ -1050,7 +1130,7 @@ function renderSends(){
    ['발송완료','p-ok','LMS','p-amber','정혜란','치료중단자 안부','09','—','2026-07-06 10:00'],
    ['발송완료','p-ok','알림톡','p-pri','강도현','웰컴 메시지','01','<span class="pill p-blue">클릭</span>','2026-07-05 15:22'],
    ['발송차단','p-red','LMS','p-amber','오경자','— (발송중단 가드 차단)','05','—','2026-07-05 11:00'],
-  ].map(r=>`<tr><td><span class="pill ${r[1]}">${r[0]}</span></td><td><span class="pill ${r[3]}">${r[2]}</span></td><td>${r[4]}</td><td>${r[5]}</td><td class="num">${r[6]}</td><td>${r[7]}</td><td class="num">${r[8]}</td></tr>`).join('');
+  ].map(r=>`<tr class="click" onclick="showMsgModal('${r[5].replace(/'/g,'')}','${r[4]}')" title="클릭하면 실제 발송 문안을 확인합니다"><td><span class="pill ${r[1]}">${r[0]}</span></td><td><span class="pill ${r[3]}">${r[2]}</span></td><td>${r[4]}</td><td>${r[5]} <span style="color:var(--mut);font-size:11px">문안 보기</span></td><td class="num">${r[6]}</td><td>${r[7]}</td><td class="num">${r[8]}</td></tr>`).join('');
 }
 let tCat=null;
 function renderTCats(){
@@ -1156,12 +1236,137 @@ function sparkline(elId,data){
 let toastTimer;
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
 
+/* ================= AI 매니저 (채팅) ================= */
+let aiUnread=0;
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function aiSay(text,opts={}){
+  const box=document.getElementById('aiMsgs'); if(!box)return;
+  const d=document.createElement('div');
+  d.className='ai-msg'+(opts.alert?' alert':'');
+  d.innerHTML=text+(opts.buttons||'');
+  box.appendChild(d); box.scrollTop=box.scrollHeight;
+  if(!document.getElementById('aiPanel').classList.contains('on')){
+    aiUnread++; const b=document.getElementById('aiBadge'); b.textContent=aiUnread; b.style.display='inline';
+  }
+}
+function meSay(text){
+  const box=document.getElementById('aiMsgs');
+  const d=document.createElement('div'); d.className='me-msg'; d.textContent=text;
+  box.appendChild(d); box.scrollTop=box.scrollHeight;
+}
+function openChat(mode){
+  if(!cfg||!Array.isArray(P))return;
+  const p=document.getElementById('aiPanel'); p.classList.add('on');
+  aiUnread=0; document.getElementById('aiBadge').style.display='none';
+  if(mode==='alerts'){
+    const crisis=P.filter(x=>x.flags.includes('위기')).length;
+    aiSay(`🔔 <b>현재 알림</b>\n· 위기 대응 ${crisis}건 ${crisis?'— 30분 내 전화':''}\n· 오늘의 액션 미처리 ${document.getElementById('todayBadge').textContent}건\n· 시스템 오류 ${errLog.length}건`,{buttons:crisis?`<button class="btn sm pri" onclick="go('today');document.getElementById('aiPanel').classList.remove('on')">오늘의 액션 열기</button>`:''});
+  }
+  document.getElementById('aiIn').focus();
+}
+function aiChips(){
+  document.getElementById('aiChips').innerHTML=['오늘 요약','위기 환자','안 한 일','매출·채널','처음이에요 (투어)'].map(c=>`<button onclick="aiAsk('${c}')">${c}</button>`).join('');
+}
+function aiAsk(preset){
+  const inp=document.getElementById('aiIn');
+  const q=(preset||inp.value||'').trim(); if(!q)return;
+  meSay(q); inp.value='';
+  setTimeout(()=>aiAnswer(q),350);
+}
+function aiAnswer(q){
+  if(!cfg||!Array.isArray(P)){aiSay('먼저 병원 설정을 완료해 주세요.');return}
+  const crisisP=P.filter(x=>x.flags.includes('위기'));
+  // 환자 이름 매칭
+  const hit=P.find(p=>q.includes(p.name));
+  if(hit){
+    aiSay(`<b>${hit.name}</b>님 (차트 ${hit.chart})\n· 관여도 ${hit.grp} (${hit.score>0?'+':''}${hit.score}점) · ${hit.status}\n· 마지막 방문 ${hit.last} · 유입 ${hit.src}\n· 다음 예정: ${hit.next}`,{buttons:`<button class="btn sm pri" onclick="showPatient('${hit.id}');document.getElementById('aiPanel').classList.remove('on')">환자 360 열기</button>`});
+    return;
+  }
+  if(/요약|오늘|브리핑/.test(q)){
+    const done=VISITS_TODAY.filter(v=>v.st==='완료').length;
+    aiSay(`📋 <b>오늘 요약 (7/7 화)</b>\n· 내원 ${VISITS_TODAY.length}건 — 완료 ${done} · 예약 ${VISITS_TODAY.filter(v=>v.st==='예약').length} · 노쇼 ${VISITS_TODAY.filter(v=>v.st==='노쇼').length}\n· 위기 ${crisisP.length}건 · 미처리 액션 ${document.getElementById('todayBadge').textContent}건\n· 발송 4건 (예약 대기 1건)`,{buttons:`<button class="btn sm pri" onclick="go('today');document.getElementById('aiPanel').classList.remove('on')">오늘의 액션</button>`});
+  } else if(/위기/.test(q)){
+    aiSay(crisisP.length?`🚨 위기 환자 <b>${crisisP.map(p=>p.name).join(', ')}</b> — D+5 '불편해요' 응답. 30분 내 전화가 원칙이에요. 통화 후 [회복 처리]를 눌러주세요.`:`지금 위기 환자는 없어요 💚`,{alert:crisisP.length>0,buttons:crisisP.length?crisisP.map(p=>`<button class="btn sm pri" onclick="showPatient('${p.id}');document.getElementById('aiPanel').classList.remove('on')">${p.name}님 카드 열기</button>`).join(''):''});
+  } else if(/안 한|할 일|미처리|남은/.test(q)){
+    aiSay(`✅ 오늘의 액션에서 <b>${document.getElementById('todayBadge').textContent}건</b>이 아직 남아 있어요. 위→아래 순서대로 처리하면 됩니다 (위기가 항상 최우선).`,{buttons:`<button class="btn sm pri" onclick="go('today');document.getElementById('aiPanel').classList.remove('on')">오늘의 액션</button>`});
+  } else if(/매출|채널|마케팅/.test(q)){
+    aiSay(`💰 <b>이번 달 채널 한 줄 평</b>\n· 유입 1위: 네이버 검색(9명) — CAC 4.4만원\n· 정착 1위: 지인 소개(72%) — CAC 0원\n· SNS는 3개월 연속 성장 중이지만 정착률(30~38%)이 낮아 예산 재검토 대상이에요.`,{buttons:`<button class="btn sm pri" onclick="go('dash');document.getElementById('aiPanel').classList.remove('on')">대시보드</button>`});
+  } else if(/오류|에러|장애/.test(q)){
+    aiSay(errLog.length?`⚠ 이번 주 오류 ${errLog.length}건:\n`+errLog.slice(-3).map(e=>`· ${e.t} ${e.msg}`).join('\n'):`시스템 정상이에요 — 12개 자동화 시나리오 모두 잘 돌고 있습니다 ✅`);
+  } else if(/투어|처음|사용법|어떻게/.test(q)){
+    tourStep(1);
+  } else if(/관여도|잠재성|활성도|D\+|중단추정|알림톡|친구톡|안전점검/.test(q)){
+    document.getElementById('helpModal').classList.add('on');
+    aiSay(`용어 가이드를 열었어요 — 궁금한 항목을 찾아보세요. 안 닫히면 Esc!`);
+  } else {
+    aiSay(`아직 그건 잘 몰라요 🙏 지금은 <b>오늘 요약 · 위기 환자 · 환자 이름 · 매출·채널 · 오류</b>를 물어보실 수 있어요.\n(실서비스에서는 Claude API가 연결되어 자유 질문에 답합니다)`);
+  }
+}
+function tourStep(n){
+  if(n===1)aiSay(`👋 <b>3분 투어 1/3 — 오늘의 액션</b>\n아침에 이 화면만 보면 됩니다. 위에서 아래로, 카드가 시키는 대로 버튼만 누르세요. 위기(빨간 줄)가 항상 1순위!`,{buttons:`<button class="btn sm pri" onclick="go('today');tourStep(2)">다음: 내원목록</button>`});
+  if(n===2)aiSay(`🗒 <b>2/3 — 내원목록</b>\n수납할 때 [완료]를 누르면 그 환자의 자동 안내가 시작돼요. 이 버튼이 이 제품의 심장입니다.`,{buttons:`<button class="btn sm pri" onclick="go('visits');tourStep(3)">다음: 환자 검색</button>`});
+  if(n===3)aiSay(`🔍 <b>3/3 — 전화 응대</b>\n전화가 오면 키보드에서 <b>/</b> 를 누르고 이름을 치세요. 환자 카드가 바로 열립니다.\n\n막히면 언제든 저를 부르세요. 우측 아래 💬 여기 있어요!`,{buttons:`<button class="btn sm pri" onclick="document.getElementById('gq').focus();document.getElementById('aiPanel').classList.remove('on')">검색 써보기</button>`});
+}
+
+/* ================= 역할 모드 ================= */
+const DESK_HIDE=['dash','perf','visitset','hospital','staff','billing','env','templates'];
+function toggleRole(){
+  const r=localStorage.getItem('careloop-role')==='desk'?'owner':'desk';
+  localStorage.setItem('careloop-role',r); applyRole();
+  toast(r==='desk'?'데스크 모드 — 실무 화면만 보입니다':'원장 모드 — 전체 메뉴가 보입니다');
+}
+function applyRole(){
+  const desk=localStorage.getItem('careloop-role')==='desk';
+  document.getElementById('roleBtn').textContent=desk?'💁 데스크 모드':'👨‍⚕️ 원장 모드';
+  document.querySelectorAll('.mitem').forEach(b=>{
+    b.style.display=(desk&&DESK_HIDE.includes(b.dataset.view))?'none':'';
+  });
+  document.querySelectorAll('.mgroup').forEach(g=>{
+    if(g.textContent==='병원관리')g.style.display=desk?'none':'';
+  });
+  const cur=document.querySelector('.view.on');
+  if(desk&&cur&&DESK_HIDE.includes(cur.id.replace('v-','')))go('today');
+}
+
+/* ================= 발송 문안 모달 ================= */
+function findTplByText(txt){
+  const all=[];Object.values(TEMPLATES).forEach(l=>l.forEach(t=>all.push(t)));
+  let f=all.find(t=>txt.includes(t.n));
+  if(!f){
+    const keys=[['경과체크','D+5'],['복약지도',SP.d1Name],[SP.d1Name,SP.d1Name],['웰컴','웰컴'],['위기','위기'],['노쇼','노쇼'],['안부','안부'],['재안내','재안내'],['초기','초기'],['중기','중기'],['설문','설문']];
+    for(const[k,m]of keys){ if(txt.includes(k)){ f=all.find(t=>t.n.includes(m)); if(f)break; } }
+  }
+  return f;
+}
+function showMsgModalTl(pid,ti){
+  const p=pById(pid); if(!p||!p.tl[ti])return;
+  showMsgModal(p.tl[ti][1],p.name);
+}
+function showMsgModal(txt,pname){
+  const t=findTplByText(txt);
+  const m=document.getElementById('msgModal');
+  document.getElementById('mmSender').textContent=cfg.name;
+  if(!t){
+    document.getElementById('mmStrip').textContent='발송 문안';
+    document.getElementById('mmStrip').className='strip';
+    document.getElementById('mmBody').textContent='이 발송 건의 문안 원문은 데이터 연동 후 표시됩니다.';
+    document.getElementById('mmBtns').innerHTML='';
+  }else{
+    document.getElementById('mmStrip').textContent=t.ch==='알림톡'?'알림톡 도착':'(광고) 친구톡';
+    document.getElementById('mmStrip').className='strip'+(t.ch==='알림톡'?'':' ad');
+    document.getElementById('mmBody').textContent=t.msg.replace(/#\{환자명\}/g,pname||'#{환자명}').replace(/#\{원장명\}/g,cfg.doctor).replace(/#\{프로그램명\}/g,SP.programs[0][0]).replace(/#\{주증상명\}/g,SP.sym[0]);
+    document.getElementById('mmBtns').innerHTML=t.btns.map(b=>`<div class="kbtn">${b}</div>`).join('');
+  }
+  m.style.display='flex';
+}
+
 /* ================= 전역 검색 ================= */
 function gSearch(){
   const q=(document.getElementById('gq').value||'').trim();
   const box=document.getElementById('gres');
   if(!q){box.style.display='none';box.innerHTML='';return}
-  const hits=P.filter(p=>p.name.includes(q)||p.chart.includes(q)).slice(0,6);
+  const digits=q.replace(/[^0-9]/g,'');
+  const hits=P.filter(p=>p.name.includes(q)||p.chart.includes(q)||(digits.length>=4&&(p.phone||'').includes(digits))).slice(0,6);
   box.innerHTML=hits.length?hits.map(p=>`<button onclick="showPatient('${p.id}');document.getElementById('gq').value='';gSearch()"><b>${p.name}</b> <span class="num" style="color:var(--mut)">차트 ${p.chart}</span> <span class="grp ${p.grp}">${p.grp}</span></button>`).join(''):'<button disabled style="color:var(--mut)">검색 결과 없음</button>';
   box.style.display='block';
 }
@@ -1246,6 +1451,7 @@ function reportError(msg){
   const cnt=document.getElementById('bellCnt');
   cnt.textContent=errLog.length; cnt.style.display='inline';
   const ec=document.getElementById('errCount'); if(ec)ec.textContent=errLog.length+'건 (이번 주)';
+  aiSay(`🚨 <b>문제가 생겨서 알려드려요</b>\n${msg}\n\n제가 자동 재시도를 걸어뒀고, 계속 실패하면 다시 말씀드릴게요. (실서비스: 카카오톡/SMS로도 발송)`,{alert:true});
 }
 function dismissErr(){document.getElementById('errbar').classList.remove('on')}
 function showAlerts(){
@@ -1278,6 +1484,10 @@ function initApp(){
     {name:'SNS',color:'var(--c4)',data:[1,1,2,3,4,5]}
   ],['2월','3월','4월','5월','6월','7월']);
   barList('chartChRev',[['네이버 검색',260,'260만원'],['지인 소개',190,'190만원'],['카카오톡 채널',110,'110만원'],['유튜브',70,'70만원'],['인스타그램',40,'40만원']],'var(--c1)');
+  updateTodayRev(); aiChips(); applyRole();
+  const crisisN=P.filter(x=>x.flags.includes('위기')).length;
+  document.getElementById('aiMsgs').innerHTML='';
+  aiSay(`👋 좋은 아침이에요, <b>${esc(cfg.name)}</b>! AI 매니저입니다.\n\n📋 <b>오늘 브리핑</b>\n· 내원 예정 ${VISITS_TODAY.length}건 · 처리할 액션 ${document.querySelectorAll('#v-today .qitem').length}건\n${crisisN?`· 🚨 위기 ${crisisN}건 — 30분 내 전화가 필요해요!`:'· 위기 없음 💚'}\n\n오류·알림은 전부 이 채팅으로 알려드릴게요. 처음이시면 아래 '처음이에요'를 눌러보세요.`);
   const dbc=loadDbCfg();
   if(document.getElementById('dbUrl')&&dbc.url){document.getElementById('dbUrl').value=dbc.url;document.getElementById('dbKey').value=dbc.key||'';}
   if(dbc.url&&dbc.key&&window.supabase)connectDb(dbc.url,dbc.key,false);
