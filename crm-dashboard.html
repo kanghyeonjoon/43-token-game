@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나비솔 CRM — 경희나비솔한의원</title>
+<style>
+:root{
+  --side:#1a211c; --side-ink:#c9d2cc; --side-mut:#7d8a81; --side-active:#243429;
+  --bg:#f5f6f4; --card:#ffffff; --line:#e5e7e3; --line2:#d7dad5;
+  --ink:#232925; --ink2:#5a635d; --mut:#8b948d;
+  --pri:#2e6b4e; --pri-soft:#e7f0ea; --pri-deep:#1f4f39;
+  --red:#b23a2c; --red-soft:#f9e9e6;
+  --amber:#c4842c; --amber-soft:#f7eedd;
+  --ok:#1e7a4b; --ok-soft:#e5f2ea;
+  --blue:#3b6fb5; --blue-soft:#e8eef7;
+  --c1:#1e7a4b; --c2:#3b6fb5; --c3:#c4842c; --c4:#b23a2c;
+  --kakao:#ffe94a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Apple SD Gothic Neo",Pretendard,"Noto Sans KR","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--pri);text-decoration:none}
+.num{font-variant-numeric:tabular-nums}
+
+/* ===== layout ===== */
+.app{display:flex;min-height:100vh}
+.sidebar{width:224px;background:var(--side);color:var(--side-ink);flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:9px;padding:18px 20px 16px;font-size:17px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.logo .mark{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#3f9268,#1f4f39);display:inline-block}
+.menu{flex:1;padding:4px 10px 20px}
+.mgroup{font-size:11px;letter-spacing:.12em;color:var(--side-mut);font-weight:700;padding:16px 12px 6px}
+.mitem{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;color:var(--side-ink);font-size:13.5px;cursor:pointer;margin-bottom:1px;border:0;background:none;width:100%;text-align:left}
+.mitem:hover{background:rgba(255,255,255,.06)}
+.mitem.active{background:var(--side-active);color:#fff;font-weight:700}
+.mitem .ico{width:16px;text-align:center;opacity:.85}
+.mitem .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10.5px;font-weight:800;border-radius:99px;padding:0 7px;line-height:17px}
+.side-foot{padding:14px 20px;font-size:12px;color:var(--side-mut);border-top:1px solid rgba(255,255,255,.07)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:52px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 24px;position:sticky;top:0;z-index:20}
+.crumb{font-size:13px;color:var(--ink2)}
+.crumb b{color:var(--ink)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.clinic{font-size:13px;font-weight:700}
+.clinic .sub{color:var(--mut);font-weight:400}
+.bell{position:relative;background:none;border:0;font-size:16px}
+.bell .dot{position:absolute;top:-2px;right:-4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
+.demo-tag{font-size:11px;font-weight:700;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:2px 10px}
+.content{padding:22px 26px 60px;max-width:1240px;width:100%}
+
+/* ===== common components ===== */
+.view{display:none}
+.view.on{display:block}
+.page-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.page-h h1{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.page-h .desc{color:var(--mut);font-size:12.5px}
+.page-h .right{margin-left:auto;display:flex;gap:8px}
+.btn{border:1px solid var(--line2);background:var(--card);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;color:var(--ink2)}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn:hover{filter:brightness(.97)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-size:14.5px;font-weight:800;margin-bottom:4px}
+.card .sub{font-size:12px;color:var(--mut);margin-bottom:14px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1000px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:1.5px 9px;white-space:nowrap}
+.p-red{background:var(--red-soft);color:var(--red)} .p-amber{background:var(--amber-soft);color:var(--amber)}
+.p-ok{background:var(--ok-soft);color:var(--ok)} .p-blue{background:var(--blue-soft);color:var(--blue)}
+.p-gray{background:#eef0ee;color:var(--mut)} .p-pri{background:var(--pri-soft);color:var(--pri-deep)}
+.grp{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;font-size:11px;font-weight:800;color:#fff}
+.grp.상{background:#1f5c3e}.grp.중{background:#5b9a78}.grp.하{background:#a9c4b4;color:#2c4437}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11.5px;color:var(--mut);font-weight:700;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:#fafbfa}
+.tblwrap{overflow-x:auto}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filters input,.filters select{border:1px solid var(--line2);border-radius:8px;padding:7px 12px;font-size:13px;font-family:inherit;background:var(--card);color:var(--ink)}
+.filters input:focus,.filters select:focus{outline:2px solid var(--pri-soft);border-color:var(--pri)}
+.chip{border:1px solid var(--line2);background:var(--card);border-radius:99px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--ink2)}
+.chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.empty{padding:40px;text-align:center;color:var(--mut);font-size:13px}
+
+/* KPI tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.tile .lbl{font-size:12px;color:var(--ink2);font-weight:600;margin-bottom:6px}
+.tile .val{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.tile .delta{font-size:11.5px;font-weight:700;margin-top:3px}
+.up{color:var(--ok)} .down{color:var(--red)} .flat{color:var(--mut)}
+.tile.alert{border-color:var(--red);background:var(--red-soft)}
+
+/* today queue */
+.qsec{margin-bottom:18px}
+.qsec h3{font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.qitem{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:12px;margin-bottom:7px}
+.qitem.crisis{border-left:4px solid var(--red)}
+.qitem .who{font-weight:700;white-space:nowrap}
+.qitem .what{color:var(--ink2);font-size:12.5px;flex:1;min-width:0}
+.qitem .due{font-size:11.5px;color:var(--mut);white-space:nowrap}
+.qitem input[type=checkbox]{width:17px;height:17px;accent-color:var(--pri);flex-shrink:0}
+.qitem.done{opacity:.45}
+.qitem.done .what{text-decoration:line-through}
+.elapsed{color:var(--red);font-weight:800;font-size:11.5px}
+
+/* bar list */
+.blist .brow{display:grid;grid-template-columns:110px minmax(0,1fr) 52px;gap:10px;align-items:center;margin-bottom:9px;font-size:12.5px}
+.blist .brow .bl{color:var(--ink2);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blist .track{background:#eef0ee;border-radius:5px;height:16px;position:relative}
+.blist .fill{height:100%;border-radius:4px;background:var(--c1);min-width:2px}
+.blist .bv{font-weight:700;text-align:right}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--ink2);margin-bottom:10px}
+.legend .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:baseline}
+
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(180px,1fr));gap:12px;overflow-x:auto}
+@media(max-width:1100px){.kanban{grid-template-columns:repeat(5,220px)}}
+.kcol{background:#eef0ec;border-radius:12px;padding:10px}
+.kcol h4{font-size:12px;font-weight:800;color:var(--ink2);padding:2px 6px 8px;display:flex;justify-content:space-between}
+.kcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12.5px;cursor:pointer}
+.kcard:hover{border-color:var(--pri)}
+.kcard .nm{font-weight:700;display:flex;gap:6px;align-items:center;margin-bottom:3px}
+.kcard .mt{color:var(--mut);font-size:11.5px}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.cal .dow{background:#fafbfa;border-bottom:1px solid var(--line);padding:7px 10px;font-size:11.5px;color:var(--mut);font-weight:700}
+.cal .day{min-height:86px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:6px 8px;font-size:11.5px}
+.cal .day:nth-child(7n){border-right:0}
+.cal .dnum{color:var(--ink2);font-weight:600;margin-bottom:3px}
+.cal .day.dim .dnum{color:#c6ccc7}
+.cal .day.today .dnum{background:var(--pri);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center}
+.cal .ev{border-radius:4px;padding:1px 6px;margin-bottom:2px;font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .ev.a{background:var(--ok-soft);color:var(--ok)} .cal .ev.b{background:var(--amber-soft);color:var(--amber)} .cal .ev.c{background:var(--blue-soft);color:var(--blue)}
+.cal .sun .dnum{color:#c96b5e}
+
+/* patient 360 */
+.p360-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.avatar{width:46px;height:46px;border-radius:50%;background:var(--pri-soft);color:var(--pri-deep);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px}
+.p360-head .nm{font-size:18px;font-weight:800}
+.p360-head .meta{color:var(--mut);font-size:12.5px}
+.score-big{display:flex;align-items:baseline;gap:10px;margin:6px 0 10px}
+.score-big .v{font-size:30px;font-weight:800}
+.score-line{font-size:12.5px;color:var(--ink2);margin-bottom:3px;display:flex;justify-content:space-between}
+.tl{list-style:none}
+.tl li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;align-items:flex-start}
+.tl li:last-child{border-bottom:0}
+.tl .d{color:var(--mut);white-space:nowrap;width:74px;flex-shrink:0}
+.next-act{background:var(--pri-soft);border:1px solid #cfe2d6;border-radius:10px;padding:11px 14px;font-size:12.5px}
+.next-act b{color:var(--pri-deep)}
+
+/* template 3-pane */
+.tpanes{display:grid;grid-template-columns:170px minmax(0,1fr) 320px;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);min-height:480px}
+@media(max-width:1000px){.tpanes{grid-template-columns:minmax(0,1fr)}}
+.tcats{border-right:1px solid var(--line);padding:12px 0}
+.tcats button{display:block;width:100%;text-align:left;padding:8px 18px;font-size:13px;border:0;background:none;color:var(--ink2)}
+.tcats button.on{color:var(--pri);font-weight:800;background:var(--pri-soft)}
+.tlist{border-right:1px solid var(--line);padding:14px}
+.titem{border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:9px;cursor:pointer}
+.titem:hover,.titem.on{border-color:var(--pri);background:#fbfdfb}
+.titem .tn{font-weight:700;font-size:13px}
+.titem .tc{font-size:11px;color:var(--mut);font-family:ui-monospace,Menlo,monospace}
+.titem .tp{font-size:11.5px;color:var(--ink2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tprev{background:#aec3d5;padding:18px 14px}
+.tprev .sender{font-size:11px;color:rgba(255,255,255,.9);margin:0 0 5px 4px}
+.bubble{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.15);max-width:280px}
+.strip{background:var(--kakao);color:#3a3000;font-size:11px;font-weight:800;padding:5px 12px}
+.strip.ad{background:var(--amber-soft);color:var(--amber)}
+.bmsg{padding:12px 13px;font-size:12px;line-height:1.62;white-space:pre-wrap;color:#232925}
+.bbtns{padding:0 9px 11px;display:flex;flex-direction:column;gap:5px}
+.kbtn{background:#f1f2ee;border-radius:5px;text-align:center;font-size:11.5px;font-weight:700;padding:7px;color:#4a544e}
+
+/* svg charts */
+.chart-tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;font-size:11.5px;padding:4px 9px;border-radius:6px;z-index:99;display:none;white-space:nowrap}
+svg text{font-family:inherit}
+
+/* toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12.5px;padding:9px 18px;border-radius:99px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:100}
+#toast.show{opacity:.94}
+input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ================= SIDEBAR ================= -->
+<nav class="sidebar">
+  <div class="logo"><span class="mark"></span>나비솔 CRM</div>
+  <div class="menu">
+    <button class="mitem" data-view="today"><span class="ico">☑</span>오늘의 액션<span class="badge" id="todayBadge">8</span></button>
+    <button class="mitem" data-view="dash"><span class="ico">📊</span>대시보드</button>
+    <div class="mgroup">내원관리</div>
+    <button class="mitem" data-view="visits"><span class="ico">🗒</span>내원목록</button>
+    <button class="mitem" data-view="cal"><span class="ico">📅</span>캘린더</button>
+    <div class="mgroup">환자관리</div>
+    <button class="mitem" data-view="patients"><span class="ico">👥</span>환자DB</button>
+    <button class="mitem" data-view="retention"><span class="ico">↩</span>재내원·이탈 관리</button>
+    <div class="mgroup">CRM</div>
+    <button class="mitem" data-view="rx"><span class="ico">💊</span>한약 처방 트래커</button>
+    <button class="mitem" data-view="sends"><span class="ico">✉</span>발송 내역</button>
+    <button class="mitem" data-view="templates"><span class="ico">💬</span>메시지 템플릿</button>
+    <button class="mitem" data-view="perf"><span class="ico">📈</span>발송 성과</button>
+    <div class="mgroup">시스템</div>
+    <button class="mitem" data-view="settings"><span class="ico">⚙</span>설정</button>
+  </div>
+  <div class="side-foot">프로토타입 v0.1 · 목데이터<br>기획서 v3.0 기반</div>
+</nav>
+
+<!-- ================= MAIN ================= -->
+<div class="main">
+  <div class="topbar">
+    <span class="crumb" id="crumb"><b>오늘의 액션</b></span>
+    <span class="demo-tag">DEMO · 가상 데이터</span>
+    <div class="right">
+      <span class="clinic">경희나비솔한의원 <span class="sub">(knbs)</span></span>
+      <button class="bell" aria-label="알림">🔔<span class="dot"></span></button>
+    </div>
+  </div>
+  <div class="content">
+
+  <!-- ========== 오늘의 액션 ========== -->
+  <section class="view on" id="v-today">
+    <div class="page-h">
+      <h1>오늘의 액션</h1><span class="desc">2026.07.07(화) · 데스크가 아침에 이 화면만 보면 하루 업무가 시작됩니다</span>
+      <div class="right"><button class="btn" onclick="toast('어제 미처리 1건이 오늘 큐로 이월되었습니다')">이월 항목 보기</button></div>
+    </div>
+    <div class="tiles">
+      <div class="tile alert"><div class="lbl">🔴 위기 대응</div><div class="val num">1</div><div class="delta down">30분 내 전화 필요</div></div>
+      <div class="tile"><div class="lbl">복약 경과 확인</div><div class="val num">2</div><div class="delta flat">D+5 / D+12</div></div>
+      <div class="tile"><div class="lbl">동반자 안내</div><div class="val num">1</div><div class="delta flat">3회차 내원</div></div>
+      <div class="tile"><div class="lbl">팔로업 발송 확인</div><div class="val num">3</div><div class="delta flat">중단·완료·노쇼</div></div>
+      <div class="tile"><div class="lbl">수동확인 큐</div><div class="val num">1</div><div class="delta flat">매칭 실패</div></div>
+    </div>
+
+    <div class="qsec">
+      <h3><span class="pill p-red">긴급</span>위기 대응 — SLA 30분</h3>
+      <div class="qitem crisis"><input type="checkbox" onchange="qdone(this)" aria-label="완료">
+        <span class="who"><a href="#" onclick="showPatient('P03');return false">이순자</a></span>
+        <span class="what">D+5 경과체크 <b>'불편해요'</b> 응답 (15일 집중, 복용 5일차) — 원장 전화 후 위기 상태 갱신</span>
+        <span class="elapsed num">경과 42분</span></div>
+    </div>
+    <div class="qsec">
+      <h3><span class="pill p-pri">복약 시퀀스</span>처방 체크포인트</h3>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('P02');return false">박성호</a></span><span class="what">D+5 경과체크 <b>미응답</b> — 내일 오전 리마인드 예약 확인</span><span class="due">오늘 중</span></div>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('P01');return false">김민정</a></span><span class="what">D+12 재처방 안내 발송 예정(오전 11시) — 발송 후 반응 확인</span><span class="due">11:00</span></div>
+    </div>
+    <div class="qsec">
+      <h3><span class="pill p-blue">진심동반자</span>3회차 안내</h3>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('P06');return false">한지우</a></span><span class="what">오늘 3회차 내원 — 설문 안내 + 감사 선물 <b>(소개 혜택 언급 금지)</b></span><span class="due">수납 시</span></div>
+    </div>
+    <div class="qsec">
+      <h3><span class="pill p-amber">팔로업</span>중단·완료·노쇼</h3>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('P05');return false">정혜란</a></span><span class="what">치료 <b>중단추정</b> 전환 D+7 — 안부 메시지 발송 확인(마지막 방문 6/20)</span><span class="due">오늘</span></div>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('P09');return false">윤미래</a></span><span class="what">치료 <b>완료</b> D+7 — 경과확인·정기검진 안내 발송 확인</span><span class="due">오늘</span></div>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('P10');return false">서준석</a></span><span class="what">오늘 10:30 <b>노쇼</b> — 재예약 안내 발송됨, 미응답 시 내일 전화</span><span class="due">발송 완료</span></div>
+    </div>
+    <div class="qsec">
+      <h3><span class="pill p-gray">수동확인</span>시스템 확인 요청</h3>
+      <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who">매칭 실패</span><span class="what">클릭 웹훅 수신번호 010-55**-**21 → 환자 0건 매칭 — 수동 지정 필요</span><span class="due">24시간 내</span></div>
+    </div>
+  </section>
+
+  <!-- ========== 대시보드 ========== -->
+  <section class="view" id="v-dash">
+    <div class="page-h"><h1>대시보드</h1><span class="desc">원장용 KPI · 최근 30일 (2026.06.08 ~ 07.07)</span>
+      <div class="right"><select class="btn"><option>최근 30일</option><option>최근 7일</option><option>이번 달</option></select></div></div>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">신규 환자</div><div class="val num">24명</div><div class="delta up">▲ 4 지난달 대비</div></div>
+      <div class="tile"><div class="lbl">재방문율 (30일 내 2회차)</div><div class="val num">58%</div><div class="delta up">▲ 6%p</div></div>
+      <div class="tile"><div class="lbl">한약 전환율</div><div class="val num">32%</div><div class="delta up">▲ 3%p</div></div>
+      <div class="tile"><div class="lbl">D+5 응답률</div><div class="val num">41%</div><div class="delta up">▲ 5%p · 목표 30%</div></div>
+      <div class="tile"><div class="lbl">수신거부율</div><div class="val num">0.6%</div><div class="delta flat">기준 1% 미만 유지</div></div>
+      <div class="tile"><div class="lbl">소개환자</div><div class="val num">5명</div><div class="delta up">▲ 2</div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h2>환자 관여도 파이프라인</h2><div class="sub">이번 주 승격 6명 · 강등 2명 (점수 이력 기준)</div>
+        <div class="blist">
+          <div class="brow"><span class="bl"><span class="grp 상">상</span> 관여도 상</span><div class="track"><div class="fill" style="width:38%;background:#1f5c3e" title="상 38명"></div></div><span class="bv num">38명</span></div>
+          <div class="brow"><span class="bl"><span class="grp 중">중</span> 관여도 중</span><div class="track"><div class="fill" style="width:74%;background:#5b9a78" title="중 74명"></div></div><span class="bv num">74명</span></div>
+          <div class="brow"><span class="bl"><span class="grp 하">하</span> 관여도 하</span><div class="track"><div class="fill" style="width:96%;background:#a9c4b4" title="하 96명"></div></div><span class="bv num">96명</span></div>
+          <div class="brow"><span class="bl">⛔ 발송중단</span><div class="track"><div class="fill" style="width:4%;background:#c9cec9" title="발송중단 4명"></div></div><span class="bv num">4명</span></div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--ink2)">💡 <b>중 그룹 74명</b>이 핵심 육성 대상 — 4주 내 승격 비율 <b class="num">12%</b></div>
+      </div>
+      <div class="card">
+        <h2>주간 발송 · 클릭 추이</h2><div class="sub">이번 주 (7/1 ~ 7/7)</div>
+        <div class="legend"><span><span class="sw" style="background:var(--c2)"></span>발송</span><span><span class="sw" style="background:var(--c1)"></span>클릭</span></div>
+        <div id="chartWeek"></div>
+      </div>
+      <div class="card">
+        <h2>콘텐츠별 발송 건수</h2><div class="sub">최근 30일 · 발송 상위 5개 콘텐츠</div>
+        <div class="blist" id="chartContent"></div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:8px">Report — 최근 30일간 <b>[요통 관리팁]</b>을 가장 많이 발송했습니다.</div>
+      </div>
+      <div class="card">
+        <h2>연령 · 성별 발송 비율</h2><div class="sub">최근 30일 · 남 41% / 여 59%</div>
+        <div class="legend"><span><span class="sw" style="background:var(--c2)"></span>남성</span><span><span class="sw" style="background:var(--c3)"></span>여성</span></div>
+        <div id="chartAge"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 내원목록 ========== -->
+  <section class="view" id="v-visits">
+    <div class="page-h"><h1>내원목록</h1>
+      <span class="desc num">‹ &nbsp;2026.07.07(화)&nbsp; ›</span>
+      <div class="right"><button class="btn pri" onclick="toast('프로토타입 — 내원 등록은 데이터 연동 단계에서 동작합니다')">＋ 내원등록</button></div></div>
+    <div class="filters">
+      <button class="chip on" onclick="filterVisits('전체',this)">전체 <b class="num">7</b></button>
+      <button class="chip" onclick="filterVisits('예약',this)">예약 <b class="num">2</b></button>
+      <button class="chip" onclick="filterVisits('완료',this)">완료 <b class="num">4</b></button>
+      <button class="chip" onclick="filterVisits('노쇼',this)">노쇼 <b class="num">1</b></button>
+      <span style="flex:1"></span>
+      <select><option>진료항목 전체</option><option>침</option><option>약침</option><option>추나</option><option>한약</option></select>
+    </div>
+    <div class="card" style="padding:0"><div class="tblwrap"><table id="visitTbl">
+      <thead><tr><th>상태</th><th>시간</th><th>환자</th><th>관여도</th><th>진료항목</th><th>방문차수</th><th>오늘 트리거되는 CRM</th></tr></thead>
+      <tbody></tbody></table></div></div>
+    <div style="font-size:12px;color:var(--mut)">✳ 수납(체크아웃) 시 '완료' 처리 — 완료 등록이 모든 자동 발송의 트리거가 됩니다. 마감 전 EMR 건수와 대조하세요.</div>
+  </section>
+
+  <!-- ========== 캘린더 ========== -->
+  <section class="view" id="v-cal">
+    <div class="page-h"><h1>캘린더</h1><span class="desc num">‹ 2026년 7월 ›</span>
+      <span class="pill p-ok">신환 12</span><span class="pill p-blue">구환 87</span>
+      <div class="right"><select class="btn"><option>월간</option><option>주간</option></select></div></div>
+    <div class="cal" id="calGrid"></div>
+  </section>
+
+  <!-- ========== 환자DB ========== -->
+  <section class="view" id="v-patients">
+    <div class="page-h"><h1>환자DB</h1><span class="desc">총 212명 · 2026-07-07 02:00 동기화</span>
+      <div class="right"><button class="btn" onclick="toast('프로토타입 — 엑셀 내보내기는 연동 단계에서 동작합니다')">엑셀 다운</button><button class="btn pri" onclick="toast('프로토타입 — 환자 등록은 연동 단계에서 동작합니다')">＋ 환자 등록</button></div></div>
+    <div class="filters">
+      <input id="pSearch" placeholder="환자명·차트번호 검색" oninput="renderPatients()" style="width:200px">
+      <select id="pGroup" onchange="renderPatients()"><option value="">관여도 전체</option><option>상</option><option>중</option><option>하</option></select>
+      <select id="pStatus" onchange="renderPatients()"><option value="">치료상태 전체</option><option>치료중</option><option>중단추정</option><option>완료</option></select>
+      <select id="pConsent" onchange="renderPatients()"><option value="">마케팅 동의 전체</option><option>Y</option><option>N</option></select>
+    </div>
+    <div class="card" style="padding:0"><div class="tblwrap"><table id="pTbl">
+      <thead><tr><th>차트번호</th><th>환자명</th><th>관여도</th><th class="num">점수</th><th>마케팅 동의</th><th>최종 내원</th><th>치료상태</th><th>상태 표시</th><th>최근 CRM</th></tr></thead>
+      <tbody></tbody></table></div></div>
+    <div style="font-size:12px;color:var(--mut)">행을 클릭하면 환자 360 상세로 이동합니다. 관여도 점수는 잠재성 + 활성도(최근 90일) 합산이며 원장 수동지정이 우선합니다.</div>
+  </section>
+
+  <!-- ========== 환자 360 ========== -->
+  <section class="view" id="v-p360">
+    <button class="btn" onclick="go('patients')" style="margin-bottom:14px">‹ 환자DB로</button>
+    <div class="p360-head">
+      <div class="avatar" id="p3Avatar">김</div>
+      <div><div class="nm" id="p3Name">김민정</div><div class="meta" id="p3Meta">차트 21034 · 010-42**-**91 · 유입: 지인 소개(박OO)</div></div>
+      <div id="p3Badges" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="grid g3">
+      <div class="card">
+        <h2>관여도 점수</h2><div class="sub">잠재성 + 활성도(최근 90일)</div>
+        <div class="score-big"><span class="v num" id="p3Score">7</span><span id="p3Grp"></span></div>
+        <div class="score-line"><span>잠재성 (문진표)</span><b class="num" id="p3Pot">+4</b></div>
+        <div class="score-line"><span>활성도 (반응·행동)</span><b class="num" id="p3Act">+3</b></div>
+        <div style="margin:10px 0 4px;font-size:11.5px;color:var(--mut)">점수 이력 (최근 8주)</div>
+        <div id="p3Spark"></div>
+        <div style="margin-top:12px" class="next-act" id="p3Next"><b>다음 예정 액션</b><br>7/7(화) 11:00 · 재처방 안내 (D+12) — 친구톡</div>
+      </div>
+      <div class="card">
+        <h2>발송 타임라인</h2><div class="sub">최근 발송·반응 (DB4)</div>
+        <ul class="tl" id="p3Timeline"></ul>
+      </div>
+      <div class="card">
+        <h2>진료 · 처방 기록</h2><div class="sub">방문 <b class="num" id="p3Visits">5</b>회 · 마지막 방문 <span id="p3Last">7/2</span></div>
+        <ul class="tl" id="p3Records"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 처방 트래커 ========== -->
+  <section class="view" id="v-rx">
+    <div class="page-h"><h1>한약 처방 트래커</h1><span class="desc">복약 시퀀스 단계별 현황 — 카드를 클릭하면 환자 360으로</span></div>
+    <div class="kanban">
+      <div class="kcol"><h4>복약지도 발송 <span class="num">2</span></h4>
+        <div class="kcard" onclick="showPatient('P07')"><div class="nm">강도현 <span class="pill p-gray num">D+1</span></div><div class="mt">15일 집중 · 복약지도 오늘 발송</div></div>
+        <div class="kcard" onclick="showPatient('P04')"><div class="nm">최영훈 <span class="pill p-gray num">D+2</span></div><div class="mt">30일 기초 · 발송 완료</div></div></div>
+      <div class="kcol"><h4>D+5 응답 대기 <span class="num">2</span></h4>
+        <div class="kcard" onclick="showPatient('P02')"><div class="nm">박성호 <span class="pill p-amber num">D+6</span></div><div class="mt">15일 집중 · 미응답 — 리마인드 예약</div></div>
+        <div class="kcard" onclick="showPatient('P08')"><div class="nm">임하늘 <span class="pill p-gray num">D+4</span></div><div class="mt">45일 완성 · 내일 경과체크 발송</div></div></div>
+      <div class="kcol"><h4>응답 수신 <span class="num">2</span></h4>
+        <div class="kcard" onclick="showPatient('P03')"><div class="nm">이순자 <span class="pill p-red">불편해요</span></div><div class="mt">15일 집중 D+5 · <b style="color:var(--red)">위기관리 가동</b></div></div>
+        <div class="kcard" onclick="showPatient('P06')"><div class="nm">한지우 <span class="pill p-ok">잘 맞아요</span></div><div class="mt">30일 기초 D+5 · 활성도 +2</div></div></div>
+      <div class="kcol"><h4>재처방 안내 대기 <span class="num">1</span></h4>
+        <div class="kcard" onclick="showPatient('P01')"><div class="nm">김민정 <span class="pill p-pri num">D+12</span></div><div class="mt">15일 집중 · 오늘 11시 안내 발송</div></div></div>
+      <div class="kcol"><h4>재처방 / 미전환 <span class="num">2</span></h4>
+        <div class="kcard" onclick="showPatient('P09')"><div class="nm">윤미래 <span class="pill p-ok">재처방</span></div><div class="mt">30일 기초 → 45일 완성 전환</div></div>
+        <div class="kcard" onclick="showPatient('P05')"><div class="nm">정혜란 <span class="pill p-gray">미전환</span></div><div class="mt">15일 집중 종료 · 중단자 팔로업으로</div></div></div>
+    </div>
+    <div style="font-size:12px;color:var(--mut);margin-top:12px">체크포인트: 15일 = D+1/D+5/D+12 · 30일 = D+1/D+5/D+14/D+27 · 45일 = D+1/D+5/D+20/D+42 (재처방 안내 = 시작일+처방일수−3)</div>
+  </section>
+
+  <!-- ========== 발송 내역 ========== -->
+  <section class="view" id="v-sends">
+    <div class="page-h"><h1>발송 내역</h1><span class="desc">모든 채널 통합 로그 (DB4)</span></div>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">이번 달 발송</div><div class="val num">412건</div><div class="delta flat">알림톡 318 · 친구톡 71 · LMS 23</div></div>
+      <div class="tile"><div class="lbl">발송 성공률</div><div class="val num">99.2%</div><div class="delta flat">실패 3건 — 재시도 완료</div></div>
+      <div class="tile"><div class="lbl">이번 달 예상 비용</div><div class="val num">9,840원</div><div class="delta flat">상한 15만원의 6.6%</div></div>
+    </div>
+    <div class="filters">
+      <select><option>발송일 전체</option></select><select><option>채널 전체</option><option>알림톡</option><option>친구톡</option><option>LMS</option></select>
+      <input placeholder="환자명·템플릿 검색" style="width:200px">
+    </div>
+    <div class="card" style="padding:0"><div class="tblwrap"><table>
+      <thead><tr><th>상태</th><th>채널</th><th>환자</th><th>템플릿</th><th>시나리오</th><th>반응</th><th>발송일시</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill p-blue">발송요청</span></td><td><span class="pill p-amber">친구톡</span></td><td>김민정</td><td>재처방·재내원 안내</td><td class="num">03</td><td>—</td><td class="num">2026-07-07 11:00 예약</td></tr>
+        <tr><td><span class="pill p-ok">발송완료</span></td><td><span class="pill p-pri">알림톡</span></td><td>이순자</td><td>위기 접수 직후 안내</td><td class="num">04</td><td>—</td><td class="num">2026-07-07 09:18</td></tr>
+        <tr><td><span class="pill p-ok">발송완료</span></td><td><span class="pill p-pri">알림톡</span></td><td>이순자</td><td>D+5 경과체크</td><td class="num">03</td><td><span class="pill p-red">불편해요</span></td><td class="num">2026-07-07 09:00</td></tr>
+        <tr><td><span class="pill p-ok">발송완료</span></td><td><span class="pill p-pri">알림톡</span></td><td>서준석</td><td>노쇼 재예약 안내</td><td class="num">11</td><td>—</td><td class="num">2026-07-07 10:47</td></tr>
+        <tr><td><span class="pill p-ok">발송완료</span></td><td><span class="pill p-amber">친구톡</span></td><td>한지우</td><td>초기(주증상) 케어 — 요통</td><td class="num">02</td><td><span class="pill p-ok">도움됐어요</span></td><td class="num">2026-07-06 11:00</td></tr>
+        <tr><td><span class="pill p-ok">발송완료</span></td><td><span class="pill p-amber">LMS</span></td><td>정혜란</td><td>치료중단자 안부</td><td class="num">09</td><td>—</td><td class="num">2026-07-06 10:00</td></tr>
+        <tr><td><span class="pill p-ok">발송완료</span></td><td><span class="pill p-pri">알림톡</span></td><td>강도현</td><td>웰컴 메시지</td><td class="num">01</td><td><span class="pill p-blue">클릭</span></td><td class="num">2026-07-05 15:22</td></tr>
+        <tr><td><span class="pill p-red">발송실패</span></td><td><span class="pill p-amber">LMS</span></td><td>오경자</td><td colspan="1">— (발송중단 가드 차단)</td><td class="num">05</td><td>—</td><td class="num">2026-07-05 11:00</td></tr>
+      </tbody></table></div></div>
+  </section>
+
+  <!-- ========== 메시지 템플릿 ========== -->
+  <section class="view" id="v-templates">
+    <div class="page-h"><h1>메시지 템플릿</h1><span class="desc">채널·시나리오별 문안 관리 — 항목을 클릭하면 미리보기</span>
+      <div class="right"><button class="btn pri" onclick="toast('프로토타입 — 템플릿 등록은 연동 단계에서 동작합니다')">＋ 템플릿 등록</button></div></div>
+    <div class="tpanes">
+      <div class="tcats" id="tCats"></div>
+      <div class="tlist" id="tList"></div>
+      <div class="tprev"><p class="sender">경희나비솔 한의원</p><div class="bubble"><div class="strip" id="tStrip">알림톡 도착</div><div class="bmsg" id="tMsg"></div><div class="bbtns" id="tBtns"></div></div></div>
+    </div>
+  </section>
+
+  <!-- ========== 발송 성과 ========== -->
+  <section class="view" id="v-perf">
+    <div class="page-h"><h1>발송 성과</h1><span class="desc">최근 30일 · 이번 달 vs 지난달</span></div>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">클릭률</div><div class="val num">18.4%</div><div class="delta up">▲ 2.1%p</div></div>
+      <div class="tile"><div class="lbl">긍정 버튼율</div><div class="val num">6.2%</div><div class="delta up">▲ 0.8%p</div></div>
+      <div class="tile"><div class="lbl">D+5 응답률</div><div class="val num">41%</div><div class="delta up">▲ 5%p</div></div>
+      <div class="tile"><div class="lbl">수신거부율</div><div class="val num">0.6%</div><div class="delta flat">기준 1% 미만</div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h2>수신거부율 추이</h2><div class="sub">월별 · 점선 = 조기경보 기준 1.0%</div>
+        <div id="chartUnsub"></div>
+      </div>
+      <div class="card">
+        <h2>시나리오별 클릭률</h2><div class="sub">발송 30건 이상 시나리오만</div>
+        <div class="blist" id="chartScen"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 재내원·이탈 ========== -->
+  <section class="view" id="v-retention">
+    <div class="page-h"><h1>재내원 · 이탈 관리</h1><span class="desc">마지막 방문 경과일 구간별 — 예약 없는 환자만</span></div>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">14일 경과</div><div class="val num">18명</div><div class="delta flat">중단추정 전환 예정</div></div>
+      <div class="tile"><div class="lbl">30일 경과</div><div class="val num">11명</div><div class="delta flat">후기 케어 대상(상 그룹)</div></div>
+      <div class="tile"><div class="lbl">60일 경과</div><div class="val num">7명</div><div class="delta down">이탈 위험</div></div>
+      <div class="tile"><div class="lbl">90일+ </div><div class="val num">23명</div><div class="delta flat">이탈 분류</div></div>
+    </div>
+    <div class="card" style="padding:0"><div class="tblwrap"><table>
+      <thead><tr><th>환자</th><th>관여도</th><th>마지막 방문</th><th class="num">경과일</th><th>치료상태</th><th>팔로업</th><th>반응</th></tr></thead>
+      <tbody>
+        <tr class="click" onclick="showPatient('P05')"><td>정혜란</td><td><span class="grp 중">중</span></td><td class="num">2026-06-20</td><td class="num">17일</td><td><span class="pill p-amber">중단추정</span></td><td>안부 발송 (7/6)</td><td>—</td></tr>
+        <tr class="click" onclick="showPatient('P09')"><td>윤미래</td><td><span class="grp 상">상</span></td><td class="num">2026-06-30</td><td class="num">7일</td><td><span class="pill p-ok">완료</span></td><td>정기검진 안내 (오늘)</td><td>—</td></tr>
+        <tr><td>조명환</td><td><span class="grp 하">하</span></td><td class="num">2026-05-02</td><td class="num">66일</td><td><span class="pill p-gray">이탈 위험</span></td><td>분기 계절 인사 (7/1)</td><td><span class="pill p-blue">클릭</span></td></tr>
+        <tr><td>백은영</td><td><span class="grp 상">상</span></td><td class="num">2026-06-05</td><td class="num">32일</td><td><span class="pill p-amber">중단추정</span></td><td>후기 케어 보류(중단 플로우 진행 중)</td><td>—</td></tr>
+      </tbody></table></div></div>
+    <div style="font-size:12px;color:var(--mut)">규칙: 예약 없이 10일 경과 → 자동 '중단추정' → D+7 안부 발송. 중단 플로우 진행 중에는 후기 케어를 보류합니다.</div>
+  </section>
+
+  <!-- ========== 설정 ========== -->
+  <section class="view" id="v-settings">
+    <div class="page-h"><h1>설정</h1><span class="desc">발송 정책 · 점수 기준 · 채널</span></div>
+    <div class="grid g2">
+      <div class="card"><h2>발송 시간 정책</h2><div class="sub">모든 자동 발송에 공통 적용</div>
+        <ul class="tl">
+          <li><span class="d">발송 가능</span><span>매일 <b class="num">08:00 ~ 20:50</b> — 야간 트리거는 익일 오전으로 자동 지연 <span class="pill p-ok">법정 준수</span></span></li>
+          <li><span class="d">빈도 상한</span><span>마케팅성 주 1건 · 월 상한 상 4 / 중 2 / 하 0 (기능성·위기 제외)</span></li>
+          <li><span class="d">우선순위</span><span>위기관리 → 기능성 → 처방 D+n → 증상 콘텐츠 → 이벤트</span></li>
+        </ul></div>
+      <div class="card"><h2>관여도 점수 기준</h2><div class="sub">커트라인: 상 ≥4 · 중 1~3 · 하 ≤0 (파일럿 후 보정)</div>
+        <ul class="tl">
+          <li><span class="d">잠재성</span><span>집중진료 +3 · 걱정증상 +2 · 다른증상 +1 · 가족력 +1 · 진료실 질문 +1 · 최소진료 −3</span></li>
+          <li><span class="d">활성도</span><span>긍정버튼 +2 · 클릭 +1(건당 1회) · 재내원 +1 · 한약결제 +3 · 소개 +3 — <b>최근 90일 합산</b></span></li>
+          <li><span class="d">강등 규칙</span><span>'상' 유지 = 최근 60일 내 반응/방문 1회 이상</span></li>
+        </ul></div>
+      <div class="card"><h2>진료항목별 CRM 매핑</h2><div class="sub">완료 등록 시 트리거되는 시퀀스</div>
+        <ul class="tl">
+          <li><span class="d">침·약침</span><span><span class="pill p-pri">웰컴 당일</span> <span class="pill p-pri">초기케어 D+1</span> <span class="pill p-blue">3회차 동반자</span></span></li>
+          <li><span class="d">한약 처방</span><span><span class="pill p-pri">복약지도 D+1</span> <span class="pill p-amber">경과체크 D+5</span> <span class="pill p-amber">재처방 안내 −3일</span></span></li>
+          <li><span class="d">추나</span><span><span class="pill p-pri">웰컴 당일</span> <span class="pill p-pri">초기케어 D+1</span></span></li>
+        </ul></div>
+      <div class="card"><h2>수신거부 · 차단 관리</h2><div class="sub">점수와 분리된 법적 차단 상태 — 현재 4명</div>
+        <ul class="tl">
+          <li><span class="d">오경자</span><span>080 수신거부 (6/28) — 처리결과 통지 완료 <span class="pill p-red">발송중단</span></span></li>
+          <li><span class="d">김철수</span><span>채널 차단 감지 (6/14) <span class="pill p-red">발송중단</span></span></li>
+          <li><span class="d">확인 대기</span><span>부정회신 후보 0건 · 동의 2년 재확인 배치: 다음 실행 2027-01</span></li>
+        </ul></div>
+    </div>
+  </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<div class="chart-tip" id="ctip"></div>
+<div id="toast"></div>
+
+<script>
+/* ============ 목데이터 ============ */
+const PATIENTS = [
+ {id:'P01',chart:'21034',name:'김민정',grp:'상',score:7,pot:4,act:3,consent:'Y',last:'2026-07-02',status:'치료중',flags:[],visits:5,src:'지인 소개(박OO)',spark:[3,3,4,5,5,6,7,7],
+  next:'7/7(화) 11:00 · 재처방 안내 (D+12) — 친구톡',
+  tl:[['7/2','알림톡 · D+5 경과체크 → 잘 맞아요 (+2)'],['6/28','알림톡 · 복약지도 D+1 → 클릭 (+1)'],['6/21','친구톡 · 초기케어(요통) → 도움됐어요 (+2)'],['6/20','알림톡 · 웰컴 메시지']],
+  rec:[['7/2','5회차 · 침+약침 (완료)'],['6/27','한약 15일 집중 처방 · 복용 시작 6/26'],['6/20','초진 · 요통 / 문진표 제출 (잠재성 +4)']]},
+ {id:'P02',chart:'21041',name:'박성호',grp:'중',score:2,pot:1,act:1,consent:'Y',last:'2026-07-01',status:'치료중',flags:[],visits:3,src:'검색',spark:[1,1,1,2,2,2,2,2],
+  next:'7/8(수) 09:00 · D+5 경과체크 리마인드 — 알림톡',
+  tl:[['7/2','알림톡 · D+5 경과체크 → 무반응'],['6/28','알림톡 · 복약지도 D+1'],['6/22','친구톡 · 초기케어(소화불량) → 클릭 (+1)']],
+  rec:[['7/1','3회차 · 침 (완료)'],['6/27','한약 15일 집중 처방'],['6/21','초진 · 소화불량 / 표준진료 (잠재성 +1)']]},
+ {id:'P03',chart:'20988',name:'이순자',grp:'상',score:5,pot:5,act:0,consent:'Y',last:'2026-07-04',status:'치료중',flags:['위기'],visits:4,src:'지인 소개',spark:[5,5,5,5,6,6,5,5],
+  next:'⚠ 위기관리 중 — 마케팅 발송 전면 보류. 원장 전화 후 상태 갱신',
+  tl:[['오늘 09:18','알림톡 · 위기 접수 안내 발송'],['오늘 09:00','알림톡 · D+5 경과체크 → 불편해요 (위기 전환)'],['7/3','알림톡 · 복약지도 D+1'],['6/25','친구톡 · 초기케어(무릎 통증) → 클릭 (+1)']],
+  rec:[['7/4','4회차 · 침+추나 (완료)'],['7/2','한약 15일 집중 처방 · 복용 시작 7/2'],['6/24','초진 · 무릎 통증 / 집중진료 +3, 걱정증상 +2']]},
+ {id:'P04',chart:'21050',name:'최영훈',grp:'하',score:-2,pot:-3,act:1,consent:'Y',last:'2026-07-05',status:'치료중',flags:[],visits:2,src:'검색',spark:[-3,-3,-3,-2,-2,-2,-2,-2],
+  next:'기능성 메시지만 발송 (하 그룹) — 분기 계절 인사 9월 예정',
+  tl:[['7/6','알림톡 · 복약지도 D+1 → 클릭 (+1)'],['7/1','알림톡 · 웰컴 메시지 → 무반응']],
+  rec:[['7/5','2회차 · 침 (완료)'],['7/5','한약 30일 기초 처방'],['7/1','초진 · 불면 / 최소진료 (잠재성 −3)']]},
+ {id:'P05',chart:'20721',name:'정혜란',grp:'중',score:3,pot:2,act:1,consent:'Y',last:'2026-06-20',status:'중단추정',flags:[],visits:6,src:'재방문',spark:[4,4,4,3,3,3,3,3],
+  next:'중단자 플로우 진행 중 — 후기 케어 보류. 반응 없으면 7/13 데스크 전화',
+  tl:[['7/6','LMS · 치료중단자 안부 → 무반응'],['6/14','친구톡 · 중기케어(수족냉증) → 클릭 (+1)']],
+  rec:[['6/20','6회차 · 침 (완료) — 이후 예약 없음'],['6/5','한약 15일 집중 처방 → 미전환'],['5/18','초진 · 피로·번아웃']]},
+ {id:'P06',chart:'21012',name:'한지우',grp:'상',score:6,pot:3,act:3,consent:'Y',last:'2026-07-07',status:'치료중',flags:['동반자 대상'],visits:3,src:'검색',spark:[3,3,4,4,5,5,6,6],
+  next:'오늘 데스크 — 진심동반자 설문 안내 + 감사 선물',
+  tl:[['7/5','알림톡 · D+5 경과체크 → 잘 맞아요 (+2)'],['6/29','친구톡 · 초기케어(요통) → 도움됐어요 (+2)'],['6/28','알림톡 · 웰컴 메시지 → 클릭 (+1)']],
+  rec:[['오늘','3회차 · 침+약침 (완료)'],['6/30','한약 30일 기초 처방'],['6/28','초진 · 요통 / 걱정증상 +2']]},
+ {id:'P07',chart:'21055',name:'강도현',grp:'중',score:1,pot:1,act:0,consent:'Y',last:'2026-07-05',status:'치료중',flags:[],visits:1,src:'검색',spark:[0,0,0,0,0,1,1,1],
+  next:'7/8(수) 11:00 · 초기케어(목·어깨) — 친구톡',
+  tl:[['7/5','알림톡 · 웰컴 메시지 → 클릭 (+1)']],
+  rec:[['7/5','초진 · 목·어깨 통증 / 다른증상 +1'],['7/5','한약 15일 집중 처방 · 복용 시작 7/6']]},
+ {id:'P08',chart:'20950',name:'임하늘',grp:'중',score:2,pot:2,act:0,consent:'N',last:'2026-07-03',status:'치료중',flags:['마케팅 미동의'],visits:2,src:'검색',spark:[2,2,2,2,2,2,2,2],
+  next:'기능성 메시지만 발송 (마케팅 미동의) — D+5 경과체크는 정보성으로 발송',
+  tl:[['7/4','알림톡 · 복약지도 D+1'],['7/1','알림톡 · 웰컴 메시지']],
+  rec:[['7/3','2회차 · 침 (완료)'],['7/3','한약 45일 완성 처방'],['7/1','초진 · 좌골신경통 / 걱정증상 +2']]},
+ {id:'P09',chart:'20933',name:'윤미래',grp:'상',score:5,pot:2,act:3,consent:'Y',last:'2026-06-30',status:'완료',flags:[],visits:9,src:'지인 소개',spark:[6,6,6,5,5,5,5,5],
+  next:'오늘 · 완료 D+7 경과확인 + 정기검진 안내 — 친구톡',
+  tl:[['6/30','알림톡 · 설문 감사 (동반자 참여완료)'],['6/25','친구톡 · 재처방 안내 → 재처방 결제 (+3)'],['6/10','친구톡 · 중기케어(불면) → 클릭 (+1)']],
+  rec:[['6/30','9회차 · 침 (완료) — 원장이 치료 종결 지정'],['6/25','한약 45일 완성 재처방'],['5/2','초진 · 두통·어지럼']]},
+ {id:'P10',chart:'21002',name:'서준석',grp:'중',score:1,pot:1,act:0,consent:'Y',last:'2026-06-30',status:'치료중',flags:['노쇼 1회'],visits:2,src:'검색',spark:[1,1,1,1,1,1,1,1],
+  next:'노쇼 재예약 안내 발송됨 — 미응답 시 내일 데스크 전화',
+  tl:[['오늘 10:47','알림톡 · 노쇼 재예약 안내'],['6/26','친구톡 · 초기케어(발목염좌) → 무반응']],
+  rec:[['오늘','3회차 예약 10:30 — 노쇼'],['6/30','2회차 · 침 (완료)'],['6/25','초진 · 발목염좌']]},
+ {id:'P11',chart:'19882',name:'오경자',grp:'하',score:0,pot:0,act:0,consent:'N',last:'2026-06-10',status:'치료중',flags:['발송중단'],visits:4,src:'재방문',spark:[0,0,0,0,0,0,0,0],
+  next:'⛔ 발송중단 (080 수신거부 6/28) — 예약·안전 고지만 발송 가능',
+  tl:[['6/28','수신거부 접수 → 즉시 차단 + 처리결과 통지'],['6/25','LMS · 중기케어 → 080 수신거부']],
+  rec:[['6/10','4회차 · 침 (완료)'],['5/28','초진(재등록) · 요통']]},
+];
+
+const VISITS_TODAY = [
+ {t:'09:30',p:'P06',item:'침+약침',st:'완료',crm:'3회차 → 동반자 대상 지정'},
+ {t:'10:00',p:'P03',item:'침+추나',st:'완료',crm:'위기관리 중 — 발송 보류'},
+ {t:'10:30',p:'P10',item:'침',st:'노쇼',crm:'재예약 안내 발송됨'},
+ {t:'11:00',p:'P01',item:'약침',st:'완료',crm:'재처방 안내 11:00'},
+ {t:'14:00',p:'P07',item:'침',st:'완료',crm:'내일 초기케어 D+1'},
+ {t:'15:30',p:'P04',item:'침',st:'예약',crm:'—'},
+ {t:'17:00',p:'P08',item:'추나',st:'예약',crm:'D+5 경과체크 예정(정보성)'},
+];
+
+const TEMPLATES = {
+ '복약 시퀀스':[
+  {n:'복약지도 (D+1)',c:'KNB-INFO-05',ch:'알림톡',msg:'#{환자명}님, 원장 #{원장명}입니다.\n어제 처방해 드린 #{처방유형} 한약,\n잘 받으셨는지요.\n\n드시는 방법을 정리해 드립니다.\n· 하루 #{복용횟수}회, #{복용시점}에 드세요\n· 드시는 동안 #{주의사항}\n\n자세한 내용은 1분 영상으로 준비했습니다.\n\n드시다가 속이 불편하거나 궁금한 점이\n생기면 참지 마시고 바로 말씀해 주세요.',btns:['복약 안내 영상 보기']},
+  {n:'D+5 경과체크 (버튼형)',c:'KNB-INFO-06',ch:'알림톡',msg:'#{환자명}님, 원장 #{원장명}입니다.\n\n한약을 드신 지 닷새째입니다.\n몸은 좀 어떠신가요?\n\n아래 버튼 하나만 눌러 알려주시면\n남은 기간 관리 방향을 잡는 데\n큰 도움이 됩니다.',btns:['잘 맞아요','보통이에요','불편해요']},
+  {n:'재처방·재내원 안내',c:'KNB-AD-04',ch:'친구톡',msg:'(광고) 경희나비솔한의원\n\n#{환자명}님, 원장 #{원장명}입니다.\n\n드시던 #{처방유형} 한약이\n#{남은일수}일 뒤면 마무리됩니다.\n\n이 시점에 몸 상태를 한번 살펴보고\n다음 단계를 정하는 것이 좋습니다.\n\n· 경과가 좋다면 — 마무리 점검\n· 남은 불편이 있다면 — 상태에 맞게 조정\n\n편하신 시간으로 예약 도와드리겠습니다.\n\n이 메시지를 원치 않으시면 채널 차단으로\n수신을 거부하실 수 있습니다.',btns:['내원 예약하기','전화 문의']}],
+ '케어 콘텐츠':[
+  {n:'웰컴 메시지',c:'KNB-INFO-04',ch:'알림톡',msg:'안녕하세요 #{환자명}님,\n경희나비솔 한의원 원장 #{원장명}입니다.\n\n오늘 저희를 믿고 찾아와 주셔서 감사합니다.\n말씀해 주신 #{주증상명} 불편,\n제가 끝까지 꼼꼼히 살피겠습니다.\n\n내일 오전, 집에서 하실 수 있는\n관리법을 짧게 정리해 보내드리겠습니다.\n\n치료 중 궁금한 점이 생기면\n언제든 편하게 연락 주세요.',btns:['채널 추가하고 건강 소식 받기','문의하기']},
+  {n:'초기(주증상) 케어 — 요통',c:'KNB-AD-01',ch:'친구톡',msg:'(광고) 경희나비솔한의원\n\n#{환자명}님, 원장 #{원장명}입니다.\n어제 말씀하신 요통, 오늘은 좀 어떠신가요?\n\n집에서 이것부터 해보세요.\n오래 앉았다 일어날 때 뻐근하다면, 30분마다\n한 번 일어나 가볍게 허리를 펴 주세요.\n통증이 심한 시기에는 온찜질이 먼저입니다.\n\n따라 하기 쉽게 1분 영상으로도 준비했습니다.\n\n이 메시지를 원치 않으시면 채널 차단으로\n수신을 거부하실 수 있습니다.',btns:['1분 관리법 영상 보기','도움이 됐어요']},
+  {n:'중기(다른증상) 케어',c:'KNB-AD-02',ch:'친구톡',msg:'(광고) 경희나비솔한의원\n\n#{환자명}님, 원장 #{원장명}입니다.\n\n치료를 이어오시는 모습을 보다가,\n처음 문진표에 적어주셨던\n\'#{다른증상명}\'이 기억났습니다.\n\n평소 이렇게 관리해 보시면 좋습니다.\n#{증상팁문구}\n\n다음 내원 때 말씀 주시면\n함께 살펴보겠습니다.\n\n이 메시지를 원치 않으시면 채널 차단으로\n수신을 거부하실 수 있습니다.',btns:['관리법 자세히 보기','도움이 됐어요']}],
+ '팔로업':[
+  {n:'치료중단자 안부',c:'KNB-AD-05',ch:'친구톡',msg:'(광고) 경희나비솔한의원\n\n#{환자명}님, 원장 #{원장명}입니다.\n\n마지막으로 뵌 지 열흘쯤 지나\n안부가 궁금해 연락드립니다.\n#{주증상명}은 좀 어떠신가요?\n\n많이 좋아지셨다면 다행입니다.\n다만 아직 불편이 남아 있다면,\n지금까지의 치료 흐름을 살려\n이어가시는 것이 회복에 좋습니다.\n\n부담 갖지 마시고, 궁금한 점만\n물어보셔도 됩니다.\n\n이 메시지를 원치 않으시면 채널 차단으로\n수신을 거부하실 수 있습니다.',btns:['예약하기','전화 문의']},
+  {n:'노쇼 재예약 안내',c:'KNB-INFO-08',ch:'알림톡',msg:'#{환자명}님, 경희나비솔 한의원입니다.\n\n오늘 #{예약일시} 예약에\n못 오신 것 같아 연락드립니다.\n바쁜 일이 있으셨지요.\n\n치료 흐름이 끊기지 않도록,\n편하신 시간으로 다시 잡아드리겠습니다.',btns:['다시 예약하기','전화 문의']}],
+ '위기·설문':[
+  {n:'위기 접수 직후 안내',c:'KNB-INFO-07',ch:'알림톡',msg:'#{환자명}님, 솔직하게 답해주셔서\n감사합니다.\n\n불편하시다는 답변을 지금 확인했습니다.\n제가 오늘 중으로 직접 전화드려\n상태를 살펴보겠습니다.\n\n잠시만 기다려 주세요.\n— 원장 #{원장명} 드림',btns:[]},
+  {n:'동반자 설문 요청',c:'KNB-INFO-09',ch:'알림톡',msg:'#{환자명}님, 원장 #{원장명}입니다.\n\n벌써 세 번째 뵈었네요.\n저를 믿고 치료를 이어와 주셔서\n감사합니다.\n\n더 잘하고 싶어 여쭙니다.\n딱 3문항, 30초면 충분합니다.\n\n· 진짜 만족스러웠던 점\n· 아쉬웠던 점, 개선 아이디어\n\n답해주신 내용은 제가 직접 읽고\n진료에 반영하겠습니다.',btns:['30초 설문 참여하기']}]
+};
+
+/* ============ 라우터 ============ */
+const CRUMBS={today:'오늘의 액션',dash:'대시보드',visits:'내원관리 / 내원목록',cal:'내원관리 / 캘린더',patients:'환자관리 / 환자DB',retention:'환자관리 / 재내원·이탈',rx:'CRM / 한약 처방 트래커',sends:'CRM / 발송 내역',templates:'CRM / 메시지 템플릿',perf:'CRM / 발송 성과',settings:'설정','p360':'환자관리 / 환자 360'};
+function go(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.mitem').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  document.getElementById('crumb').innerHTML='<b>'+(CRUMBS[v]||v)+'</b>';
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.mitem').forEach(b=>b.addEventListener('click',()=>go(b.dataset.view)));
+
+/* ============ 오늘의 액션 ============ */
+function qdone(cb){
+  cb.closest('.qitem').classList.toggle('done',cb.checked);
+  const total=document.querySelectorAll('#v-today .qitem').length;
+  const done=document.querySelectorAll('#v-today .qitem.done').length;
+  document.getElementById('todayBadge').textContent=total-done;
+  if(cb.checked)toast('처리 완료로 기록되었습니다');
+}
+
+/* ============ 내원목록 ============ */
+function pName(id){return PATIENTS.find(p=>p.id===id)}
+function renderVisits(filter='전체'){
+  const tb=document.querySelector('#visitTbl tbody');
+  const stPill={완료:'p-blue',예약:'p-ok',노쇼:'p-red',접수:'p-amber'};
+  tb.innerHTML=VISITS_TODAY.filter(v=>filter==='전체'||v.st===filter).map(v=>{
+    const p=pName(v.p);
+    return `<tr class="click" onclick="showPatient('${p.id}')"><td><span class="pill ${stPill[v.st]}">${v.st}</span></td><td class="num">${v.t}</td><td><b>${p.name}</b></td><td><span class="grp ${p.grp}">${p.grp}</span></td><td>${v.item}</td><td class="num">${p.visits}회차</td><td style="color:var(--ink2);font-size:12px">${v.crm}</td></tr>`;
+  }).join('');
+}
+function filterVisits(f,btn){
+  document.querySelectorAll('#v-visits .chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');renderVisits(f);
+}
+
+/* ============ 캘린더 ============ */
+function renderCal(){
+  const g=document.getElementById('calGrid');
+  const dows=['일','월','화','수','목','금','토'];
+  let h=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+  const evs={1:[['09:00 장경식','a']],2:[['17:00 최향숙','a']],3:[['10:30 박정자','b']],6:[['11:00 김영훈','a'],['14:00 사혜연','b']],
+    7:[['09:30 한지우','a'],['10:00 이순자','b'],['11:00 김민정','a'],['+4 더보기','c']],8:[['17:00 최향숙','a']],9:[['10:00 신환상담','c']],
+    10:[['17:00 최향숙','a']],14:[['15:00 박성호','a']],16:[['17:00 최향숙','a']],21:[['10:00 윤미래 정기검진','c']],28:[['11:00 임하늘','a']]};
+  for(let i=0;i<35;i++){
+    const day=i-2; // 7/1(수) = index 3, 7/7(화) = index 9
+
+    if(day<1||day>31){h+=`<div class="day dim ${i%7===0?'sun':''}"><div class="dnum num">${day<1?30+day:day-31}</div></div>`;continue;}
+    const today=day===7?'today':'';
+    const list=(evs[day]||[]).map(e=>`<div class="ev ${e[1]}">${e[0]}</div>`).join('');
+    h+=`<div class="day ${today} ${i%7===0?'sun':''}"><div class="dnum num">${day}</div>${list}</div>`;
+  }
+  g.innerHTML=h;
+}
+
+/* ============ 환자DB ============ */
+function renderPatients(){
+  const q=(document.getElementById('pSearch').value||'').trim();
+  const g=document.getElementById('pGroup').value, s=document.getElementById('pStatus').value, c=document.getElementById('pConsent').value;
+  const tb=document.querySelector('#pTbl tbody');
+  const stPill={치료중:'p-blue',중단추정:'p-amber',완료:'p-ok'};
+  const rows=PATIENTS.filter(p=>(!q||p.name.includes(q)||p.chart.includes(q))&&(!g||p.grp===g)&&(!s||p.status===s)&&(!c||p.consent===c))
+    .map(p=>{
+      const flags=p.flags.map(f=>`<span class="pill ${f==='위기'?'p-red':f==='발송중단'?'p-red':f==='동반자 대상'?'p-blue':'p-gray'}">${f}</span>`).join(' ')||'—';
+      return `<tr class="click" onclick="showPatient('${p.id}')"><td class="num">${p.chart}</td><td><b>${p.name}</b></td><td><span class="grp ${p.grp}">${p.grp}</span></td><td class="num">${p.score>0?'+':''}${p.score}</td><td>${p.consent==='Y'?'Y':'<span style=\"color:var(--red)\">N</span>'}</td><td class="num">${p.last}</td><td><span class="pill ${stPill[p.status]||'p-gray'}">${p.status}</span></td><td>${flags}</td><td style="font-size:12px;color:var(--ink2)">${p.tl[0]?p.tl[0][1].split('·')[1]||p.tl[0][1]:'—'}</td></tr>`;
+    }).join('');
+  tb.innerHTML=rows||`<tr><td colspan="9" class="empty">조건에 맞는 환자가 없습니다.</td></tr>`;
+}
+
+/* ============ 환자 360 ============ */
+function showPatient(id){
+  const p=pName(id); if(!p)return;
+  go('p360');
+  document.getElementById('crumb').innerHTML=`환자관리 / 환자DB / <b>${p.name}</b>`;
+  document.getElementById('p3Avatar').textContent=p.name[0];
+  document.getElementById('p3Name').textContent=p.name;
+  document.getElementById('p3Meta').textContent=`차트 ${p.chart} · 010-**-**** · 유입: ${p.src} · 마케팅 동의 ${p.consent}`;
+  const badges=[`<span class="grp ${p.grp}" style="width:auto;padding:0 8px">관여도 ${p.grp}</span>`];
+  p.flags.forEach(f=>badges.push(`<span class="pill ${f==='위기'||f==='발송중단'?'p-red':'p-blue'}">${f}</span>`));
+  badges.push(`<span class="pill ${p.status==='중단추정'?'p-amber':p.status==='완료'?'p-ok':'p-blue'}">${p.status}</span>`);
+  document.getElementById('p3Badges').innerHTML=badges.join('');
+  document.getElementById('p3Score').textContent=(p.score>0?'+':'')+p.score;
+  document.getElementById('p3Grp').innerHTML=`<span class="grp ${p.grp}">${p.grp}</span>`;
+  document.getElementById('p3Pot').textContent=(p.pot>0?'+':'')+p.pot;
+  document.getElementById('p3Act').textContent=(p.act>0?'+':'')+p.act;
+  document.getElementById('p3Next').innerHTML='<b>다음 예정 액션</b><br>'+p.next;
+  document.getElementById('p3Visits').textContent=p.visits;
+  document.getElementById('p3Last').textContent=p.last.slice(5).replace('-','/');
+  document.getElementById('p3Timeline').innerHTML=p.tl.map(t=>`<li><span class="d num">${t[0]}</span><span>${t[1]}</span></li>`).join('');
+  document.getElementById('p3Records').innerHTML=p.rec.map(t=>`<li><span class="d num">${t[0]}</span><span>${t[1]}</span></li>`).join('');
+  sparkline('p3Spark',p.spark);
+}
+
+/* ============ 템플릿 3분할 ============ */
+let tCat=Object.keys(TEMPLATES)[0];
+function renderTCats(){
+  document.getElementById('tCats').innerHTML=Object.keys(TEMPLATES).map(c=>`<button class="${c===tCat?'on':''}" onclick="tCat='${c}';renderTCats();renderTList(0)">${c}</button>`).join('');
+}
+function renderTList(sel){
+  const list=TEMPLATES[tCat];
+  document.getElementById('tList').innerHTML=list.map((t,i)=>`<div class="titem ${i===sel?'on':''}" onclick="renderTList(${i})"><div class="tn">${t.n} <span class="pill ${t.ch==='알림톡'?'p-pri':'p-amber'}">${t.ch}</span></div><div class="tc">${t.c}</div><div class="tp">${t.msg.split('\n')[0]}</div></div>`).join('');
+  const t=list[sel];
+  document.getElementById('tStrip').textContent=t.ch==='알림톡'?'알림톡 도착':'(광고) 친구톡';
+  document.getElementById('tStrip').className='strip'+(t.ch==='알림톡'?'':' ad');
+  document.getElementById('tMsg').textContent=t.msg;
+  document.getElementById('tBtns').innerHTML=t.btns.map(b=>`<div class="kbtn">${b}</div>`).join('');
+}
+
+/* ============ 차트 (SVG) ============ */
+const tip=document.getElementById('ctip');
+function showTip(e,txt){tip.textContent=txt;tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-10)+'px'}
+function hideTip(){tip.style.display='none'}
+
+function lineChart(elId,series,labels,opts={}){
+  const el=document.getElementById(elId); if(!el)return;
+  const W=el.clientWidth||520,H=200,pad={l:34,r:60,t:12,b:24};
+  const all=series.flatMap(s=>s.data).concat(opts.threshold?[opts.threshold]:[]);
+  const max=Math.max(...all)*1.15||1;
+  const x=i=>pad.l+i*(W-pad.l-pad.r)/(labels.length-1);
+  const y=v=>H-pad.b-(v/max)*(H-pad.t-pad.b);
+  let g='';
+  for(let i=0;i<=3;i++){const gy=pad.t+i*(H-pad.t-pad.b)/3;const gv=(max*(3-i)/3);
+    g+=`<line x1="${pad.l}" y1="${gy}" x2="${W-pad.r}" y2="${gy}" stroke="#eceeeb"/><text x="${pad.l-6}" y="${gy+4}" text-anchor="end" font-size="10" fill="#8b948d">${opts.pct?gv.toFixed(1)+'%':Math.round(gv)}</text>`;}
+  labels.forEach((l,i)=>{g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle" font-size="10" fill="#8b948d">${l}</text>`});
+  if(opts.threshold){const ty=y(opts.threshold);
+    g+=`<line x1="${pad.l}" y1="${ty}" x2="${W-pad.r}" y2="${ty}" stroke="#b23a2c" stroke-dasharray="4 4" stroke-width="1.5"/><text x="${W-pad.r+6}" y="${ty+4}" font-size="10" fill="#b23a2c">기준 ${opts.threshold}%</text>`;}
+  series.forEach(s=>{
+    const pts=s.data.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+    g+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round"/>`;
+    s.data.forEach((v,i)=>{g+=`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="${s.color}" stroke="#fff" stroke-width="1.5"/><circle cx="${x(i)}" cy="${y(v)}" r="9" fill="transparent" onmousemove="showTip(event,'${labels[i]} · ${s.name} ${opts.pct?v+'%':v+'건'}')" onmouseout="hideTip()"/>`});
+    const li=s.data.length-1;
+    g+=`<text x="${x(li)+8}" y="${y(s.data[li])+4}" font-size="11" font-weight="700" fill="${s.color}">${s.name}</text>`;
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${series.map(s=>s.name).join(', ')} 추이 차트">${g}</svg>`;
+}
+function barList(elId,rows,color){
+  const el=document.getElementById(elId); if(!el)return;
+  const max=Math.max(...rows.map(r=>r[1]));
+  el.innerHTML=rows.map(r=>`<div class="brow"><span class="bl">${r[0]}</span><div class="track"><div class="fill" style="width:${r[1]/max*100}%;background:${color}" onmousemove="showTip(event,'${r[0]} · ${r[2]||r[1]+'건'}')" onmouseout="hideTip()"></div></div><span class="bv num">${r[2]||r[1]+'건'}</span></div>`).join('');
+}
+function pairedBars(elId,rows){
+  const el=document.getElementById(elId); if(!el)return;
+  const max=Math.max(...rows.flatMap(r=>[r[1],r[2]]));
+  el.innerHTML=rows.map(r=>`
+    <div style="display:grid;grid-template-columns:36px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;margin-bottom:7px;font-size:12px">
+      <span style="color:var(--ink2)">${r[0]}</span>
+      <div style="display:flex;justify-content:flex-end"><div style="height:14px;border-radius:4px;background:var(--c2);width:${r[1]/max*100}%;min-width:2px" onmousemove="showTip(event,'${r[0]} 남성 ${r[1]}%')" onmouseout="hideTip()"></div></div>
+      <div style="display:flex"><div style="height:14px;border-radius:4px;background:var(--c3);width:${r[2]/max*100}%;min-width:2px" onmousemove="showTip(event,'${r[0]} 여성 ${r[2]}%')" onmouseout="hideTip()"></div></div>
+    </div>`).join('');
+}
+function sparkline(elId,data){
+  const el=document.getElementById(elId); if(!el)return;
+  const W=220,H=44,min=Math.min(...data,-1),max=Math.max(...data,1);
+  const x=i=>6+i*(W-12)/(data.length-1), y=v=>H-8-((v-min)/(max-min))*(H-16);
+  const pts=data.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="점수 추이"><polyline points="${pts}" fill="none" stroke="var(--c1)" stroke-width="2"/><circle cx="${x(data.length-1)}" cy="${y(data[data.length-1])}" r="3.5" fill="var(--c1)"/></svg>`;
+}
+
+/* ============ 기타 ============ */
+let toastTimer;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200)}
+
+/* ============ init ============ */
+renderVisits();renderCal();renderPatients();renderTCats();renderTList(0);
+lineChart('chartWeek',[{name:'발송',color:'var(--c2)',data:[42,55,48,61,58,12,9]},{name:'클릭',color:'var(--c1)',data:[9,14,11,18,16,3,2]}],['7/1','7/2','7/3','7/4','7/5','7/6','7/7']);
+barList('chartContent',[['요통 관리팁',96],['복약지도',73],['목·어깨 팁',42],['무릎 팁',31],['불면 팁',18]],'var(--c1)');
+pairedBars('chartAge',[['30대',4,3],['40대',7,9],['50대',11,17],['60대',13,21],['70대',6,9]]);
+lineChart('chartUnsub',[{name:'수신거부율',color:'var(--c4)',data:[0.4,0.5,0.8,0.6,0.5,0.6]}],['2월','3월','4월','5월','6월','7월'],{threshold:1.0,pct:true});
+barList('chartScen',[['02 초기케어',24,'24%'],['03 복약 시퀀스',21,'21%'],['05 중기케어',17,'17%'],['06 후기케어',14,'14%'],['09 중단자 안부',9,'9%']],'var(--c1)');
+go('today');
+</script>
+</body>
+</html>
