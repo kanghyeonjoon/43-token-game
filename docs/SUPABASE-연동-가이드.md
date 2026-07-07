@@ -22,6 +22,18 @@
 3. 성공하면 상단 태그가 `DEMO · 가상 데이터` → `LIVE · 실데이터`로 바뀌고, 환자DB·내원목록·발송내역이 DB에서 로드됩니다. (대시보드 집계 차트는 이번 단계에서는 목데이터 유지 — 다음 단계에서 집계 쿼리 연결)
 4. 실패하면 상단에 오류 배너가 뜨고 자동으로 목데이터로 돌아갑니다.
 
+## 4.5 (SaaS 모드) 로그인 켜기 — 다른 병원들도 각자 계정으로
+
+1. SQL Editor에서 **`db/schema-v2-auth.sql`** 실행 (데모 전체허용 정책이 병원별 격리 정책으로 교체됩니다)
+2. Dashboard → **Authentication → Providers → Email**: Enabled 확인. 데모 편의상 **Confirm email 끄기** 권장(끄지 않으면 가입 후 메일 인증 필요)
+3. 이제 앱에서 URL/키 입력 → **로그인 화면**이 뜹니다. 회원가입 → 병원 설정(마법사) → 자동으로 그 계정의 병원이 생성되고, 이후 그 병원 데이터만 보입니다.
+4. **직원(데스크) 추가**: 직원이 같은 화면에서 회원가입만 해두면, 원장이 SQL Editor에서 아래 1줄 실행(user_id는 Auth → Users에서 복사) — 그 계정은 로그인 시 데스크 모드로 고정됩니다.
+   ```sql
+   insert into clinic_members (user_id, clinic_id, role)
+   values ('<직원 user_id>', (select clinic_id from clinic_members where role='owner' limit 1), 'desk');
+   ```
+5. 신규 병원은 환자가 0명 — AI 매니저가 제안하는 **[체험 데이터 만들기]**로 샘플 환자를 넣어볼 수 있습니다. (`db/seed.sql`의 데모 병원은 v2 격리 정책에서는 보이지 않는 것이 정상입니다)
+
 ## 5. ⚠ 보안 주의 (실환자 데이터 전)
 - `schema.sql`의 RLS 정책은 **데모용(전체 허용)** 입니다. 데모 seed 데이터까지만 이 상태로 쓰세요.
 - 실제 환자 정보를 넣기 전에 반드시: ① 데모 정책 삭제 ② Supabase Auth 로그인 도입 ③ `clinic_id` 필터 + 역할별(원장/데스크) 정책으로 교체. (기획서 8장·10.6 데이터 정책 참고)

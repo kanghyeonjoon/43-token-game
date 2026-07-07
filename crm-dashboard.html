@@ -249,7 +249,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 .setup-card .brand .mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#3f9268,#1f4f39)}
 .setup-card .tag{color:var(--mut);font-size:12.5px;margin-bottom:22px}
 .setup-card h3{font-size:13px;font-weight:800;margin:16px 0 8px}
-.setup-card input[type=text]{width:100%;border:1px solid var(--line2);border-radius:9px;padding:10px 13px;font-size:14px;font-family:inherit}
+.setup-card input[type=text],.setup-card input[type=password]{width:100%;border:1px solid var(--line2);border-radius:9px;padding:10px 13px;font-size:14px;font-family:inherit}
 .spec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .spec-grid button{border:1.5px solid var(--line2);border-radius:10px;padding:12px 6px;background:var(--card);font-size:12.5px;font-weight:700;color:var(--ink2)}
 .spec-grid button.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri-deep)}
@@ -287,6 +287,41 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   </div>
 </div>
 
+<div id="authView" style="position:fixed;inset:0;background:var(--bg);z-index:190;display:none;align-items:center;justify-content:center;padding:20px">
+  <div class="setup-card">
+    <div class="brand"><span class="mark"></span>케어루프 CRM</div>
+    <div class="tag">병원 계정으로 로그인 · <b style="color:var(--red)">데모 단계 — 실제 환자 개인정보 입력 금지</b></div>
+    <h3>이메일</h3><input type="text" id="auEmail" placeholder="you@clinic.kr" autocomplete="username">
+    <h3>비밀번호</h3><input type="password" id="auPw" placeholder="6자 이상" autocomplete="current-password" onkeydown="if(event.key==='Enter'&&!event.isComposing)doAuth()">
+    <button class="setup-go" id="auGo" onclick="doAuth()">로그인</button>
+    <div class="note" style="margin-top:12px;text-align:center">
+      <a href="#" id="auToggle" onclick="authMode=authMode==='in'?'up':'in';renderAuth();return false">처음이신가요? 회원가입</a>
+      &nbsp;·&nbsp; <a href="#" onclick="localStorage.removeItem('careloop-db');location.reload();return false">데모 모드로 보기</a>
+    </div>
+    <div class="note" id="auMsg" style="margin-top:8px;text-align:center;color:var(--red)"></div>
+  </div>
+</div>
+
+<div id="regModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:420px">
+    <h3>＋ 환자 등록</h3>
+    <div class="field"><label>이름</label><input id="rgName" style="flex:1" placeholder="홍길동"></div>
+    <div class="field"><label>차트번호</label><input id="rgChart" style="flex:1" placeholder="21100"></div>
+    <div class="field"><label>유입 채널</label><select id="rgCh" style="flex:1"><option>네이버 검색</option><option>카카오톡 채널</option><option>유튜브</option><option>인스타그램</option><option>지인 소개</option><option>기타</option></select></div>
+    <div class="field"><label>마케팅 동의</label><select id="rgConsent" style="flex:1"><option value="Y">동의 (Y)</option><option value="N">미동의 (N)</option></select></div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="addPatient()">등록</button>
+  </div>
+</div>
+<div id="visModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:420px">
+    <h3>＋ 내원 등록 (오늘)</h3>
+    <div class="field"><label>환자</label><select id="vsP" style="flex:1"></select></div>
+    <div class="field"><label>시간</label><input id="vsT" style="flex:1" value="16:00" placeholder="HH:MM"></div>
+    <div class="field"><label>진료항목</label><select id="vsItem" style="flex:1"></select></div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="addVisit()">예약 등록</button>
+  </div>
+</div>
+
 <div class="app">
 <!-- ============ SIDEBAR ============ -->
 <nav class="sidebar">
@@ -316,7 +351,8 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="billing"><span class="ico">💳</span>결제 관리</button>
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
-  <div class="side-foot">프로토타입 v0.4<br>기획서 v3.0 기반</div>
+  <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
+  <div class="side-foot">프로토타입 v0.6<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -416,7 +452,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 내원목록 -->
   <section class="view" id="v-visits">
     <div class="page-h"><h1>내원목록</h1><button class="btn sm" onclick="toast('데모 데이터는 오늘(7/7) 하루만 제공됩니다')">‹</button><span class="desc num"><b>2026.07.07(화)</b></span><button class="btn sm" onclick="toast('데모 데이터는 오늘(7/7) 하루만 제공됩니다')">›</button>
-      <div class="right"><button class="btn pri" onclick="toast('프로토타입 — 내원 등록은 데이터 연동 단계에서 동작합니다')">＋ 내원등록</button></div></div>
+      <div class="right"><button class="btn pri" onclick="openVis()">＋ 내원등록</button></div></div>
     <div class="filters" id="visitChips"></div>
     <div class="card" style="padding:0"><div class="tblwrap"><table id="visitTbl">
       <thead><tr><th>상태</th><th>시간</th><th>환자</th><th>관여도</th><th>진료항목</th><th>담당</th><th>방문차수</th><th>완료 시 자동 안내</th><th>처리</th></tr></thead>
@@ -474,7 +510,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 환자DB -->
   <section class="view" id="v-patients">
     <div class="page-h"><h1>환자DB</h1><span class="desc">총 212명 · 2026-07-07 02:00 동기화</span>
-      <div class="right"><button class="btn" onclick="toast('프로토타입 — 엑셀 기능은 연동 단계에서 동작합니다')">엑셀 다운</button><button class="btn pri" onclick="toast('프로토타입 — 환자 등록은 연동 단계에서 동작합니다')">＋ 환자 등록</button></div></div>
+      <div class="right"><button class="btn" onclick="toast('프로토타입 — 엑셀 기능은 연동 단계에서 동작합니다')">엑셀 다운</button><button class="btn pri" onclick="openReg()">＋ 환자 등록</button></div></div>
     <div class="filters">
       <input id="pSearch" placeholder="환자명·차트번호 검색" oninput="renderPatients()" style="width:200px">
       <select id="pGroup" onchange="renderPatients()"><option value="">관여도 전체</option><option>상</option><option>중</option><option>하</option></select>
@@ -786,6 +822,15 @@ function finishSetup(){
   cfg={name,spec:suSpecSel,doctor:doc,color:suColorSel};
   saveCfg();
   document.getElementById('setup').classList.remove('on');
+  if(window._newClinic&&sb&&authUser){
+    sb.rpc('create_clinic',{p_name:name,p_spec:suSpecSel,p_doctor:doc,p_color:suColorSel}).then(async({data,error})=>{
+      if(error){reportError('병원 생성 실패: '+error.message);return}
+      clinicId=data; myRole='owner'; live=true;
+      initApp(); go('today'); await loadLive(); setLiveTag(true); showAuthUi();
+      aiSay(`🏥 <b>${esc(name)}</b> 병원이 생성되었습니다! 환자가 아직 없어요 — 체험 데이터로 시작해 볼까요?`,{buttons:`<button class="btn sm pri" onclick="seedDemo()">체험 데이터 만들기 (5명)</button>`});
+    });
+    window._newClinic=false; return;
+  }
   initApp();
   toast(`${name} 설정 완료 — ${suSpecSel} 프리셋이 적용되었습니다`);
 }
@@ -955,6 +1000,10 @@ function crisisResolve(id,btn){
   const q=btn&&btn.closest?btn.closest('.qitem'):null;
   if(q){const c=q.querySelector('input');if(c)c.checked=true;q.classList.add('done');const b=q.querySelector('button.btn');if(b)b.remove();saveToday();}
   updateTodayBadge(); renderPatients();
+  if(live&&sb){
+    sb.from('patients').update({crisis:'회복'}).eq('id',p.id).then(({error})=>{if(error)reportError('위기 상태 저장 실패: '+error.message)});
+    sb.from('score_history').insert({clinic_id:clinicId,patient_id:p.id,reason:'수동',delta:0,after_score:p.score,after_grp:p.grp}).then(()=>{});
+  }
   toast('회복 처리되었습니다 — 마케팅 발송 보류가 해제됩니다');
 }
 function renderVisits(filter='전체'){
@@ -975,6 +1024,7 @@ function visitDone(idx,st){
   const msg=st==='완료'?p.name+'님을 완료 처리합니다.\n→ 내일 오전 자동 안내가 예약됩니다.':p.name+'님을 노쇼 처리합니다.\n→ 재예약 안내가 발송됩니다.';
   if(!confirm(msg))return;
   v.st=st; renderVisits('전체'); updateTodayRev();
+  if(live&&sb&&v.dbId)sb.from('visits').update({status:st}).eq('id',v.dbId).then(({error})=>{if(error)reportError('내원 상태 저장 실패: '+error.message)});
   toast(st==='완료'?`${p.name}님 완료 — ${SP.d1Name} D+1 발송이 예약되었습니다`:`${p.name}님 노쇼 처리 — 재예약 안내 발송`);
   aiSay(st==='완료'?`✅ ${p.name}님 완료 처리했어요. 내일 오전 ${SP.d1Name}가 자동 발송됩니다.`:`📵 ${p.name}님을 노쇼 처리했어요. 재예약 안내를 보냈고, 미응답 시 내일 전화 항목을 만들게요.`);
 }
@@ -1377,7 +1427,101 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{if(!e.target.closest('.gsearch'))document.getElementById('gres').style.display='none';});
 
 /* ================= Supabase 데이터 어댑터 (mock ↔ live) ================= */
-let sb=null, live=false;
+let sb=null, live=false, authMode='in', authUser=null, myRole='owner', clinicId=null;
+function renderAuth(){
+  document.getElementById('auGo').textContent=authMode==='in'?'로그인':'회원가입 →';
+  document.getElementById('auToggle').textContent=authMode==='in'?'처음이신가요? 회원가입':'이미 계정이 있어요 — 로그인';
+  document.getElementById('auMsg').textContent='';
+}
+async function doAuth(){
+  const email=document.getElementById('auEmail').value.trim(), pw=document.getElementById('auPw').value;
+  const msg=document.getElementById('auMsg');
+  if(!email||pw.length<6){msg.textContent='이메일과 6자 이상 비밀번호를 입력해 주세요';return}
+  if(!sb){msg.textContent='DB 연결이 없습니다 — 데모 모드로 보기를 눌러주세요';return}
+  try{
+    if(authMode==='up'){
+      const {data,error}=await sb.auth.signUp({email,password:pw});
+      if(error)throw error;
+      if(!data.session){msg.style.color='var(--pri-deep)';msg.textContent='가입 완료 — 메일 인증이 켜져 있다면 메일함 확인 후 로그인해 주세요';authMode='in';renderAuth();msg.textContent='가입 완료 — 로그인해 주세요 (메일 인증이 켜져 있다면 메일함 확인)';return}
+    }else{
+      const {error}=await sb.auth.signInWithPassword({email,password:pw});
+      if(error)throw error;
+    }
+    await afterAuth();
+  }catch(e){msg.style.color='var(--red)';msg.textContent='실패: '+(e.message||e)}
+}
+async function afterAuth(){
+  const {data:{user}}=await sb.auth.getUser(); if(!user)return;
+  authUser=user;
+  const {data:mem,error}=await sb.from('clinic_members').select('clinic_id,role').eq('user_id',user.id).maybeSingle();
+  if(error){reportError('소속 조회 실패: '+error.message);return}
+  document.getElementById('authView').style.display='none';
+  if(mem){
+    clinicId=mem.clinic_id; myRole=mem.role;
+    const {data:cl}=await sb.from('clinics').select('*').eq('id',clinicId).single();
+    if(cl){cfg={name:cl.name,spec:SPECS[cl.spec]?cl.spec:'일반의원',doctor:cl.doctor,color:cl.brand_color||0};saveCfg();}
+    if(myRole==='desk')localStorage.setItem('careloop-role','desk');
+    live=true; initApp(); go('today'); await loadLive(); setLiveTag(true); showAuthUi();
+    aiSay(`🔐 <b>${esc(user.email)}</b> 로그인 — ${esc(cfg.name)} 데이터로 연결되었습니다.`);
+    if(!P.length)aiSay(`이 병원에는 아직 환자가 없어요. 체험 데이터를 넣어볼까요?`,{buttons:`<button class="btn sm pri" onclick="seedDemo()">체험 데이터 만들기 (5명)</button>`});
+  }else{
+    window._newClinic=true;
+    renderSetup(); document.getElementById('setup').classList.add('on');
+  }
+}
+function showAuthUi(){
+  document.getElementById('logoutBtn').style.display='';
+  if(myRole==='desk')document.getElementById('roleBtn').style.display='none';
+}
+async function doLogout(){
+  try{await sb.auth.signOut()}catch(e){}
+  localStorage.removeItem('careloop-role'); location.reload();
+}
+async function seedDemo(){
+  if(!live||!sb)return;
+  const rows=[['21001','김하늘','상',6,3,3,'지인 소개'],['21002','박서준','중',2,1,1,'네이버 검색'],['21003','이도윤','중',1,1,0,'카카오톡 채널'],['21004','정예린','하',-2,-3,1,'유튜브'],['21005','최민서','상',5,5,0,'인스타그램']]
+    .map(r=>({clinic_id:clinicId,chart_no:r[0],name:r[1],grp:r[2],score:r[3],pot:r[4],act:r[5],consent:true,channel:r[6],visit_count:1,last_visit_at:new Date().toISOString().slice(0,10),next_send_label:'웰컴 메시지 발송 예정'}));
+  const {error}=await sb.from('patients').insert(rows);
+  if(error){reportError('체험 데이터 생성 실패: '+error.message);return}
+  await loadLive(); aiSay('✅ 체험 환자 5명을 만들었어요 — 환자DB에서 확인해 보세요.');
+}
+function openReg(){document.getElementById('regModal').style.display='flex'}
+function openVis(){
+  document.getElementById('vsP').innerHTML=P.map(p=>`<option value="${p.id}">${p.name} (${p.chart})</option>`).join('');
+  document.getElementById('vsItem').innerHTML=SP.items.map(i=>`<option>${i}</option>`).join('');
+  document.getElementById('visModal').style.display='flex';
+}
+async function addPatient(){
+  const name=document.getElementById('rgName').value.trim(), chart=document.getElementById('rgChart').value.trim();
+  const ch=document.getElementById('rgCh').value, consent=document.getElementById('rgConsent').value;
+  if(!name||!chart){toast('이름과 차트번호를 입력해 주세요');return}
+  const base={grp:'중',score:0,pot:0,act:0,consent,last:new Date().toISOString().slice(0,10),status:'치료중',flags:[],visits:0,src:ch,spark:[0,0,0,0,0,0,0,0],next:'초진 문진표 대기',tl:[],rec:[],intake:{goal:'표준',ins:'—',worry:[],family:[]},phone:''};
+  if(live&&sb){
+    const {data,error}=await sb.from('patients').insert({clinic_id:clinicId,chart_no:chart,name,channel:ch,consent:consent==='Y',visit_count:0,next_send_label:'초진 문진표 대기'}).select().single();
+    if(error){reportError('환자 등록 실패: '+error.message);return}
+    P.unshift({...base,id:data.id,chart,name});
+  }else{
+    P.unshift({...base,id:'P'+Math.floor(Math.random()*90000+10000),chart,name});
+  }
+  document.getElementById('regModal').style.display='none';
+  document.getElementById('rgName').value='';document.getElementById('rgChart').value='';
+  renderPatients(); renderSendList(); go('patients');
+  toast(`${name}님 등록 완료`); aiSay(`🧑 신규 환자 <b>${esc(name)}</b>님(${esc(ch)})을 등록했어요. 문진표를 보내면 관여도 점수가 계산됩니다.`);
+}
+async function addVisit(){
+  const pid=document.getElementById('vsP').value, t=document.getElementById('vsT').value||'16:00', item=document.getElementById('vsItem').value;
+  const p=pById(pid); if(!p){toast('환자를 선택해 주세요');return}
+  const row={t,p:pid,item,st:'예약',staff:'원장',crm:'—',rev:45000};
+  if(live&&sb){
+    const {data,error}=await sb.from('visits').insert({clinic_id:clinicId,patient_id:pid,at:new Date().toISOString().slice(0,10)+'T'+t+':00+09:00',item,status:'예약',staff:'원장'}).select().single();
+    if(error){reportError('내원 등록 실패: '+error.message);return}
+    row.dbId=data.id;
+  }
+  VISITS_TODAY.push(row); VISITS_TODAY.sort((a,b)=>a.t<b.t?-1:1);
+  document.getElementById('visModal').style.display='none';
+  renderVisits('전체'); go('visits');
+  toast(`${p.name}님 ${t} 예약 등록`);
+}
 function loadDbCfg(){try{return JSON.parse(localStorage.getItem('careloop-db'))||{}}catch(e){return{}}}
 function setLiveTag(on){
   const t=document.getElementById('modeTag');
@@ -1389,7 +1533,15 @@ function setLiveTag(on){
 async function testDb(){
   const url=document.getElementById('dbUrl').value.trim(), key=document.getElementById('dbKey').value.trim();
   if(!url||!key){toast('URL과 anon 키를 모두 입력해 주세요');return}
-  await connectDb(url,key,true);
+  if(!window.supabase){reportError('supabase-js 로딩 실패 — 아티팩트/오프라인에서는 외부 접속이 차단됩니다. 파일을 직접 열어주세요');return}
+  try{
+    const c=window.supabase.createClient(url,key);
+    const {error}=await c.from('clinics').select('id').limit(1);
+    if(error)throw error;
+    localStorage.setItem('careloop-db',JSON.stringify({url,key}));
+    toast('연결 확인 — 로그인 화면으로 이동합니다');
+    setTimeout(()=>location.reload(),900);
+  }catch(e){reportError('DB 연결 실패: '+(e.message||e)+' — 목데이터로 계속 동작합니다')}
 }
 function disconnectDb(){
   localStorage.removeItem('careloop-db'); live=false; sb=null;
@@ -1413,18 +1565,18 @@ async function connectDb(url,key,save){
 async function loadLive(){
   // 환자 (집계 차트는 이번 단계에서는 목데이터 유지 — 다음 단계에서 집계 쿼리 연결)
   const {data:pats}=await sb.from('patients').select('*').limit(500);
-  if(pats&&pats.length){
+  if(pats){
     P=pats.map(r=>({id:r.id,chart:r.chart_no,name:r.name,grp:r.grp_override||r.grp,score:r.score,pot:r.pot,act:r.act,
       consent:r.consent?'Y':'N',last:r.last_visit_at||'—',status:r.treat_status,
       flags:[...(r.blocked?['발송중단']:[]),...(r.crisis==='위기'?['위기']:[])],
       visits:r.visit_count,src:r.channel||'기타',
       spark:Array(8).fill(r.score),next:r.next_send_label||'—',tl:[],rec:[]}));
   }
-  const {data:vs}=await sb.from('visits').select('*').gte('at','2026-07-07').lt('at','2026-07-08').order('at');
-  if(vs&&vs.length){
-    VISITS_TODAY=vs.map(v=>{const p=P.find(x=>x.id===v.patient_id);
-      return p?{t:new Date(v.at).toTimeString().slice(0,5),p:p.id,item:v.item,st:v.status,staff:v.staff||'—',crm:'—'}:null}).filter(Boolean);
-  }
+  const td=new Date(); const d0=td.toISOString().slice(0,10);
+  const d1=new Date(td.getTime()+86400000).toISOString().slice(0,10);
+  const {data:vs}=await sb.from('visits').select('*').or(`and(at.gte.${d0},at.lt.${d1}),and(at.gte.2026-07-07,at.lt.2026-07-08)`).order('at');
+  VISITS_TODAY=(vs||[]).map(v=>{const p=P.find(x=>x.id===v.patient_id);
+    return p?{t:new Date(v.at).toTimeString().slice(0,5),p:p.id,item:v.item,st:v.status,staff:v.staff||'—',crm:'—',rev:45000,dbId:v.id}:null}).filter(Boolean);
   const {data:sd}=await sb.from('sends').select('*').order('sent_at',{ascending:false}).limit(20);
   if(sd&&sd.length){
     const chPill={'알림톡':'p-pri','친구톡':'p-amber','LMS':'p-amber'};
@@ -1490,12 +1642,23 @@ function initApp(){
   aiSay(`👋 좋은 아침이에요, <b>${esc(cfg.name)}</b>! AI 매니저입니다.\n\n📋 <b>오늘 브리핑</b>\n· 내원 예정 ${VISITS_TODAY.length}건 · 처리할 액션 ${document.querySelectorAll('#v-today .qitem').length}건\n${crisisN?`· 🚨 위기 ${crisisN}건 — 30분 내 전화가 필요해요!`:'· 위기 없음 💚'}\n\n오류·알림은 전부 이 채팅으로 알려드릴게요. 처음이시면 아래 '처음이에요'를 눌러보세요.`);
   const dbc=loadDbCfg();
   if(document.getElementById('dbUrl')&&dbc.url){document.getElementById('dbUrl').value=dbc.url;document.getElementById('dbKey').value=dbc.key||'';}
-  if(dbc.url&&dbc.key&&window.supabase)connectDb(dbc.url,dbc.key,false);
+  // 자동 연결은 부트 시 인증 플로우에서 처리 (아래 부트 블록)
   barList('chartScen',[['02 초기케어',24,'24%'],['03 '+SP.seqName,21,'21%'],['05 중기케어',17,'17%'],['06 후기케어',14,'14%'],['09 중단자 안부',9,'9%']],'var(--c1)');
 }
 loadCfg();
-if(cfg){ initApp(); go('today'); }
-else { renderSetup(); document.getElementById('setup').classList.add('on'); }
+(function boot(){
+  const dbc=loadDbCfg();
+  if(dbc.url&&dbc.key&&window.supabase){
+    sb=window.supabase.createClient(dbc.url,dbc.key);
+    if(cfg){ initApp(); go('today'); }               // 로그인 뒤 실데이터로 덮어씀
+    document.getElementById('authView').style.display='flex'; renderAuth();
+    sb.auth.getSession().then(({data:{session}})=>{ if(session) afterAuth(); });
+    return;
+  }
+  if(dbc.url&&dbc.key&&!window.supabase&&cfg){ initApp(); go('today'); reportError('supabase-js 로딩 실패 — 목데이터 모드로 동작합니다'); return; }
+  if(cfg){ initApp(); go('today'); }
+  else { renderSetup(); document.getElementById('setup').classList.add('on'); }
+})();
 </script>
 </body>
 </html>
