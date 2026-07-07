@@ -1543,6 +1543,14 @@ async function addVisit(){
   toast(`${p.name}님 ${t} 예약 등록`);
 }
 function loadDbCfg(){try{return JSON.parse(localStorage.getItem('careloop-db'))||{}}catch(e){return{}}}
+function sanitizeUrl(u){
+  u=String(u||'').replace(/[\s\u200B-\u200D\uFEFF\u00A0"']/g,'');
+  if(u&&!/^https?:\/\//i.test(u))u='https://'+u;
+  u=u.replace(/\/(rest|auth|storage|realtime)\/v1.*$/i,'').replace(/\/+$/,'');
+  return u;
+}
+function sanitizeKey(k){return String(k||'').replace(/[\s\u200B-\u200D\uFEFF\u00A0"']/g,'')}
+function validDbUrl(u){return /^https:\/\/[a-z0-9-]+\.supabase\.(co|in)/i.test(u)}
 function setLiveTag(on){
   const t=document.getElementById('modeTag');
   if(on){t.textContent='LIVE · 실데이터';t.style.background='var(--ok-soft)';t.style.color='var(--ok)';}
@@ -1551,8 +1559,11 @@ function setLiveTag(on){
   if(st){st.textContent=on?'연결됨 (LIVE)':'목데이터 모드';st.className='pill '+(on?'p-ok':'p-gray');}
 }
 async function testDb(){
-  const url=document.getElementById('dbUrl').value.trim(), key=document.getElementById('dbKey').value.trim();
+  const url=sanitizeUrl(document.getElementById('dbUrl').value);
+  const key=sanitizeKey(document.getElementById('dbKey').value);
+  document.getElementById('dbUrl').value=url; document.getElementById('dbKey').value=key;
   if(!url||!key){toast('URL과 anon 키를 모두 입력해 주세요');return}
+  if(!validDbUrl(url)){reportError('프로젝트 URL 형식이 올바르지 않습니다 — 입력된 값: "'+url.slice(0,50)+'" · https://프로젝트ID.supabase.co 형태여야 합니다 (Settings→Data API의 Project URL)');return}
   if(!window.supabase){reportError('supabase-js 로딩 실패 — 아티팩트/오프라인에서는 외부 접속이 차단됩니다. 파일을 직접 열어주세요');return}
   try{
     const c=window.supabase.createClient(url,key);
@@ -1835,6 +1846,10 @@ function initApp(){
 loadCfg();
 (function boot(){
   const dbc=loadDbCfg();
+  if(dbc.url||dbc.key){
+    dbc.url=sanitizeUrl(dbc.url); dbc.key=sanitizeKey(dbc.key);
+    if(dbc.url&&dbc.key)localStorage.setItem('careloop-db',JSON.stringify({url:dbc.url,key:dbc.key}));
+  }
   if(dbc.url&&dbc.key&&window.supabase){
     sb=window.supabase.createClient(dbc.url,dbc.key);
     if(cfg){ initApp(); go('today'); }               // 로그인 뒤 실데이터로 덮어씀
