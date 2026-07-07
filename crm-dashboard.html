@@ -374,7 +374,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
   <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
-  <div class="side-foot">v0.7.2 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
+  <div class="side-foot">v0.7.3 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -990,9 +990,10 @@ function renderToday(){
   restoreToday();
 }
 const DEMO_DATE='2026-07-07';
-function todayStr(){return live?new Date().toISOString().slice(0,10):DEMO_DATE}
+function localDate(d){d=d||new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function todayStr(){return live?localDate():DEMO_DATE}
 function todayKey(){return 'careloop-today-'+todayStr().replace(/-/g,'')}
-function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}
+function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return localDate(x)}
 function daysBetween(a,b){return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000)}
 function todayLabel(){const d=live?new Date():new Date(DEMO_DATE+'T09:00:00');const w=['일','월','화','수','목','금','토'][d.getDay()];return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0')+'('+w+')'}
 function setDates(){document.querySelectorAll('.todayLbl').forEach(e=>e.textContent=todayLabel())}
@@ -1512,13 +1513,19 @@ async function doLogout(){
 async function seedDemo(){
   if(!live||!sb)return;
   const rows=[['21001','김하늘','상',6,3,3,'지인 소개'],['21002','박서준','중',2,1,1,'네이버 검색'],['21003','이도윤','중',1,1,0,'카카오톡 채널'],['21004','정예린','하',-2,-3,1,'유튜브'],['21005','최민서','상',5,5,0,'인스타그램']]
-    .map(r=>({clinic_id:clinicId,chart_no:r[0],name:r[1],grp:r[2],score:r[3],pot:r[4],act:r[5],consent:true,channel:r[6],visit_count:1,last_visit_at:new Date().toISOString().slice(0,10),next_send_label:'웰컴 메시지 발송 예정'}));
+    .map(r=>({clinic_id:clinicId,chart_no:r[0],name:r[1],grp:r[2],score:r[3],pot:r[4],act:r[5],consent:true,channel:r[6],visit_count:1,last_visit_at:localDate(),next_send_label:'웰컴 메시지 발송 예정'}));
   const {error}=await sb.from('patients').insert(rows);
   if(error){reportError('체험 데이터 생성 실패: '+error.message);return}
   await loadLive(); aiSay('✅ 체험 환자 5명을 만들었어요 — 환자DB에서 확인해 보세요.');
 }
 function openReg(){document.getElementById('regModal').style.display='flex'}
 function openVis(){
+  if(!P.length){
+    toast('등록된 환자가 아직 없어요 — 신규 환자 등록 창을 열게요');
+    aiSay(`👥 <b>내원 등록</b>은 등록된 환자를 골라 예약을 잡는 기능이에요. 아직 환자가 0명이라 <b>신규 환자 등록</b> 창을 먼저 열어드렸어요 — 이름·차트번호만 넣으면 됩니다. 등록 후 다시 [내원 등록]을 눌러주세요.${live?' 먼저 구경해 보고 싶으시면 체험 데이터로 시작할 수도 있어요.':''}`,live?{buttons:`<button class="btn sm pri" onclick="seedDemo();document.getElementById('regModal').style.display='none'">체험 데이터 만들기 (5명)</button>`}:undefined);
+    openReg();
+    return;
+  }
   document.getElementById('vsP').innerHTML=P.map(p=>`<option value="${p.id}">${p.name} (${p.chart})</option>`).join('');
   document.getElementById('vsItem').innerHTML=SP.items.map(i=>`<option>${i}</option>`).join('');
   document.getElementById('visModal').style.display='flex';
@@ -1527,7 +1534,7 @@ async function addPatient(){
   const name=document.getElementById('rgName').value.trim(), chart=document.getElementById('rgChart').value.trim();
   const ch=document.getElementById('rgCh').value, consent=document.getElementById('rgConsent').value;
   if(!name||!chart){toast('이름과 차트번호를 입력해 주세요');return}
-  const base={grp:'중',score:0,pot:0,act:0,consent,last:new Date().toISOString().slice(0,10),status:'치료중',flags:[],visits:0,src:ch,spark:[0,0,0,0,0,0,0,0],next:'초진 문진표 대기',tl:[],rec:[],intake:{goal:'표준',ins:'—',worry:[],family:[]},phone:''};
+  const base={grp:'중',score:0,pot:0,act:0,consent,last:localDate(),status:'치료중',flags:[],visits:0,src:ch,spark:[0,0,0,0,0,0,0,0],next:'초진 문진표 대기',tl:[],rec:[],intake:{goal:'표준',ins:'—',worry:[],family:[]},phone:''};
   if(live&&sb){
     const {data,error}=await sb.from('patients').insert({clinic_id:clinicId,chart_no:chart,name,channel:ch,consent:consent==='Y',visit_count:0,next_send_label:'초진 문진표 대기'}).select().single();
     if(error){reportError('환자 등록 실패: '+error.message);return}
@@ -1545,7 +1552,7 @@ async function addVisit(){
   const p=pById(pid); if(!p){toast('환자를 선택해 주세요');return}
   const row={t,p:pid,item,st:'예약',staff:'원장',crm:'—',rev:45000};
   if(live&&sb){
-    const {data,error}=await sb.from('visits').insert({clinic_id:clinicId,patient_id:pid,at:new Date().toISOString().slice(0,10)+'T'+t+':00+09:00',item,status:'예약',staff:'원장'}).select().single();
+    const {data,error}=await sb.from('visits').insert({clinic_id:clinicId,patient_id:pid,at:localDate()+'T'+t+':00+09:00',item,status:'예약',staff:'원장'}).select().single();
     if(error){reportError('내원 등록 실패: '+error.message);return}
     row.dbId=data.id;
   }
@@ -1615,8 +1622,7 @@ async function loadLive(){
       visits:r.visit_count,src:r.channel||'기타',
       spark:Array(8).fill(r.score),next:r.next_send_label||'—',tl:[],rec:[],created:r.created_at||''}));
   }
-  const td=new Date(); const d0=td.toISOString().slice(0,10);
-  const d1=new Date(td.getTime()+86400000).toISOString().slice(0,10);
+  const d0=localDate(); const d1=localDate(new Date(Date.now()+86400000));
   const {data:vs}=await sb.from('visits').select('*').or(`and(at.gte.${d0},at.lt.${d1}),and(at.gte.2026-07-07,at.lt.2026-07-08)`).order('at');
   VISITS_TODAY=(vs||[]).map(v=>{const p=P.find(x=>x.id===v.patient_id);
     return p?{t:new Date(v.at).toTimeString().slice(0,5),p:p.id,item:v.item,st:v.status,staff:v.staff||'—',crm:'—',rev:45000,dbId:v.id}:null}).filter(Boolean);
