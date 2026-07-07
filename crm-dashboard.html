@@ -290,7 +290,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 <div id="authView" style="position:fixed;inset:0;background:var(--bg);z-index:190;display:none;align-items:center;justify-content:center;padding:20px">
   <div class="setup-card">
     <div class="brand"><span class="mark"></span>케어루프 CRM</div>
-    <div class="tag">병원 계정으로 로그인 · <b style="color:var(--red)">데모 단계 — 실제 환자 개인정보 입력 금지</b></div>
+    <div class="tag">병원 계정으로 로그인 · <b style="color:var(--red)">실사용 전 v2 보안 스키마 적용 필수 (가이드 5장)</b></div>
     <h3>이메일</h3><input type="text" id="auEmail" placeholder="you@clinic.kr" autocomplete="username">
     <h3>비밀번호</h3><input type="password" id="auPw" placeholder="6자 이상" autocomplete="current-password" onkeydown="if(event.key==='Enter'&&!event.isComposing)doAuth()">
     <button class="setup-go" id="auGo" onclick="doAuth()">로그인</button>
@@ -310,6 +310,16 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <div class="field"><label>유입 채널</label><select id="rgCh" style="flex:1"><option>네이버 검색</option><option>카카오톡 채널</option><option>유튜브</option><option>인스타그램</option><option>지인 소개</option><option>기타</option></select></div>
     <div class="field"><label>마케팅 동의</label><select id="rgConsent" style="flex:1"><option value="Y">동의 (Y)</option><option value="N">미동의 (N)</option></select></div>
     <button class="btn pri" style="width:100%;margin-top:10px" onclick="addPatient()">등록</button>
+  </div>
+</div>
+<div id="progModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:420px">
+    <h3>＋ 프로그램(처방) 등록</h3>
+    <div class="field"><label>환자</label><select id="pgP" style="flex:1"></select></div>
+    <div class="field"><label>프로그램</label><select id="pgType" style="flex:1"></select></div>
+    <div class="field"><label>시작일</label><input id="pgDate" type="date" style="flex:1"></div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="addProgram()">등록</button>
+    <div class="note" style="margin-top:8px">등록하면 시작 5일째 경과 확인과 종료 −3일 재안내가 '오늘의 액션'에 자동으로 올라옵니다.</div>
   </div>
 </div>
 <div id="visModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
@@ -352,7 +362,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
   <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
-  <div class="side-foot">프로토타입 v0.6<br>기획서 v3.0 기반</div>
+  <div class="side-foot">v0.7 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -372,9 +382,9 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 
   <!-- 오늘의 액션 -->
   <section class="view on" id="v-today">
-    <div class="page-h"><h1>오늘의 액션</h1><span class="desc">2026.07.07(화) · 데스크가 아침에 이 화면만 보면 하루 업무가 시작됩니다</span>
+    <div class="page-h"><h1>오늘의 액션</h1><span class="desc"><span class="todayLbl num">2026.07.07(화)</span> · 데스크가 아침에 이 화면만 보면 하루 업무가 시작됩니다</span>
       <div class="right"><button class="btn" onclick="toast('어제 미처리 1건이 오늘 큐로 이월되었습니다')">이월 항목 보기</button></div></div>
-    <div class="tiles">
+    <div class="tiles" id="todayTiles">
       <div class="tile alert"><div class="lbl">🔴 위기 대응</div><div class="val num">1</div><div class="delta down">SLA 12분 초과 — 즉시 전화</div></div>
       <div class="tile"><div class="lbl">경과 확인</div><div class="val num">2</div><div class="delta flat">D+5 / 종료 임박</div></div>
       <div class="tile"><div class="lbl">단골 이벤트 안내</div><div class="val num">1</div><div class="delta flat">3회차 내원</div></div>
@@ -389,15 +399,15 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <section class="view" id="v-dash">
     <div class="page-h"><h1>대시보드</h1><span class="desc">원장용 KPI · 최근 30일 (2026.06.08 ~ 07.07)</span>
       <div class="right"><select class="btn" onchange="toast('데모에서는 최근 30일 고정 — 실데이터 연동 시 동작합니다');this.selectedIndex=0"><option>최근 30일</option><option>최근 7일</option><option>이번 달</option></select></div></div>
-    <div class="sub" style="font-weight:700;color:var(--ink2);margin-bottom:6px">오늘 현황 · 7/7(화)</div>
-    <div class="tiles">
+    <div class="sub" style="font-weight:700;color:var(--ink2);margin-bottom:6px">오늘 현황 · <span class="todayLbl">7/7(화)</span></div>
+    <div class="tiles" id="dashToday">
       <div class="tile"><div class="lbl">오늘 내원</div><div class="val num">7건</div><div class="delta flat">완료 4 · 예약 2 · 노쇼 1</div></div>
       <div class="tile alert"><div class="lbl">오늘 위기</div><div class="val num">1건</div><div class="delta down">즉시 전화 — 오늘의 액션 확인</div></div>
       <div class="tile"><div class="lbl">오늘 발송</div><div class="val num">4건</div><div class="delta flat">예약 대기 1건 (11:00)</div></div>
       <div class="tile"><div class="lbl">오늘 매출</div><div class="val num" id="todayRev">—</div><div class="delta flat" id="todayRevSub">완료 수납 기준 · 객단가 포함</div></div>
     </div>
     <div class="sub" style="font-weight:700;color:var(--ink2);margin-bottom:6px">최근 30일 지표</div>
-    <div class="tiles">
+    <div class="tiles" id="dashKpis">
       <div class="tile"><div class="lbl">신규 환자</div><div class="val num">24명</div><div class="delta up">▲ 4 지난달 대비</div></div>
       <div class="tile"><div class="lbl">재방문율 (30일 내 2회차)</div><div class="val num">58%</div><div class="delta up">▲ 6%p</div></div>
       <div class="tile"><div class="lbl" id="kpiProgLbl">프로그램 전환율</div><div class="val num">32%</div><div class="delta up">▲ 3%p</div></div>
@@ -407,33 +417,33 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     </div>
     <div class="grid g2">
       <div class="card"><h2>환자 관여도 파이프라인</h2><div class="sub">이번 주 승격 6명 · 강등 2명 (점수 이력 기준)</div>
-        <div class="blist">
+        <div class="blist" id="pipeBars">
           <div class="brow"><span class="bl"><span class="grp 상">상</span> 관여도 상</span><div class="track"><div class="fill" style="width:38%;background:#1f5c3e"></div></div><span class="bv num">38명</span></div>
           <div class="brow"><span class="bl"><span class="grp 중">중</span> 관여도 중</span><div class="track"><div class="fill" style="width:74%;background:#5b9a78"></div></div><span class="bv num">74명</span></div>
           <div class="brow"><span class="bl"><span class="grp 하">하</span> 관여도 하</span><div class="track"><div class="fill" style="width:96%;background:#a9c4b4"></div></div><span class="bv num">96명</span></div>
           <div class="brow"><span class="bl">⛔ 발송중단</span><div class="track"><div class="fill" style="width:4%;background:#c9cec9"></div></div><span class="bv num">4명</span></div>
         </div>
         <div style="margin-top:10px;font-size:12px;color:var(--ink2)">💡 <b>중 그룹 74명</b>이 핵심 육성 대상 — 4주 내 승격 비율 <b class="num">12%</b></div></div>
-      <div class="card"><h2>주간 발송 · 클릭 추이</h2><div class="sub">이번 주 (7/1 ~ 7/7)</div>
+      <div class="card" data-live="ph"><h2>주간 발송 · 클릭 추이</h2><div class="sub">이번 주 (7/1 ~ 7/7)</div>
         <div class="legend"><span><span class="sw" style="background:var(--c2)"></span>발송</span><span><span class="sw" style="background:var(--c1)"></span>클릭</span></div>
         <div id="chartWeek"></div></div>
-      <div class="card"><h2>콘텐츠별 발송 건수</h2><div class="sub">최근 30일 · 상위 5개</div>
+      <div class="card" data-live="ph"><h2>콘텐츠별 발송 건수</h2><div class="sub">최근 30일 · 상위 5개</div>
         <div class="blist" id="chartContent"></div>
         <div style="font-size:12px;color:var(--ink2);margin-top:8px" id="contentReport"></div></div>
-      <div class="card"><h2>연령 · 성별 발송 비율</h2><div class="sub">최근 30일 · 남 41% / 여 59%</div>
+      <div class="card" data-live="ph"><h2>연령 · 성별 발송 비율</h2><div class="sub">최근 30일 · 남 41% / 여 59%</div>
         <div class="legend"><span><span class="sw" style="background:var(--c2)"></span>남성</span><span><span class="sw" style="background:var(--c3)"></span>여성</span></div>
         <div id="chartAge"></div></div>
       <div class="card"><h2>신규 환자 유입 채널</h2><div class="sub">최근 30일 신규 24명 · 문진표 7번 + 채널별 QR/링크 태그로 자동 수집</div>
         <div class="blist" id="chartChannel"></div>
-        <div style="font-size:12px;color:var(--ink2);margin-top:8px">Report — 최근 30일 신규 환자는 <b>[네이버 검색]</b> 유입이 가장 많았습니다.</div></div>
-      <div class="card"><h2>채널별 정착 품질</h2><div class="sub">3회차 도달율 · 4~5월 유입 코호트(n=41) 기준 — 어떤 채널이 '남는 환자'를 데려오는가</div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:8px" id="chReport">Report — 최근 30일 신규 환자는 <b>[네이버 검색]</b> 유입이 가장 많았습니다.</div></div>
+      <div class="card" data-live="ph"><h2>채널별 정착 품질</h2><div class="sub">3회차 도달율 · 4~5월 유입 코호트(n=41) 기준 — 어떤 채널이 '남는 환자'를 데려오는가</div>
         <div class="blist" id="chartChannelQ"></div>
         <div style="font-size:12px;color:var(--ink2);margin-top:8px">💡 <b>지인 소개</b> 환자의 정착률이 가장 높습니다 — 단골 이벤트(구전)가 최고의 채널입니다. 유입이 많아도 정착이 낮은 채널은 광고비 재검토 대상.</div></div>
-      <div class="card"><h2>채널별 유입 추이</h2><div class="sub">최근 6개월 · 월별 신규 환자 수</div>
+      <div class="card" data-live="ph"><h2>채널별 유입 추이</h2><div class="sub">최근 6개월 · 월별 신규 환자 수</div>
         <div class="legend"><span><span class="sw" style="background:var(--c2)"></span>네이버</span><span><span class="sw" style="background:var(--c1)"></span>지인 소개</span><span><span class="sw" style="background:var(--c3)"></span>카카오톡</span><span><span class="sw" style="background:var(--c4)"></span>SNS(유튜브+인스타)</span></div>
         <div id="chartChTrend"></div>
         <div style="font-size:12px;color:var(--ink2);margin-top:6px">💡 SNS 유입이 3개월 연속 증가 — 유튜브·인스타 콘텐츠 효과가 나타나고 있습니다.</div></div>
-      <div class="card"><h2>채널별 매출 기여</h2><div class="sub">최근 30일 프로그램 결제액 × 유입 채널 (처방 기록과 유입 채널을 연결해 집계)</div>
+      <div class="card" data-live="ph"><h2>채널별 매출 기여</h2><div class="sub">최근 30일 프로그램 결제액 × 유입 채널 (처방 기록과 유입 채널을 연결해 집계)</div>
         <div class="blist" id="chartChRev"></div>
         <div style="font-size:12px;color:var(--ink2);margin-top:8px">Report — 1인당 평균 결제액은 <b>[지인 소개]</b> 환자가 가장 높습니다(38만원/인).</div>
         <div class="tblwrap" style="margin-top:12px"><table class="num" style="min-width:0">
@@ -451,7 +461,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 
   <!-- 내원목록 -->
   <section class="view" id="v-visits">
-    <div class="page-h"><h1>내원목록</h1><button class="btn sm" onclick="toast('데모 데이터는 오늘(7/7) 하루만 제공됩니다')">‹</button><span class="desc num"><b>2026.07.07(화)</b></span><button class="btn sm" onclick="toast('데모 데이터는 오늘(7/7) 하루만 제공됩니다')">›</button>
+    <div class="page-h"><h1>내원목록</h1><button class="btn sm" onclick="toast(live?'실사용에서는 오늘 기준으로 표시됩니다':'데모 데이터는 오늘(7/7) 하루만 제공됩니다')">‹</button><span class="desc num"><b class="todayLbl">2026.07.07(화)</b></span><button class="btn sm" onclick="toast(live?'실사용에서는 오늘 기준으로 표시됩니다':'데모 데이터는 오늘(7/7) 하루만 제공됩니다')">›</button>
       <div class="right"><button class="btn pri" onclick="openVis()">＋ 내원등록</button></div></div>
     <div class="filters" id="visitChips"></div>
     <div class="card" style="padding:0"><div class="tblwrap"><table id="visitTbl">
@@ -462,8 +472,8 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 
   <!-- 캘린더 -->
   <section class="view" id="v-cal">
-    <div class="page-h"><h1>캘린더</h1><button class="btn sm" onclick="toast('데모는 2026년 7월만 제공됩니다')">‹</button><span class="desc num"><b>2026년 7월</b></span><button class="btn sm" onclick="toast('데모는 2026년 7월만 제공됩니다')">›</button>
-      <span class="pill p-ok">신환 12</span><span class="pill p-blue">구환 87</span>
+    <div class="page-h"><h1>캘린더</h1><button class="btn sm" onclick="toast(live?'이번 달만 표시합니다':'데모는 2026년 7월만 제공됩니다')">‹</button><span class="desc num"><b id="calLbl">2026년 7월</b></span><button class="btn sm" onclick="toast(live?'이번 달만 표시합니다':'데모는 2026년 7월만 제공됩니다')">›</button>
+      <span class="pill p-ok" id="calStat1">신환 12</span><span class="pill p-blue" id="calStat2">구환 87</span>
       <div class="right"><select class="btn"><option>월간</option><option>주간</option></select></div></div>
     <div class="cal" id="calGrid"></div>
   </section>
@@ -565,7 +575,8 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 
   <!-- 프로그램 트래커 -->
   <section class="view" id="v-rx">
-    <div class="page-h"><h1 id="rxTitle">프로그램 트래커</h1><span class="desc">시퀀스 단계별 현황 — 카드 클릭 시 환자 360</span></div>
+    <div class="page-h"><h1 id="rxTitle">프로그램 트래커</h1><span class="desc">시퀀스 단계별 현황 — 카드 클릭 시 환자 360</span>
+      <div class="right"><button class="btn pri" onclick="openProg()">＋ 프로그램 등록</button></div></div>
     <div class="kanban" id="rxKanban"></div>
     <div class="note" style="margin-top:12px" id="rxNote"></div>
   </section>
@@ -573,7 +584,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 발송 내역 -->
   <section class="view" id="v-sends">
     <div class="page-h"><h1>발송 내역</h1><span class="desc">모든 채널 통합 로그</span></div>
-    <div class="tiles">
+    <div class="tiles" id="sendsTiles">
       <div class="tile"><div class="lbl">이번 달 발송</div><div class="val num">412건</div><div class="delta flat">알림톡 318 · 친구톡 71 · LMS 23</div></div>
       <div class="tile"><div class="lbl">발송 성공률</div><div class="val num">99.2%</div><div class="delta flat">실패 3건 — 재시도 완료</div></div>
       <div class="tile"><div class="lbl">이번 달 발송 비용</div><div class="val num">0원</div><div class="delta flat">플랜 포함 10,000건 중 412건 사용</div></div>
@@ -598,22 +609,22 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 발송 성과 -->
   <section class="view" id="v-perf">
     <div class="page-h"><h1>발송 성과</h1><span class="desc">최근 30일 · 이번 달 vs 지난달</span></div>
-    <div class="tiles">
+    <div class="tiles" id="perfTiles">
       <div class="tile"><div class="lbl">클릭률</div><div class="val num">18.4%</div><div class="delta up">▲ 2.1%p</div></div>
       <div class="tile"><div class="lbl">긍정 버튼율</div><div class="val num">6.2%</div><div class="delta up">▲ 0.8%p</div></div>
       <div class="tile"><div class="lbl">D+5 응답률</div><div class="val num">41%</div><div class="delta up">▲ 5%p</div></div>
       <div class="tile"><div class="lbl">수신거부율</div><div class="val num">0.6%</div><div class="delta flat">기준 1% 미만</div></div>
     </div>
     <div class="grid g2">
-      <div class="card"><h2>수신거부율 추이</h2><div class="sub">월별 · 점선 = 조기경보 기준 1.0%</div><div id="chartUnsub"></div></div>
-      <div class="card"><h2>시나리오별 클릭률</h2><div class="sub">발송 30건 이상 시나리오만</div><div class="blist" id="chartScen"></div></div>
+      <div class="card" data-live="ph"><h2>수신거부율 추이</h2><div class="sub">월별 · 점선 = 조기경보 기준 1.0%</div><div id="chartUnsub"></div></div>
+      <div class="card" data-live="ph"><h2>시나리오별 클릭률</h2><div class="sub">발송 30건 이상 시나리오만</div><div class="blist" id="chartScen"></div></div>
     </div>
   </section>
 
   <!-- 재내원·이탈 -->
   <section class="view" id="v-retention">
     <div class="page-h"><h1>재내원 · 이탈 관리</h1><span class="desc">마지막 방문 경과일 구간별 — 예약 없는 환자만</span></div>
-    <div class="tiles">
+    <div class="tiles" id="retTiles">
       <div class="tile"><div class="lbl">14일 경과</div><div class="val num">18명</div><div class="delta flat">중단추정 전환 예정</div></div>
       <div class="tile"><div class="lbl">30일 경과</div><div class="val num">11명</div><div class="delta flat">후기 케어 대상(상 그룹)</div></div>
       <div class="tile"><div class="lbl">60일 경과</div><div class="val num">7명</div><div class="delta down">이탈 위험</div></div>
@@ -621,7 +632,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     </div>
     <div class="card" style="padding:0"><div class="tblwrap"><table>
       <thead><tr><th>환자</th><th>관여도</th><th>마지막 방문</th><th class="num">경과일</th><th>치료상태</th><th>팔로업</th><th>반응</th></tr></thead>
-      <tbody id="retTbl"></tbody></table></div></div>
+      <tbody id="retTblBody"></tbody></table></div></div>
     <div class="note">규칙: 예약 없이 10일 경과 → 자동 '중단추정' → D+7 안부 발송. 중단 플로우 진행 중에는 후기 케어를 보류합니다.</div>
   </section>
 
@@ -836,7 +847,7 @@ function finishSetup(){
 }
 function resetSetup(){
   if(!confirm('정말 초기화할까요?\n병원 설정과 오늘의 처리 기록이 삭제되며 되돌릴 수 없습니다.'))return;
-  localStorage.removeItem('careloop-cfg'); localStorage.removeItem(TODAY_KEY);
+  localStorage.removeItem('careloop-cfg'); localStorage.removeItem(todayKey());
   localStorage.removeItem('careloop-role'); localStorage.removeItem('careloop-db'); location.reload();
 }
 function editClinic(){
@@ -966,21 +977,29 @@ function renderToday(){
       <div class="qitem"><input type="checkbox" onchange="qdone(this)" aria-label="완료"><span class="who">매칭 실패</span><span class="what">클릭 웹훅 수신번호 010-55**-**21 → 환자 0건 매칭 — 수동 지정 필요 <span style="color:var(--mut)">(웹훅=자동 연동 신호. 모르면 실장님께 전달)</span></span><span class="due">24시간 내</span></div></div>`;
   restoreToday();
 }
-const TODAY_KEY='careloop-today-20260707';
+const DEMO_DATE='2026-07-07';
+function todayStr(){return live?new Date().toISOString().slice(0,10):DEMO_DATE}
+function todayKey(){return 'careloop-today-'+todayStr().replace(/-/g,'')}
+function addDays(d,n){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}
+function daysBetween(a,b){return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000)}
+function todayLabel(){const d=live?new Date():new Date(DEMO_DATE+'T09:00:00');const w=['일','월','화','수','목','금','토'][d.getDay()];return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0')+'('+w+')'}
+function setDates(){document.querySelectorAll('.todayLbl').forEach(e=>e.textContent=todayLabel())}
 function qdone(cb){
   cb.closest('.qitem').classList.toggle('done',cb.checked);
   saveToday(); updateTodayBadge();
   if(cb.checked)toast('확인 처리로 저장되었습니다 — 되돌리려면 체크를 해제하세요');
 }
 function saveToday(){
-  const arr=[...document.querySelectorAll('#v-today .qitem input')].map(c=>c.checked?1:0);
-  localStorage.setItem(TODAY_KEY,JSON.stringify(arr));
+  const o={};
+  [...document.querySelectorAll('#v-today .qitem input')].forEach((c,i)=>{o[c.dataset.q||('demo'+i)]=c.checked?1:0});
+  localStorage.setItem(todayKey(),JSON.stringify(o));
 }
 function restoreToday(){
-  try{const arr=JSON.parse(localStorage.getItem(TODAY_KEY))||[];
-    [...document.querySelectorAll('#v-today .qitem input')].forEach((c,i)=>{
-      if(arr[i]){c.checked=true;c.closest('.qitem').classList.add('done')}});
-  }catch(e){}
+  let o={};try{o=JSON.parse(localStorage.getItem(todayKey()))||{}}catch(e){}
+  [...document.querySelectorAll('#v-today .qitem input')].forEach((c,i)=>{
+    if(!c.dataset.q)c.dataset.q='demo'+i;
+    if(o[c.dataset.q]){c.checked=true;c.closest('.qitem').classList.add('done')}
+  });
   updateTodayBadge();
 }
 function updateTodayBadge(){
@@ -999,7 +1018,7 @@ function crisisResolve(id,btn){
   aiSay(`💚 ${esc(p.name)}님 위기를 회복 처리했어요.\n메모: "${esc(memo)}"\n보류했던 안내 발송을 다시 켰고, 위기→회복 전환으로 기록했습니다.`);
   const q=btn&&btn.closest?btn.closest('.qitem'):null;
   if(q){const c=q.querySelector('input');if(c)c.checked=true;q.classList.add('done');const b=q.querySelector('button.btn');if(b)b.remove();saveToday();}
-  updateTodayBadge(); renderPatients();
+  updateTodayBadge(); renderPatients(); if(live)renderTodayLive();
   if(live&&sb){
     sb.from('patients').update({crisis:'회복'}).eq('id',p.id).then(({error})=>{if(error)reportError('위기 상태 저장 실패: '+error.message)});
     sb.from('score_history').insert({clinic_id:clinicId,patient_id:p.id,reason:'수동',delta:0,after_score:p.score,after_grp:p.grp}).then(()=>{});
@@ -1025,6 +1044,7 @@ function visitDone(idx,st){
   if(!confirm(msg))return;
   v.st=st; renderVisits('전체'); updateTodayRev();
   if(live&&sb&&v.dbId)sb.from('visits').update({status:st}).eq('id',v.dbId).then(({error})=>{if(error)reportError('내원 상태 저장 실패: '+error.message)});
+  if(live){renderTodayLive();renderDashLive();}
   toast(st==='완료'?`${p.name}님 완료 — ${SP.d1Name} D+1 발송이 예약되었습니다`:`${p.name}님 노쇼 처리 — 재예약 안내 발송`);
   aiSay(st==='완료'?`✅ ${p.name}님 완료 처리했어요. 내일 오전 ${SP.d1Name}가 자동 발송됩니다.`:`📵 ${p.name}님을 노쇼 처리했어요. 재예약 안내를 보냈고, 미응답 시 내일 전화 항목을 만들게요.`);
 }
@@ -1198,7 +1218,7 @@ function renderTList(sel){
   document.getElementById('tBtns').innerHTML=t.btns.map(b=>`<div class="kbtn">${b}</div>`).join('');
 }
 function renderRet(){
-  document.getElementById('retTbl').innerHTML=`
+  document.getElementById('retTblBody').innerHTML=`
    <tr class="click" onclick="showPatient('P05')"><td>정혜란</td><td><span class="grp 중">중</span></td><td class="num">2026-06-20</td><td class="num">17일</td><td><span class="pill p-amber">중단추정</span></td><td>안부 발송 (7/6)</td><td>—</td></tr>
    <tr class="click" onclick="showPatient('P09')"><td>윤미래</td><td><span class="grp 상">상</span></td><td class="num">2026-06-30</td><td class="num">7일</td><td><span class="pill p-ok">완료</span></td><td>정기검진 안내 (오늘)</td><td>—</td></tr>
    <tr><td>조명환</td><td><span class="grp 하">하</span></td><td class="num">2026-05-02</td><td class="num">66일</td><td><span class="pill p-gray">이탈 위험</span></td><td>분기 계절 인사 (7/1)</td><td><span class="pill p-blue">클릭</span></td></tr>
@@ -1570,27 +1590,194 @@ async function loadLive(){
       consent:r.consent?'Y':'N',last:r.last_visit_at||'—',status:r.treat_status,
       flags:[...(r.blocked?['발송중단']:[]),...(r.crisis==='위기'?['위기']:[])],
       visits:r.visit_count,src:r.channel||'기타',
-      spark:Array(8).fill(r.score),next:r.next_send_label||'—',tl:[],rec:[]}));
+      spark:Array(8).fill(r.score),next:r.next_send_label||'—',tl:[],rec:[],created:r.created_at||''}));
   }
   const td=new Date(); const d0=td.toISOString().slice(0,10);
   const d1=new Date(td.getTime()+86400000).toISOString().slice(0,10);
   const {data:vs}=await sb.from('visits').select('*').or(`and(at.gte.${d0},at.lt.${d1}),and(at.gte.2026-07-07,at.lt.2026-07-08)`).order('at');
   VISITS_TODAY=(vs||[]).map(v=>{const p=P.find(x=>x.id===v.patient_id);
     return p?{t:new Date(v.at).toTimeString().slice(0,5),p:p.id,item:v.item,st:v.status,staff:v.staff||'—',crm:'—',rev:45000,dbId:v.id}:null}).filter(Boolean);
-  const {data:sd}=await sb.from('sends').select('*').order('sent_at',{ascending:false}).limit(20);
-  if(sd&&sd.length){
+  const {data:sd}=await sb.from('sends').select('*').order('sent_at',{ascending:false}).limit(50);
+  SENDS=sd||[];
+  {
     const chPill={'알림톡':'p-pri','친구톡':'p-amber','LMS':'p-amber'};
     const stP={'성공':'p-ok','예약':'p-blue','실패':'p-red','차단':'p-red'};
-    document.getElementById('sendsTbl').innerHTML=sd.map(r=>{
+    document.getElementById('sendsTbl').innerHTML=SENDS.length?SENDS.map(r=>{
       const p=P.find(x=>x.id===r.patient_id);
-      return `<tr><td><span class="pill ${stP[r.status]||'p-gray'}">발송${r.status}</span></td><td><span class="pill ${chPill[r.channel]||'p-gray'}">${r.channel}</span></td><td>${p?p.name:'—'}</td><td>${r.template}</td><td class="num">${r.scenario}</td><td>${r.reaction||'—'}</td><td class="num">${r.sent_at?r.sent_at.slice(0,16).replace('T',' '):'예약'}</td></tr>`;}).join('');
+      return `<tr><td><span class="pill ${stP[r.status]||'p-gray'}">발송${r.status}</span></td><td><span class="pill ${chPill[r.channel]||'p-gray'}">${r.channel}</span></td><td>${p?esc(p.name):'—'}</td><td>${esc(r.template)}</td><td class="num">${r.scenario}</td><td>${r.reaction||'—'}</td><td class="num">${r.sent_at?r.sent_at.slice(0,16).replace('T',' '):'예약'}</td></tr>`;}).join(''):'<tr><td colspan="7" class="empty">발송 기록이 없습니다 — 자동 발송 연결(솔라피/Make) 전까지는 수동 안내 후 기록합니다</td></tr>';
   }
-  renderPatients(); renderVisits('전체'); renderSendList();
+  const {data:progs}=await sb.from('programs').select('*');
+  PROGRAMS=progs||[];
+  const monthStart=todayStr().slice(0,8)+'01';
+  const {data:mv}=await sb.from('visits').select('*').gte('at',monthStart).order('at');
+  MONTH_VISITS=mv||[];
+  renderLiveAll();
+}
+function renderLiveAll(){
+  setDates(); renderPatients(); renderVisits('전체'); renderSendList(); updateSendPreview();
+  renderTodayLive(); renderCalLive(); renderDashLive(); renderRxLive(); renderRetLive(); renderSendsLiveExtras();
 }
 function renderAll(){
   renderToday();renderVisits('전체');renderCal();renderIntake();renderMap();renderPatients();
   sSel=null;sTpl=null;renderSendList();renderSendTpls();updateSendPreview();
   renderRx();renderSends();tCat=null;renderTCats();renderTList(0);renderRet();renderContents();renderStaff();renderHospital();
+}
+
+/* ================= LIVE 실데이터 파생 렌더 ================= */
+let PROGRAMS=[], MONTH_VISITS=[], SENDS=[];
+function phCards(){
+  document.querySelectorAll('[data-live=ph]').forEach(c=>{
+    if(c.dataset.phed)return; c.dataset.phed='1';
+    [...c.children].forEach(ch=>{if(ch.tagName!=='H2'&&!ch.classList.contains('sub'))ch.remove()});
+    const d=document.createElement('div'); d.className='empty';
+    d.textContent='📊 데이터 수집 중 — 발송·정착 데이터가 쌓이면 자동으로 표시됩니다';
+    c.appendChild(d);
+  });
+}
+function buildQueue(){
+  const t=todayStr(), items=[];
+  P.filter(p=>p.flags.includes('위기')).forEach(p=>items.push({k:'crisis:'+p.id,sec:'긴급',cls:'p-red',crisis:true,who:p,
+    what:`위기 대응 — 통화 후 [회복 처리] <b>(30분 내 전화)</b>`,due:'즉시',
+    btn:`<button class="btn sm pri" onclick="crisisResolve('${p.id}',this)">☎ 통화 완료 · 회복 처리</button>`}));
+  PROGRAMS.forEach(pr=>{
+    const p=P.find(x=>x.id===pr.patient_id); if(!p||pr.outcome)return;
+    if(!pr.d5_response&&addDays(pr.start_date,5)<=t)
+      items.push({k:'d5:'+pr.id,sec:'프로그램',cls:'p-pri',who:p,what:`${esc(pr.name)} 경과 확인(시작 ${daysBetween(pr.start_date,t)}일째) — 연락 후 결과 기록`,due:'오늘'});
+    if(addDays(pr.start_date,pr.days-3)<=t)
+      items.push({k:'rn:'+pr.id,sec:'프로그램',cls:'p-pri',who:p,what:`${esc(pr.name)} 종료 임박(−3일) — 재안내`,due:'오늘'});
+  });
+  VISITS_TODAY.filter(v=>v.st==='노쇼').forEach(v=>{const p=pById(v.p); if(p)items.push({k:'ns:'+(v.dbId||v.t),sec:'팔로업',cls:'p-amber',who:p,what:`오늘 ${v.t} <b>노쇼</b> — 재예약 연락`,due:'오늘'})});
+  P.filter(p=>p.status==='중단추정').forEach(p=>items.push({k:'drop:'+p.id,sec:'팔로업',cls:'p-amber',who:p,what:`치료 <b>중단추정</b> — 안부 연락`,due:'오늘'}));
+  P.filter(p=>p.visits>=3&&p.status==='치료중'&&!p.flags.includes('발송중단')&&!p.flags.includes('위기')&&p.grp!=='하').slice(0,3)
+    .forEach(p=>items.push({k:'loyal:'+p.id,sec:'단골 이벤트',cls:'p-blue',who:p,what:`${p.visits}회차 — 감사 설문 안내 <b>(소개 혜택 언급 금지)</b>`,due:'내원 시'}));
+  return items;
+}
+function renderTodayLive(){
+  const items=buildQueue(), secs={};
+  items.forEach(it=>{(secs[it.sec]=secs[it.sec]||[]).push(it)});
+  const order=['긴급','프로그램','팔로업','단골 이벤트'];
+  document.getElementById('todayQueue').innerHTML=order.filter(k=>secs[k]).map(k=>`
+    <div class="qsec"><h3><span class="pill ${secs[k][0].cls}">${k}</span>${k==='긴급'?'위기 대응 — 30분 내 전화':''}</h3>
+    ${secs[k].map(it=>`<div class="qitem ${it.crisis?'crisis':''}"><input type="checkbox" data-q="${it.k}" onchange="qdone(this)" aria-label="완료"><span class="who"><a href="#" onclick="showPatient('${it.who.id}');return false">${esc(it.who.name)}</a></span><span class="what">${it.what}</span><span class="due">${it.due}</span>${it.btn||''}</div>`).join('')}</div>`).join('');
+  const n=k=>(secs[k]||[]).length;
+  document.getElementById('todayTiles').innerHTML=`
+    <div class="tile ${n('긴급')?'alert':''}"><div class="lbl">🔴 위기 대응</div><div class="val num">${n('긴급')}</div><div class="delta ${n('긴급')?'down':'flat'}">${n('긴급')?'즉시 전화':'없음'}</div></div>
+    <div class="tile"><div class="lbl">프로그램 체크</div><div class="val num">${n('프로그램')}</div><div class="delta flat">경과 확인 · 재안내</div></div>
+    <div class="tile"><div class="lbl">팔로업</div><div class="val num">${n('팔로업')}</div><div class="delta flat">노쇼 · 중단추정</div></div>
+    <div class="tile"><div class="lbl">단골 이벤트</div><div class="val num">${n('단골 이벤트')}</div><div class="delta flat">3회차+</div></div>`;
+  const doneEl=document.getElementById('todayDone');
+  if(!items.length){doneEl.style.display='block';doneEl.textContent='✅ 오늘 처리할 액션이 없습니다 — 환자·내원·프로그램을 등록하면 자동으로 올라옵니다.';document.getElementById('todayBadge').textContent='0';}
+  else restoreToday();
+}
+function renderCalLive(){
+  const t=new Date(), y=t.getFullYear(), m=t.getMonth();
+  document.getElementById('calLbl').textContent=y+'년 '+(m+1)+'월';
+  const first=new Date(y,m,1).getDay(), dim=new Date(y,m+1,0).getDate();
+  const ev={};
+  MONTH_VISITS.forEach(v=>{const d=new Date(v.at); if(d.getMonth()!==m)return;
+    const p=P.find(x=>x.id===v.patient_id); const day=d.getDate();
+    (ev[day]=ev[day]||[]).push([String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' '+(p?p.name:''), v.status==='노쇼'?'b':v.status==='예약'?'c':'a']);});
+  const dows=['일','월','화','수','목','금','토'];
+  let h=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+  const cells=Math.ceil((first+dim)/7)*7;
+  for(let i=0;i<cells;i++){const day=i-first+1;
+    if(day<1||day>dim){h+=`<div class="day dim ${i%7===0?'sun':''}"><div class="dnum num"></div></div>`;continue}
+    const l=(ev[day]||[]);
+    const list=l.slice(0,3).map(e=>`<div class="ev ${e[1]}">${e[0]}</div>`).join('')+(l.length>3?`<div class="ev c">+${l.length-3}</div>`:'');
+    h+=`<div class="day ${day===t.getDate()?'today':''} ${i%7===0?'sun':''}"><div class="dnum num">${day}</div>${list}</div>`;}
+  document.getElementById('calGrid').innerHTML=h;
+  document.getElementById('calStat1').textContent='이번 달 내원 '+MONTH_VISITS.length+'건';
+  document.getElementById('calStat2').textContent='오늘 '+VISITS_TODAY.length+'건';
+}
+function renderDashLive(){
+  const done=VISITS_TODAY.filter(v=>v.st==='완료').length, res=VISITS_TODAY.filter(v=>v.st==='예약').length, ns=VISITS_TODAY.filter(v=>v.st==='노쇼').length;
+  const crisis=P.filter(p=>p.flags.includes('위기')).length;
+  const sendsToday=SENDS.filter(r=>(r.sent_at||'').slice(0,10)===todayStr()).length;
+  document.getElementById('dashToday').innerHTML=`
+    <div class="tile"><div class="lbl">오늘 내원</div><div class="val num">${VISITS_TODAY.length}건</div><div class="delta flat">완료 ${done} · 예약 ${res} · 노쇼 ${ns}</div></div>
+    <div class="tile ${crisis?'alert':''}"><div class="lbl">오늘 위기</div><div class="val num">${crisis}건</div><div class="delta ${crisis?'down':'flat'}">${crisis?'즉시 전화':'없음'}</div></div>
+    <div class="tile"><div class="lbl">오늘 발송 기록</div><div class="val num">${sendsToday}건</div><div class="delta flat">발송 로그 기준</div></div>
+    <div class="tile"><div class="lbl">오늘 매출</div><div class="val num" id="todayRev">—</div><div class="delta flat" id="todayRevSub">완료 수납 기준</div></div>`;
+  updateTodayRev();
+  const cut=new Date(Date.now()-30*86400000).toISOString();
+  const newP=P.filter(p=>p.created&&p.created>=cut).length;
+  document.getElementById('dashKpis').innerHTML=`
+    <div class="tile"><div class="lbl">신규 환자 (30일)</div><div class="val num">${newP}명</div><div class="delta flat">등록 기준</div></div>
+    <div class="tile"><div class="lbl">전체 환자</div><div class="val num">${P.length}명</div><div class="delta flat">발송중단 ${P.filter(p=>p.flags.includes('발송중단')).length}명</div></div>
+    <div class="tile"><div class="lbl">재방문율</div><div class="val num">—</div><div class="delta flat">데이터 수집 중</div></div>
+    <div class="tile"><div class="lbl">${SP.progLabel} 전환율</div><div class="val num">—</div><div class="delta flat">데이터 수집 중</div></div>
+    <div class="tile"><div class="lbl">D+5 응답률</div><div class="val num">—</div><div class="delta flat">데이터 수집 중</div></div>
+    <div class="tile"><div class="lbl">수신거부율</div><div class="val num">—</div><div class="delta flat">데이터 수집 중</div></div>`;
+  const g={상:0,중:0,하:0,차단:0};
+  P.forEach(p=>{if(p.flags.includes('발송중단'))g.차단++;else g[p.grp]=(g[p.grp]||0)+1});
+  const mx=Math.max(g.상,g.중,g.하,g.차단,1);
+  document.getElementById('pipeBars').innerHTML=[['상','#1f5c3e',g.상],['중','#5b9a78',g.중],['하','#a9c4b4',g.하],['발송중단','#c9cec9',g.차단]]
+    .map(r=>`<div class="brow"><span class="bl">${r[0]==='발송중단'?'⛔ 발송중단':`<span class="grp ${r[0]}">${r[0]}</span> 관여도 ${r[0]}`}</span><div class="track"><div class="fill" style="width:${r[2]/mx*100}%;background:${r[1]}"></div></div><span class="bv num">${r[2]}명</span></div>`).join('');
+  const ch={}; P.forEach(p=>{ch[p.src]=(ch[p.src]||0)+1});
+  const chRows=Object.entries(ch).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  if(chRows.length){barList('chartChannel',chRows,'var(--c1)');
+    document.getElementById('chReport').innerHTML=`Report — 유입 1위 채널은 <b>[${esc(chRows[0][0])}]</b> 입니다 (${chRows[0][1]}명).`;}
+  else{document.getElementById('chartChannel').innerHTML='<div class="empty">환자를 등록하면 채널 분포가 표시됩니다</div>';document.getElementById('chReport').textContent='';}
+  phCards();
+}
+function renderRxLive(){
+  const t=todayStr();
+  const cols=[['진행 중',[]],['경과 확인 대기',[]],['응답 수신',[]],['재안내 대기',[]],['종료·전환',[]]];
+  PROGRAMS.forEach(pr=>{
+    const p=P.find(x=>x.id===pr.patient_id); if(!p)return;
+    const dn=Math.max(daysBetween(pr.start_date,t),0);
+    const card=(extra,pill='p-gray')=>`<div class="kcard" onclick="showPatient('${p.id}')"><div class="nm">${esc(p.name)} <span class="pill ${pill} num">D+${dn}</span></div><div class="mt">${esc(pr.name)} · ${extra}</div></div>`;
+    if(pr.outcome)cols[4][1].push(card(pr.outcome,'p-ok'));
+    else if(addDays(pr.start_date,pr.days-3)<=t)cols[3][1].push(card('종료 임박 — 재안내','p-pri'));
+    else if(pr.d5_response)cols[2][1].push(card('응답: '+pr.d5_response, pr.d5_response==='불편함'?'p-red':'p-ok'));
+    else if(addDays(pr.start_date,5)<=t)cols[1][1].push(card('경과 확인 필요','p-amber'));
+    else cols[0][1].push(card('진행 중'));
+  });
+  document.getElementById('rxKanban').innerHTML=cols.map(c=>`<div class="kcol"><h4>${c[0]} <span class="num">${c[1].length}</span></h4>${c[1].join('')||'<div class="kcard" style="cursor:default;color:var(--mut)">비어 있음</div>'}</div>`).join('');
+  document.getElementById('rxNote').textContent=PROGRAMS.length?`체크포인트: 시작 5일째 경과 확인 · 종료 3일 전 재안내 — 오늘의 액션에 자동 반영`:'아직 등록된 프로그램이 없습니다 — [＋ 프로그램 등록]으로 시작하세요.';
+}
+function renderRetLive(){
+  const t=todayStr();
+  const rows=P.filter(p=>p.last&&/\d{4}-\d{2}-\d{2}/.test(p.last)).map(p=>({p,d:daysBetween(p.last,t)})).filter(r=>r.d>=0).sort((a,b)=>b.d-a.d);
+  const b=[0,0,0,0]; rows.forEach(r=>{if(r.d>=90)b[3]++;else if(r.d>=60)b[2]++;else if(r.d>=30)b[1]++;else if(r.d>=14)b[0]++});
+  document.getElementById('retTiles').innerHTML=[['14일 경과',b[0],'중단추정 전환 예정'],['30일 경과',b[1],'후기 케어 대상'],['60일 경과',b[2],'이탈 위험'],['90일+',b[3],'이탈 분류']]
+    .map(r=>`<div class="tile"><div class="lbl">${r[0]}</div><div class="val num">${r[1]}명</div><div class="delta flat">${r[2]}</div></div>`).join('');
+  document.getElementById('retTblBody').innerHTML=rows.slice(0,12).map(r=>`<tr class="click" onclick="showPatient('${r.p.id}')"><td>${esc(r.p.name)}</td><td><span class="grp ${r.p.grp}">${r.p.grp}</span></td><td class="num">${r.p.last}</td><td class="num">${r.d}일</td><td><span class="pill ${r.p.status==='중단추정'?'p-amber':r.p.status==='완료'?'p-ok':'p-blue'}">${r.p.status}</span></td><td>—</td><td>—</td></tr>`).join('')||'<tr><td colspan="7" class="empty">환자 데이터가 없습니다</td></tr>';
+}
+function renderSendsLiveExtras(){
+  const mo=SENDS.filter(r=>(r.sent_at||'').slice(0,7)===todayStr().slice(0,7)).length;
+  const ok=SENDS.filter(r=>r.status==='성공').length;
+  document.getElementById('sendsTiles').innerHTML=`
+    <div class="tile"><div class="lbl">이번 달 발송 기록</div><div class="val num">${mo}건</div><div class="delta flat">전체 로그 ${SENDS.length}건</div></div>
+    <div class="tile"><div class="lbl">성공</div><div class="val num">${ok}건</div><div class="delta flat">실패·차단 ${SENDS.length-ok}건</div></div>
+    <div class="tile"><div class="lbl">발송 비용</div><div class="val num">0원</div><div class="delta flat">자동 발송 미연결 — 수동 안내·기록</div></div>`;
+  const re=SENDS.filter(r=>r.reaction).length;
+  document.getElementById('perfTiles').innerHTML=`
+    <div class="tile"><div class="lbl">발송 기록 (최근)</div><div class="val num">${SENDS.length}건</div><div class="delta flat">로그 기준</div></div>
+    <div class="tile"><div class="lbl">반응 기록</div><div class="val num">${re}건</div><div class="delta flat">클릭 · 응답</div></div>
+    <div class="tile"><div class="lbl">클릭률</div><div class="val num">—</div><div class="delta flat">데이터 수집 중</div></div>
+    <div class="tile"><div class="lbl">수신거부율</div><div class="val num">—</div><div class="delta flat">데이터 수집 중</div></div>`;
+}
+function openProg(){
+  document.getElementById('pgP').innerHTML=P.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.chart})</option>`).join('');
+  document.getElementById('pgType').innerHTML=SP.programs.map((pg,i)=>`<option value="${i}">${pg[0]} (${pg[1]}일)</option>`).join('');
+  document.getElementById('pgDate').value=todayStr();
+  document.getElementById('progModal').style.display='flex';
+}
+async function addProgram(){
+  const pid=document.getElementById('pgP').value, i=+document.getElementById('pgType').value;
+  const d=document.getElementById('pgDate').value||todayStr();
+  const pg=SP.programs[i], p=pById(pid); if(!p||!pg){toast('환자와 프로그램을 선택해 주세요');return}
+  if(live&&sb){
+    const {data,error}=await sb.from('programs').insert({clinic_id:clinicId,patient_id:pid,name:pg[0],days:pg[1],start_date:d}).select().single();
+    if(error){reportError('프로그램 등록 실패: '+error.message);return}
+    PROGRAMS.push(data); renderRxLive(); renderTodayLive();
+  }else{
+    toast('데모 모드 — 실사용(LIVE)에서는 트래커와 오늘의 액션에 자동 반영됩니다');
+  }
+  document.getElementById('progModal').style.display='none';
+  go('rx');
+  aiSay(`💊 ${esc(p.name)}님 <b>${esc(pg[0])}</b> 등록 (시작 ${d}). 시작 5일째 경과 확인이 오늘의 액션에 자동으로 올라옵니다.`);
 }
 
 /* ================= 오류 신호 (장애 알림) ================= */
@@ -1636,7 +1823,7 @@ function initApp(){
     {name:'SNS',color:'var(--c4)',data:[1,1,2,3,4,5]}
   ],['2월','3월','4월','5월','6월','7월']);
   barList('chartChRev',[['네이버 검색',260,'260만원'],['지인 소개',190,'190만원'],['카카오톡 채널',110,'110만원'],['유튜브',70,'70만원'],['인스타그램',40,'40만원']],'var(--c1)');
-  updateTodayRev(); aiChips(); applyRole();
+  updateTodayRev(); aiChips(); applyRole(); setDates();
   const crisisN=P.filter(x=>x.flags.includes('위기')).length;
   document.getElementById('aiMsgs').innerHTML='';
   aiSay(`👋 좋은 아침이에요, <b>${esc(cfg.name)}</b>! AI 매니저입니다.\n\n📋 <b>오늘 브리핑</b>\n· 내원 예정 ${VISITS_TODAY.length}건 · 처리할 액션 ${document.querySelectorAll('#v-today .qitem').length}건\n${crisisN?`· 🚨 위기 ${crisisN}건 — 30분 내 전화가 필요해요!`:'· 위기 없음 💚'}\n\n오류·알림은 전부 이 채팅으로 알려드릴게요. 처음이시면 아래 '처음이에요'를 눌러보세요.`);
