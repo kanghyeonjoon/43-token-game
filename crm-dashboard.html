@@ -330,6 +330,12 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
       <div class="card"><h2>연령 · 성별 발송 비율</h2><div class="sub">최근 30일 · 남 41% / 여 59%</div>
         <div class="legend"><span><span class="sw" style="background:var(--c2)"></span>남성</span><span><span class="sw" style="background:var(--c3)"></span>여성</span></div>
         <div id="chartAge"></div></div>
+      <div class="card"><h2>신규 환자 유입 채널</h2><div class="sub">최근 30일 신규 24명 · 문진표 7번 + 채널별 QR/링크 태그로 자동 수집</div>
+        <div class="blist" id="chartChannel"></div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:8px">Report — 최근 30일 신규 환자는 <b>[네이버 검색]</b> 유입이 가장 많았습니다.</div></div>
+      <div class="card"><h2>채널별 정착 품질</h2><div class="sub">유입 채널별 3회차 도달율 — 어떤 채널이 '남는 환자'를 데려오는가</div>
+        <div class="blist" id="chartChannelQ"></div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:8px">💡 <b>지인 소개</b> 환자의 정착률이 가장 높습니다 — 단골 이벤트(구전)가 최고의 채널입니다. 유입이 많아도 정착이 낮은 채널은 광고비 재검토 대상.</div></div>
     </div>
   </section>
 
@@ -363,7 +369,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
           <li><span class="d">2~4번</span><span>다른 증상 · 걱정되는 건강 문제 · 가족력 (복수 선택)</span></li>
           <li><span class="d">5번</span><span>실손보험 가입 여부</span></li>
           <li><span class="d">6번</span><span>치료 방향 (최소 / 표준 / 집중) — <b>잠재성 점수 핵심 입력</b></span></li>
-          <li><span class="d">7번</span><span>내원 경로 (검색 / 지인 소개+소개자 / 기타)</span></li>
+          <li><span class="d">7번</span><span>내원 경로 (네이버 / 카카오톡 / 유튜브 / 인스타그램 / 지인 소개+소개자명 / 기타) — <b>채널별 QR·예약 링크 태그로 자동 기록, 미기록 시 데스크 확인</b></span></li>
           <li><span class="d">동의</span><span>①필수 개인정보 ②필수 민감정보 ③<b>선택 마케팅 수신</b> ④국외이전 고지 — ③ 미동의 시 기능성 메시지만 발송</span></li>
         </ul></div>
       <div class="card"><h2>발송·작성 내역</h2><div class="sub">최근 5건</div>
@@ -400,9 +406,10 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
       <select id="pGroup" onchange="renderPatients()"><option value="">관여도 전체</option><option>상</option><option>중</option><option>하</option></select>
       <select id="pStatus" onchange="renderPatients()"><option value="">치료상태 전체</option><option>치료중</option><option>중단추정</option><option>완료</option></select>
       <select id="pConsent" onchange="renderPatients()"><option value="">마케팅 동의 전체</option><option>Y</option><option>N</option></select>
+      <select id="pChannel" onchange="renderPatients()"><option value="">유입 채널 전체</option><option>네이버 검색</option><option>카카오톡 채널</option><option>유튜브</option><option>인스타그램</option><option>지인 소개</option><option>재방문</option></select>
     </div>
     <div class="card" style="padding:0"><div class="tblwrap"><table id="pTbl">
-      <thead><tr><th>차트번호</th><th>환자명</th><th>관여도</th><th class="num">점수</th><th>마케팅 동의</th><th>최종 내원</th><th>치료상태</th><th>상태 표시</th><th>최근 CRM</th></tr></thead>
+      <thead><tr><th>차트번호</th><th>환자명</th><th>관여도</th><th class="num">점수</th><th>유입 채널</th><th>마케팅 동의</th><th>최종 내원</th><th>치료상태</th><th>상태 표시</th><th>최근 CRM</th></tr></thead>
       <tbody></tbody></table></div></div>
     <div class="note">행 클릭 → 환자 360. 점수 = 잠재성 + 활성도(최근 90일), 원장 수동지정 우선.</div>
   </section>
@@ -692,7 +699,7 @@ function buildData(){
     next:`7/7(화) 11:00 · ${PR(0)} 종료 전 재안내 — 친구톡`,
     tl:[['7/2','알림톡 · D+5 경과체크 → 잘 맞아요 (+2)'],['6/28',`알림톡 · ${SP.d1Name} D+1 → 클릭 (+1)`],['6/21',`친구톡 · 초기케어(${S(0)}) → 도움됐어요 (+2)`],['6/20','알림톡 · 웰컴 메시지']],
     rec:[['7/2',`5회차 · ${SP.items[0]}+${SP.items[1]} (완료)`],['6/27',`${PR(0)} 시작 · 6/26`],['6/20',`초진 · ${S(0)} / 문진표 제출 (잠재성 +4)`]]},
-   {id:'P02',chart:'21041',name:'박성호',grp:'중',score:2,pot:1,act:1,consent:'Y',last:'2026-07-01',status:'치료중',flags:[],visits:3,src:'검색',spark:[1,1,1,2,2,2,2,2],
+   {id:'P02',chart:'21041',name:'박성호',grp:'중',score:2,pot:1,act:1,consent:'Y',last:'2026-07-01',status:'치료중',flags:[],visits:3,src:'네이버 검색',spark:[1,1,1,2,2,2,2,2],
     next:'7/8(수) 09:00 · D+5 경과체크 리마인드 — 알림톡',
     tl:[['7/2','알림톡 · D+5 경과체크 → 무반응'],['6/28',`알림톡 · ${SP.d1Name} D+1`],['6/22',`친구톡 · 초기케어(${S(3)}) → 클릭 (+1)`]],
     rec:[['7/1',`3회차 · ${SP.items[0]} (완료)`],['6/27',`${PR(0)} 시작`],['6/21',`초진 · ${S(3)} / 표준진료 (잠재성 +1)`]]},
@@ -700,7 +707,7 @@ function buildData(){
     next:'⚠ 위기관리 중 — 마케팅 발송 전면 보류. 원장 전화 후 상태 갱신',
     tl:[['오늘 09:18','알림톡 · 위기 접수 안내 발송'],['오늘 09:00','알림톡 · D+5 경과체크 → 불편해요 (위기 전환)'],['7/3',`알림톡 · ${SP.d1Name} D+1`],['6/25',`친구톡 · 초기케어(${S(2)}) → 클릭 (+1)`]],
     rec:[['7/4',`4회차 · ${SP.items[0]}+${SP.items[2]} (완료)`],['7/2',`${PR(0)} 시작 · 7/2`],['6/24',`초진 · ${S(2)} / 집중진료 +3, 걱정증상 +2`]]},
-   {id:'P04',chart:'21050',name:'최영훈',grp:'하',score:-2,pot:-3,act:1,consent:'Y',last:'2026-07-05',status:'치료중',flags:[],visits:2,src:'검색',spark:[-3,-3,-3,-2,-2,-2,-2,-2],
+   {id:'P04',chart:'21050',name:'최영훈',grp:'하',score:-2,pot:-3,act:1,consent:'Y',last:'2026-07-05',status:'치료중',flags:[],visits:2,src:'유튜브',spark:[-3,-3,-3,-2,-2,-2,-2,-2],
     next:'기능성 메시지만 발송 (하 그룹) — 분기 계절 인사 9월 예정',
     tl:[['7/6',`알림톡 · ${SP.d1Name} D+1 → 클릭 (+1)`],['7/1','알림톡 · 웰컴 메시지 → 무반응']],
     rec:[['7/5',`2회차 · ${SP.items[0]} (완료)`],['7/5',`${PR(1)} 시작`],['7/1',`초진 · ${S(4)} / 최소진료 (잠재성 −3)`]]},
@@ -708,15 +715,15 @@ function buildData(){
     next:'중단자 플로우 진행 중 — 후기 케어 보류. 반응 없으면 7/13 데스크 전화',
     tl:[['7/6','LMS · 치료중단자 안부 → 무반응'],['6/14',`친구톡 · 중기케어(${S(6)}) → 클릭 (+1)`]],
     rec:[['6/20',`6회차 · ${SP.items[0]} (완료) — 이후 예약 없음`],['6/5',`${PR(0)} 종료 → 미전환`],['5/18',`초진 · ${S(6)}`]]},
-   {id:'P06',chart:'21012',name:'한지우',grp:'상',score:6,pot:3,act:3,consent:'Y',last:'2026-07-07',status:'치료중',flags:['단골 이벤트 대상'],visits:3,src:'검색',spark:[3,3,4,4,5,5,6,6],
+   {id:'P06',chart:'21012',name:'한지우',grp:'상',score:6,pot:3,act:3,consent:'Y',last:'2026-07-07',status:'치료중',flags:['단골 이벤트 대상'],visits:3,src:'인스타그램',spark:[3,3,4,4,5,5,6,6],
     next:'오늘 데스크 — 단골 감사 설문 안내 + 감사 선물',
     tl:[['7/5','알림톡 · D+5 경과체크 → 잘 맞아요 (+2)'],['6/29',`친구톡 · 초기케어(${S(0)}) → 도움됐어요 (+2)`],['6/28','알림톡 · 웰컴 메시지 → 클릭 (+1)']],
     rec:[['오늘',`3회차 · ${SP.items[0]}+${SP.items[1]} (완료)`],['6/30',`${PR(1)} 시작`],['6/28',`초진 · ${S(0)} / 걱정증상 +2`]]},
-   {id:'P07',chart:'21055',name:'강도현',grp:'중',score:1,pot:1,act:0,consent:'Y',last:'2026-07-05',status:'치료중',flags:[],visits:1,src:'검색',spark:[0,0,0,0,0,1,1,1],
+   {id:'P07',chart:'21055',name:'강도현',grp:'중',score:1,pot:1,act:0,consent:'Y',last:'2026-07-05',status:'치료중',flags:[],visits:1,src:'네이버 검색',spark:[0,0,0,0,0,1,1,1],
     next:`7/8(수) 11:00 · 초기케어(${S(1)}) — 친구톡`,
     tl:[['7/5','알림톡 · 웰컴 메시지 → 클릭 (+1)']],
     rec:[['7/5',`초진 · ${S(1)} / 다른증상 +1`],['7/5',`${PR(0)} 시작 · 7/6`]]},
-   {id:'P08',chart:'20950',name:'임하늘',grp:'중',score:2,pot:2,act:0,consent:'N',last:'2026-07-03',status:'치료중',flags:['마케팅 미동의'],visits:2,src:'검색',spark:[2,2,2,2,2,2,2,2],
+   {id:'P08',chart:'20950',name:'임하늘',grp:'중',score:2,pot:2,act:0,consent:'N',last:'2026-07-03',status:'치료중',flags:['마케팅 미동의'],visits:2,src:'카카오톡 채널',spark:[2,2,2,2,2,2,2,2],
     next:'기능성 메시지만 발송 (마케팅 미동의) — D+5 경과체크는 정보성으로 발송',
     tl:[['7/4',`알림톡 · ${SP.d1Name} D+1`],['7/1','알림톡 · 웰컴 메시지']],
     rec:[['7/3',`2회차 · ${SP.items[0]} (완료)`],['7/3',`${PR(2)} 시작`],['7/1',`초진 · ${S(5)} / 걱정증상 +2`]]},
@@ -724,7 +731,7 @@ function buildData(){
     next:'오늘 · 완료 D+7 경과확인 + 정기검진 안내 — 친구톡',
     tl:[['6/30','알림톡 · 설문 감사 (이벤트 참여완료)'],['6/25',`친구톡 · 재안내 → ${PR(2)} 결제 (+3)`],['6/10',`친구톡 · 중기케어(${S(4)}) → 클릭 (+1)`]],
     rec:[['6/30',`9회차 · ${SP.items[0]} (완료) — 원장이 치료 종결 지정`],['6/25',`${PR(2)} 재시작`],['5/2',`초진 · ${S(2)}`]]},
-   {id:'P10',chart:'21002',name:'서준석',grp:'중',score:1,pot:1,act:0,consent:'Y',last:'2026-06-30',status:'치료중',flags:['노쇼 1회'],visits:2,src:'검색',spark:[1,1,1,1,1,1,1,1],
+   {id:'P10',chart:'21002',name:'서준석',grp:'중',score:1,pot:1,act:0,consent:'Y',last:'2026-06-30',status:'치료중',flags:['노쇼 1회'],visits:2,src:'유튜브',spark:[1,1,1,1,1,1,1,1],
     next:'노쇼 재예약 안내 발송됨 — 미응답 시 내일 데스크 전화',
     tl:[['오늘 10:47','알림톡 · 노쇼 재예약 안내'],['6/26',`친구톡 · 초기케어(${S(5)}) → 무반응`]],
     rec:[['오늘','3회차 예약 10:30 — 노쇼'],['6/30',`2회차 · ${SP.items[0]} (완료)`],['6/25',`초진 · ${S(5)}`]]},
@@ -832,13 +839,13 @@ function renderMap(){
 }
 function renderPatients(){
   const q=(document.getElementById('pSearch').value||'').trim();
-  const g=document.getElementById('pGroup').value,s=document.getElementById('pStatus').value,c=document.getElementById('pConsent').value;
+  const g=document.getElementById('pGroup').value,s=document.getElementById('pStatus').value,c=document.getElementById('pConsent').value,ch=document.getElementById('pChannel').value;
   const stPill={치료중:'p-blue',중단추정:'p-amber',완료:'p-ok'};
-  const rows=P.filter(p=>(!q||p.name.includes(q)||p.chart.includes(q))&&(!g||p.grp===g)&&(!s||p.status===s)&&(!c||p.consent===c))
+  const rows=P.filter(p=>(!q||p.name.includes(q)||p.chart.includes(q))&&(!g||p.grp===g)&&(!s||p.status===s)&&(!c||p.consent===c)&&(!ch||p.src.startsWith(ch)))
     .map(p=>{
       const flags=p.flags.map(f=>`<span class="pill ${f==='위기'||f==='발송중단'?'p-red':f==='단골 이벤트 대상'?'p-blue':'p-gray'}">${f}</span>`).join(' ')||'—';
-      return `<tr class="click" onclick="showPatient('${p.id}')"><td class="num">${p.chart}</td><td><b>${p.name}</b></td><td><span class="grp ${p.grp}">${p.grp}</span></td><td class="num">${p.score>0?'+':''}${p.score}</td><td>${p.consent==='Y'?'Y':'<span style="color:var(--red)">N</span>'}</td><td class="num">${p.last}</td><td><span class="pill ${stPill[p.status]||'p-gray'}">${p.status}</span></td><td>${flags}</td><td style="font-size:12px;color:var(--ink2)">${p.tl[0]?(p.tl[0][1].split('·')[1]||p.tl[0][1]):'—'}</td></tr>`;}).join('');
-  document.querySelector('#pTbl tbody').innerHTML=rows||`<tr><td colspan="9" class="empty">조건에 맞는 환자가 없습니다.</td></tr>`;
+      return `<tr class="click" onclick="showPatient('${p.id}')"><td class="num">${p.chart}</td><td><b>${p.name}</b></td><td><span class="grp ${p.grp}">${p.grp}</span></td><td class="num">${p.score>0?'+':''}${p.score}</td><td><span class="pill p-gray">${p.src.split('(')[0]}</span></td><td>${p.consent==='Y'?'Y':'<span style="color:var(--red)">N</span>'}</td><td class="num">${p.last}</td><td><span class="pill ${stPill[p.status]||'p-gray'}">${p.status}</span></td><td>${flags}</td><td style="font-size:12px;color:var(--ink2)">${p.tl[0]?(p.tl[0][1].split('·')[1]||p.tl[0][1]):'—'}</td></tr>`;}).join('');
+  document.querySelector('#pTbl tbody').innerHTML=rows||`<tr><td colspan="10" class="empty">조건에 맞는 환자가 없습니다.</td></tr>`;
 }
 function showPatient(id){
   const p=pById(id); if(!p)return;
@@ -1063,6 +1070,8 @@ function initApp(){
   barList('chartContent',SP.contents.slice(0,5).map((c,i)=>[c[1].slice(0,10),96-i*19]),'var(--c1)');
   pairedBars('chartAge',[['30대',4,3],['40대',7,9],['50대',11,17],['60대',13,21],['70대',6,9]]);
   lineChart('chartUnsub',[{name:'수신거부율',color:'var(--c4)',data:[0.4,0.5,0.8,0.6,0.5,0.6]}],['2월','3월','4월','5월','6월','7월'],{threshold:1.0,pct:true});
+  barList('chartChannel',[['네이버 검색',9],['지인 소개',5],['카카오톡 채널',4],['유튜브',3],['인스타그램',2],['기타·워크인',1],],'var(--c1)');
+  barList('chartChannelQ',[['지인 소개',72,'72%'],['카카오톡 채널',58,'58%'],['네이버 검색',44,'44%'],['유튜브',38,'38%'],['인스타그램',30,'30%'],],'var(--c2)');
   barList('chartScen',[['02 초기케어',24,'24%'],['03 '+SP.seqName,21,'21%'],['05 중기케어',17,'17%'],['06 후기케어',14,'14%'],['09 중단자 안부',9,'9%']],'var(--c1)');
 }
 loadCfg();
