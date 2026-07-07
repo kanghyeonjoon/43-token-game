@@ -343,6 +343,31 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="btn pri" style="width:100%;margin-top:10px" onclick="addVisit()">예약 등록</button>
   </div>
 </div>
+<div id="ikModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:480px">
+    <h3>📋 문진표 작성 (태블릿·데스크)</h3>
+    <div class="note" style="margin-bottom:10px">환자분께 태블릿을 건네거나, 여쭤보며 데스크가 대신 작성하세요. 제출 즉시 잠재성 점수·관여도가 자동 계산됩니다. (알림톡 링크 발송은 채널 연동 후 제공)</div>
+    <div class="field"><label>환자</label><select id="ikP" style="flex:1"></select></div>
+    <div class="field"><label>1. 불편한 증상</label><select id="ikSym" style="flex:1"></select></div>
+    <div class="field" style="align-items:flex-start"><label>2. 걱정 문제</label><span id="ikWorry" style="flex:1;display:flex;gap:6px;flex-wrap:wrap"></span></div>
+    <div class="field" style="align-items:flex-start"><label>3. 가족력</label><span id="ikFam" style="flex:1;display:flex;gap:6px;flex-wrap:wrap"></span></div>
+    <div class="field"><label>4. 실손보험</label><select id="ikIns" style="flex:1"><option>가입</option><option>미가입</option><option>모름</option></select></div>
+    <div class="field"><label>5. 치료 방향</label><select id="ikGoal" style="flex:1"><option>표준</option><option>집중</option><option>최소</option></select></div>
+    <div class="field"><label>6. 내원 경로</label><select id="ikCh" style="flex:1"><option>네이버 검색</option><option>카카오톡 채널</option><option>유튜브</option><option>인스타그램</option><option>지인 소개</option><option>재방문</option><option>기타</option></select></div>
+    <div class="field"><label>7. 마케팅 수신</label><select id="ikConsent" style="flex:1"><option value="Y">동의</option><option value="N">미동의</option></select></div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="submitIntake()">제출 — 점수 자동 계산</button>
+  </div>
+</div>
+<div id="tplModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:480px">
+    <h3>＋ 내 템플릿 등록</h3>
+    <div class="field"><label>이름</label><input id="tpName" style="flex:1" placeholder="예: 여름 휴진 안내"></div>
+    <div class="field"><label>채널</label><select id="tpCh" style="flex:1"><option>알림톡</option><option>친구톡</option><option>LMS</option></select></div>
+    <div class="field" style="align-items:flex-start"><label>내용</label><textarea id="tpMsg" style="flex:1;min-height:130px;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6" placeholder="#{환자명}님, 원장입니다.&#10;…&#10;&#10;※ #{환자명}은 발송 시 이름으로 바뀝니다"></textarea></div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="saveTpl()">저장</button>
+    <div class="note" style="margin-top:8px">이 기기(브라우저)에 저장되고, 개별 발송의 템플릿 목록에 바로 나타납니다. 실제 자동 발송은 채널 연동(솔라피/Make) 후 — 그전에는 [문안 복사]로 쓰세요.</div>
+  </div>
+</div>
 
 <div class="app">
 <!-- ============ SIDEBAR ============ -->
@@ -374,7 +399,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
   <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
-  <div class="side-foot">v0.7.3 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
+  <div class="side-foot">v0.8 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -395,7 +420,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 오늘의 액션 -->
   <section class="view on" id="v-today">
     <div class="page-h"><h1>오늘의 액션</h1><span class="desc"><span class="todayLbl num">2026.07.07(화)</span> · 데스크가 아침에 이 화면만 보면 하루 업무가 시작됩니다</span>
-      <div class="right"><button class="btn" onclick="toast('어제 미처리 1건이 오늘 큐로 이월되었습니다')">이월 항목 보기</button></div></div>
+      <div class="right"><button class="btn" onclick="showCarryover()">이월 항목 보기</button></div></div>
     <div class="tiles" id="todayTiles">
       <div class="tile alert"><div class="lbl">🔴 위기 대응</div><div class="val num">1</div><div class="delta down">SLA 12분 초과 — 즉시 전화</div></div>
       <div class="tile"><div class="lbl">경과 확인</div><div class="val num">2</div><div class="delta flat">D+5 / 종료 임박</div></div>
@@ -493,7 +518,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 문진표 -->
   <section class="view" id="v-intake">
     <div class="page-h"><h1>문진표</h1><span class="desc">태블릿 문진 · 제출 시 관여도 잠재성 점수 자동 계산</span>
-      <div class="right"><button class="btn" onclick="toast('프로토타입 — 문진표 편집은 연동 단계에서 동작합니다')">문진표 편집</button><button class="btn pri" onclick="toast('발송 링크가 복사되었습니다 (가상)')">＋ 문진표 발송</button></div></div>
+      <div class="right"><button class="btn" onclick="explainIntakeEdit()">문진표 편집</button><button class="btn pri" onclick="openIntake()">＋ 문진 시작 (태블릿)</button></div></div>
     <div class="grid g2">
       <div class="card"><h2>문진표 구성 (v2.0)</h2><div class="sub">7문항 + 법정 동의 4블록</div>
         <ul class="tl">
@@ -516,12 +541,12 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <div class="page-h"><h1>내원 CRM 설정</h1><span class="desc">발송 시점 · 진료항목별 매핑 · 노쇼</span></div>
     <div class="grid g2">
       <div class="card"><h2>내원 전 · 내원일 메시지</h2><div class="sub">새로 등록되는 메시지부터 적용됩니다</div>
-        <div class="field"><label>내원 1일 전</label><select><option>오후 7시</option><option>오후 6시</option><option>오후 8시</option></select><span class="note">에 리마인드 발송</span></div>
-        <div class="field"><label>내원 당일</label><select><option>오전 8시</option><option>오전 9시</option></select><span class="note">에 당일 안내 발송</span></div>
+        <div class="field"><label>내원 1일 전</label><select id="remind1" onchange="saveSel(this,'careloop-remind1','내원 1일 전 발송 시각')"><option>오후 7시</option><option>오후 6시</option><option>오후 8시</option></select><span class="note">에 리마인드 발송</span></div>
+        <div class="field"><label>내원 당일</label><select id="remind2" onchange="saveSel(this,'careloop-remind2','내원 당일 발송 시각')"><option>오전 8시</option><option>오전 9시</option></select><span class="note">에 당일 안내 발송</span></div>
         <div class="field"><label>야간 전송 차단</label><span class="pill p-ok">21:00 ~ 08:00 고정</span><span class="note">법정 준수 — 해제 불가</span></div>
         <div class="field"><label>빈도 상한</label><span class="val">마케팅성 주 1건 · 월 상 4 / 중 2 / 하 0</span></div></div>
       <div class="card"><h2>노쇼 관리</h2><div class="sub">노쇼 처리 시 자동 발송</div>
-        <div class="filters"><button class="chip" onclick="toast('발송하지 않음으로 설정 (가상)')">발송하지 않음</button><button class="chip on">즉시 발송</button><button class="chip" onclick="toast('예약 발송으로 설정 (가상)')">예약 발송</button></div>
+        <div class="filters" id="nsChips"><button class="chip" onclick="setNsMode(this)">발송하지 않음</button><button class="chip on" onclick="setNsMode(this)">즉시 발송</button><button class="chip" onclick="setNsMode(this)">예약 발송</button></div>
         <div class="field"><label>노쇼 템플릿</label><span class="val">노쇼 재예약 안내 (INFO-08)</span><button class="btn sm" onclick="go('templates')">변경</button></div>
         <div class="field"><label>데스크 알림</label><button class="toggle on" onclick="this.classList.toggle('on')" aria-label="데스크 알림"></button><span class="note">노쇼 발생 시 오늘의 액션에 추가</span></div></div>
     </div>
@@ -531,8 +556,8 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 
   <!-- 환자DB -->
   <section class="view" id="v-patients">
-    <div class="page-h"><h1>환자DB</h1><span class="desc">총 212명 · 2026-07-07 02:00 동기화</span>
-      <div class="right"><button class="btn" onclick="toast('프로토타입 — 엑셀 기능은 연동 단계에서 동작합니다')">엑셀 다운</button><button class="btn pri" onclick="openReg()">＋ 환자 등록</button></div></div>
+    <div class="page-h"><h1>환자DB</h1><span class="desc" id="pdbDesc">환자 목록</span>
+      <div class="right"><button class="btn" onclick="exportCsv()">엑셀(CSV) 다운</button><button class="btn pri" onclick="openReg()">＋ 환자 등록</button></div></div>
     <div class="filters">
       <input id="pSearch" placeholder="환자명·차트번호 검색" oninput="renderPatients()" style="width:200px">
       <select id="pGroup" onchange="renderPatients()"><option value="">관여도 전체</option><option>상</option><option>중</option><option>하</option></select>
@@ -610,7 +635,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 메시지 템플릿 -->
   <section class="view" id="v-templates">
     <div class="page-h"><h1>메시지 템플릿</h1><span class="desc">채널·시나리오별 문안 — 항목 클릭 시 미리보기</span>
-      <div class="right"><button class="btn pri" onclick="toast('프로토타입 — 템플릿 등록은 연동 단계에서 동작합니다')">＋ 템플릿 등록</button></div></div>
+      <div class="right"><button class="btn pri" onclick="openTpl()">＋ 템플릿 등록</button></div></div>
     <div class="tpanes">
       <div class="tcats" id="tCats"></div>
       <div class="tlist" id="tList"></div>
@@ -651,7 +676,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <!-- 콘텐츠 목록 -->
   <section class="view" id="v-contents">
     <div class="page-h"><h1>콘텐츠 목록</h1><span class="desc">메시지에 연결되는 영상·이미지 라이브러리</span>
-      <div class="right"><button class="btn" onclick="toast('콘텐츠 홈페이지(환자용 랜딩) 미리보기 (가상)')">콘텐츠 홈페이지</button><button class="btn pri" onclick="toast('프로토타입 — 콘텐츠 등록은 연동 단계에서 동작합니다')">＋ 콘텐츠 등록</button></div></div>
+      <div class="right"><button class="btn" onclick="toast('환자용 콘텐츠 홈페이지는 알림톡 연동 단계에서 제공됩니다')">콘텐츠 홈페이지</button><button class="btn pri" onclick="toast('콘텐츠 등록은 알림톡 연동 단계에서 제공됩니다 — 지금 목록은 진료과 추천 콘텐츠입니다')">＋ 콘텐츠 등록</button></div></div>
     <div class="filters"><input placeholder="콘텐츠 제목 검색" style="width:200px"><select id="cCatSel"><option>항목 전체</option></select><select><option>유형 전체</option><option>유튜브</option><option>이미지</option></select></div>
     <div class="ccards" id="cCards"></div>
     <div class="note" style="margin-top:12px">매칭되는 콘텐츠가 없는 증상은 '공통 건강관리 콘텐츠'로 폴백되고, 제작 필요 알림이 기록됩니다.</div>
@@ -697,7 +722,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
       <div class="card"><h2>이번 달 사용량</h2><div class="sub">정산기간 2026-07-01 ~ 07-31 · 정산 예정일 08-05</div>
         <div class="field"><label>발송 건수</label><span class="val num">412건 / 10,000건</span></div>
         <div class="field"><label>초과 예상 비용</label><span class="val num">0원</span></div>
-        <div class="field"><label>결제 수단</label><span class="val">카드 **** 3779</span><button class="btn sm" onclick="toast('프로토타입 (가상)')">변경</button></div></div>
+        <div class="field"><label>결제 수단</label><span class="val">카드 **** 3779</span><button class="btn sm" onclick="toast('결제 수단 관리는 실서비스 단계에서 제공됩니다')">변경</button></div></div>
     </div>
     <div class="card" style="padding:0"><div class="tblwrap"><table>
       <thead><tr><th>플랜</th><th>결제금액</th><th>결제일</th><th>수단</th><th>상태</th></tr></thead>
@@ -711,7 +736,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
       <div class="card"><h2>카카오 채널</h2><div class="sub">알림톡 발신프로필 · 친구톡 채널</div>
         <div class="field"><label>채널 등록</label><span class="pill p-ok">등록 완료</span><span class="note" id="envCh"></span></div>
         <div class="field"><label>알림톡 템플릿</label><span class="val num">승인 6 · 심사중 2 · 미제출 3</span><button class="btn sm" onclick="go('templates')">관리</button></div>
-        <div class="field"><label>내부 알림 번호</label><span class="val num">010-****-**01 (데스크)</span><button class="btn sm" onclick="toast('번호 추가 (가상)')">추가</button></div></div>
+        <div class="field"><label>내부 알림 번호</label><span class="val num" id="alertNums">010-****-**01 (데스크)</span><button class="btn sm" onclick="addAlertNum('alertNums','내부 알림')">추가</button></div></div>
       <div class="card"><h2>보고서 · 자동화 점검</h2><div class="sub">일일 헬스체크</div>
         <div class="field"><label>일일 요약 보고</label><button class="toggle on" onclick="this.classList.toggle('on')" aria-label="일일 보고"></button><span class="note">매일 08:30 발송 — 시나리오 상태·미처리 큐</span></div>
         <div class="field"><label>자동화 상태</label><span class="pill p-ok">12개 시나리오 정상</span><span class="note">실패 시 자동 재시도 3회 + 경보</span></div>
@@ -724,7 +749,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
         <div class="field"><label>상태</label><span id="dbStatus" class="pill p-gray">목데이터 모드</span><button class="btn sm pri" onclick="testDb()">연결 테스트</button><button class="btn sm" onclick="disconnectDb()">해제</button></div>
         <div class="note">⚠ 아티팩트 미리보기에서는 외부 접속이 차단되어 항상 목데이터로 동작합니다. 파일을 직접 열거나 호스팅에서 사용하세요. 실환자 데이터 전 RLS 정책 교체 필수.</div></div>
       <div class="card"><h2>오류 알림 (장애 신호)</h2><div class="sub">발송 실패·자동화 중단·화면 오류가 생기면 즉시 원장님께 신호를 보냅니다</div>
-        <div class="field"><label>수신자</label><span class="val" id="errRecv">원장 · 010-****-**00</span><button class="btn sm" onclick="toast('수신자 추가 (가상)')">추가</button></div>
+        <div class="field"><label>수신자</label><span class="val" id="errRecv">원장 · 010-****-**00</span><button class="btn sm" onclick="addAlertNum('errRecv','오류 알림 수신자')">추가</button></div>
         <div class="field"><label>신호 방식</label><span class="val">화면 상단 배너 + 카카오톡/SMS <span class="pill p-red">즉시</span></span></div>
         <div class="field"><label>감지 대상</label><span class="note">발송 실패 누적(3건+) · 시나리오 자동 비활성화 · 웹훅 무응답 · 화면 스크립트 오류</span></div>
         <div class="field"><label>오류 로그</label><span class="val num" id="errCount">0건 (이번 주)</span><button class="btn sm" onclick="testError()">🔔 테스트 신호 보내기</button></div></div>
@@ -957,6 +982,7 @@ function buildData(){
   TEMPLATES['위기·설문']=[
    {n:'위기 접수 직후 안내',c:'CL-INFO-07',ch:'알림톡',msg:`#{환자명}님, 솔직하게 답해주셔서\n감사합니다.\n\n불편하시다는 답변을 지금 확인했습니다.\n제가 오늘 중으로 직접 전화드려\n상태를 살펴보겠습니다.\n\n잠시만 기다려 주세요.\n— 원장 ${D} 드림`,btns:[]},
    {n:'단골 감사 설문 요청',c:'CL-INFO-09',ch:'알림톡',msg:`#{환자명}님, 원장 ${D}입니다.\n\n벌써 세 번째 뵈었네요.\n저를 믿고 치료를 이어와 주셔서\n감사합니다.\n\n더 잘하고 싶어 여쭙니다.\n딱 3문항, 30초면 충분합니다.\n\n· 진짜 만족스러웠던 점\n· 아쉬웠던 점, 개선 아이디어\n\n답해주신 내용은 제가 직접 읽고\n진료에 반영하겠습니다.`,btns:['30초 설문 참여하기']}];
+  applyMyTpls();
 }
 
 /* ================= 라우터 ================= */
@@ -1082,18 +1108,121 @@ function renderCal(){
   }
   document.getElementById('calGrid').innerHTML=h;
 }
+let INTAKES=[];
 function renderIntake(){
   document.getElementById('intakeSymN').textContent=SP.sym.length;
-  document.getElementById('intakeTbl').innerHTML=[
-   ['작성 완료','강도현','2026-07-05 14:40','+1'],['작성 완료','임하늘','2026-07-01 10:12','+2'],
-   ['미작성','신규 대기','2026-07-07 09:30','—'],['작성 완료','한지우','2026-06-28 11:05','+3'],['작성 완료','최영훈','2026-07-01 09:44','−3']
-  ].map(r=>`<tr><td><span class="pill ${r[0]==='작성 완료'?'p-ok':'p-gray'}">${r[0]}</span></td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join('');
+  const rows=live
+    ? INTAKES.map(r=>['작성 완료',r.name,r.at,(r.delta>0?'+':'')+r.delta])
+    : [['작성 완료','강도현','2026-07-05 14:40','+1'],['작성 완료','임하늘','2026-07-01 10:12','+2'],
+       ['미작성','신규 대기','2026-07-07 09:30','—'],['작성 완료','한지우','2026-06-28 11:05','+3'],['작성 완료','최영훈','2026-07-01 09:44','−3']];
+  document.getElementById('intakeTbl').innerHTML=rows.length?rows.slice(0,8).map(r=>`<tr><td><span class="pill ${r[0]==='작성 완료'?'p-ok':'p-gray'}">${r[0]}</span></td><td>${esc(r[1])}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">아직 작성된 문진표가 없습니다 — 우측 상단 [＋ 문진 시작]으로 첫 문진을 받아보세요</td></tr>';
+}
+function explainIntakeEdit(){
+  toast('문진표 편집기는 알림톡 연동 단계에서 제공됩니다');
+  openChat();
+  aiSay(`📝 문진 문항(불편 증상 ${SP.sym.length}종·걱정 항목 등)은 지금은 <b>진료과 프리셋</b>에서 자동으로 구성돼요 — [병원 정보]에서 진료과를 바꾸면 문항도 함께 바뀝니다. 문항을 직접 고치는 편집기는 알림톡 연동 단계에서 만들게요.`);
+}
+function openIntake(){
+  if(!P.length){
+    toast('등록된 환자가 아직 없어요 — 신규 환자 등록 창을 열게요');
+    aiSay(`📋 문진표는 <b>등록된 환자</b>에 대해 작성해요. 먼저 환자를 등록해 주세요 — 등록 후 다시 [＋ 문진 시작]을 누르면 됩니다.`);
+    openReg(); return;
+  }
+  document.getElementById('ikP').innerHTML=P.map(p=>`<option value="${p.id}">${esc(p.name)} (${esc(p.chart)})</option>`).join('');
+  document.getElementById('ikSym').innerHTML=SP.sym.map(s=>`<option>${s}</option>`).join('');
+  document.getElementById('ikWorry').innerHTML=SP.worry.map(w=>`<button class="chip" onclick="this.classList.toggle('on')">${w}</button>`).join('');
+  document.getElementById('ikFam').innerHTML=SP.worry.map(w=>`<button class="chip" onclick="this.classList.toggle('on')">${w}</button>`).join('');
+  document.getElementById('ikModal').style.display='flex';
+}
+async function submitIntake(){
+  const p=pById(document.getElementById('ikP').value); if(!p){toast('환자를 선택해 주세요');return}
+  const goal=document.getElementById('ikGoal').value, ins=document.getElementById('ikIns').value;
+  const worry=[...document.querySelectorAll('#ikWorry .chip.on')].map(b=>b.textContent);
+  const family=[...document.querySelectorAll('#ikFam .chip.on')].map(b=>b.textContent);
+  const ch=document.getElementById('ikCh').value, consent=document.getElementById('ikConsent').value;
+  const sym=document.getElementById('ikSym').value;
+  const pot=(goal==='집중'?3:goal==='표준'?1:-2)+(ins==='가입'?1:0)+(worry.length?1:0);
+  const before=p.score;
+  p.intake={goal,ins,worry,family,sym}; p.pot=pot; p.score=pot+p.act;
+  p.grp=p.score>=4?'상':p.score>=1?'중':'하';
+  p.src=ch; p.consent=consent; p.next='문진 완료 — 웰컴 메시지 대기';
+  INTAKES.unshift({name:p.name,at:todayStr()+' '+new Date().toTimeString().slice(0,5),delta:p.score-before});
+  if(live&&sb){
+    const {error}=await sb.from('patients').update({pot:p.pot,score:p.score,grp:p.grp,channel:ch,consent:consent==='Y'}).eq('id',p.id);
+    if(error){reportError('문진 저장 실패: '+error.message);return}
+    sb.from('score_history').insert({clinic_id:clinicId,patient_id:p.id,reason:'문진',delta:p.score-before,after_score:p.score,after_grp:p.grp}).then(({error:e2})=>{if(e2)reportError('문진 이력 저장 실패: '+e2.message)});
+  }
+  document.getElementById('ikModal').style.display='none';
+  renderIntake(); renderPatients();
+  toast(`${p.name}님 문진 제출 — 잠재성 ${p.pot>0?'+':''}${p.pot}점 · 관여도 ${p.grp}`);
+  aiSay(`📋 <b>${esc(p.name)}</b>님 문진표를 제출했어요.\n· 치료 방향 <b>${goal}</b> · 실손 ${ins} → 잠재성 <b>${p.pot>0?'+':''}${p.pot}점</b>\n· 관여도 <b>${p.grp}</b> (총 ${p.score>0?'+':''}${p.score}점) · 유입 ${ch}\n· 마케팅 수신 ${consent==='Y'?'동의 ✅':'미동의 — 기능성 메시지만 발송돼요'}`);
+}
+function exportCsv(){
+  if(!P.length){toast('내보낼 환자가 없습니다');return}
+  const head=['차트번호','이름','관여도','점수','잠재성','활성도','유입채널','마케팅동의','상태','방문수','마지막내원'];
+  const rows=P.map(p=>[p.chart,p.name,p.grp,p.score,p.pot,p.act,p.src,p.consent,p.status,p.visits,p.last]);
+  const csv='\uFEFF'+[head,...rows].map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`케어루프_환자DB_${todayStr()}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  toast(`환자 ${P.length}명을 CSV(엑셀용)로 내려받았습니다`);
+}
+function showCarryover(){
+  const y=addDays(todayStr(),-1);
+  let o=null;try{o=JSON.parse(localStorage.getItem('careloop-today-'+y.replace(/-/g,'')))}catch(e){}
+  openChat();
+  if(!o){aiSay(`📂 어제(${y}) 처리 기록이 이 기기에 없어요. 완료하지 못한 항목은 오늘 큐에 규칙(위기·D+5·팔로업) 기준으로 자동으로 다시 올라오니, 위에서부터 순서대로 처리하시면 됩니다.`);return}
+  const vals=Object.values(o), done=vals.filter(v=>v).length;
+  aiSay(`📂 <b>어제(${y}) 마감 요약</b>\n· 체크 완료 <b>${done}건</b> / 기록 ${vals.length}건\n· 완료하지 못한 항목은 오늘 큐에 규칙 기준으로 자동으로 다시 올라와요.`);
+}
+function setNsMode(btn){
+  [...btn.parentElement.children].forEach(b=>b.classList.toggle('on',b===btn));
+  localStorage.setItem('careloop-noshow',btn.textContent);
+  toast(`노쇼 자동 발송: '${btn.textContent}'으로 저장되었습니다`);
+}
+function saveSel(sel,key,label){localStorage.setItem(key,sel.value);toast(`${label}: ${sel.value} 저장됨`)}
+function addAlertNum(spanId,label){
+  const n=prompt(label+' 전화번호를 입력해 주세요 (예: 010-1234-5678)'); if(!n)return;
+  const clean=n.replace(/[^0-9-]/g,'');
+  if(clean.replace(/-/g,'').length<10){toast('전화번호 형식을 확인해 주세요');return}
+  const key='careloop-alert-'+spanId, list=JSON.parse(localStorage.getItem(key)||'[]');
+  list.push(clean); localStorage.setItem(key,JSON.stringify(list));
+  const el=document.getElementById(spanId);
+  el.textContent=el.textContent.split(' 외 ')[0]+' 외 '+list.length+'명';
+  toast('저장되었습니다 — 실제 문자/카카오 신호는 알림톡 연동 후 발송됩니다');
+}
+function restoreSettings(){
+  const m=localStorage.getItem('careloop-noshow');
+  if(m)document.querySelectorAll('#nsChips .chip').forEach(b=>b.classList.toggle('on',b.textContent===m));
+  ['careloop-remind1','careloop-remind2'].forEach((k,i)=>{const v=localStorage.getItem(k);const el=document.getElementById('remind'+(i+1));if(v&&el)el.value=v});
+  ['alertNums','errRecv'].forEach(id=>{
+    const list=JSON.parse(localStorage.getItem('careloop-alert-'+id)||'[]');
+    if(list.length){const el=document.getElementById(id);el.textContent=el.textContent.split(' 외 ')[0]+' 외 '+list.length+'명'}
+  });
+}
+function openTpl(){document.getElementById('tplModal').style.display='flex'}
+function applyMyTpls(){
+  const list=JSON.parse(localStorage.getItem('careloop-mytpl')||'[]');
+  if(list.length)TEMPLATES['내 템플릿']=list.map(t=>({n:t.n,c:'MY',ch:t.ch,msg:t.msg,btns:[]}));
+  else delete TEMPLATES['내 템플릿'];
+}
+function saveTpl(){
+  const n=document.getElementById('tpName').value.trim(), ch=document.getElementById('tpCh').value, msg=document.getElementById('tpMsg').value.trim();
+  if(!n||!msg){toast('이름과 내용을 입력해 주세요');return}
+  const list=JSON.parse(localStorage.getItem('careloop-mytpl')||'[]');
+  list.push({n,ch,msg}); localStorage.setItem('careloop-mytpl',JSON.stringify(list));
+  applyMyTpls(); tCat='내 템플릿'; renderTCats(); renderTList(TEMPLATES['내 템플릿'].length-1); renderSendTpls();
+  document.getElementById('tplModal').style.display='none';
+  document.getElementById('tpName').value=''; document.getElementById('tpMsg').value='';
+  toast(`'${n}' 템플릿이 저장되었습니다 — 개별 발송에서 바로 쓸 수 있어요`);
 }
 function renderMap(){
   const seqs=[['웰컴 당일','초기케어 D+1','3회차 이벤트'],[SP.d1Name+' D+1','경과체크 D+5','종료 전 재안내'],['웰컴 당일','초기케어 D+1'],['웰컴 당일']];
-  document.getElementById('mapTbl').innerHTML=SP.items.map((it,i)=>`<tr><td><button class="toggle on" onclick="this.classList.toggle('on')" aria-label="${it} 사용"></button></td><td><b>${it}</b></td><td>${(seqs[i]||seqs[0]).map(s=>`<span class="pill p-pri">${s}</span>`).join(' ')}</td><td><button class="btn sm" onclick="toast('프로토타입 — 매핑 편집은 연동 단계에서')">편집</button></td></tr>`).join('');
+  document.getElementById('mapTbl').innerHTML=SP.items.map((it,i)=>`<tr><td><button class="toggle on" onclick="this.classList.toggle('on')" aria-label="${it} 사용"></button></td><td><b>${it}</b></td><td>${(seqs[i]||seqs[0]).map(s=>`<span class="pill p-pri">${s}</span>`).join(' ')}</td><td><button class="btn sm" onclick="toast('매핑 편집은 알림톡 연동 단계에서 제공됩니다 — 지금은 진료과 프리셋 기본 매핑이 적용돼 있어요')">편집</button></td></tr>`).join('');
 }
 function renderPatients(){
+  const pd=document.getElementById('pdbDesc');
+  if(pd)pd.textContent=`총 ${P.length}명`+(live?'':' · 데모 데이터');
   const q=(document.getElementById('pSearch').value||'').trim();
   const g=document.getElementById('pGroup').value,s=document.getElementById('pStatus').value,c=document.getElementById('pConsent').value,ch=document.getElementById('pChannel').value;
   const stPill={치료중:'p-blue',중단추정:'p-amber',완료:'p-ok'};
@@ -1141,7 +1270,7 @@ function renderSendList(){
 }
 function renderSendTpls(){
   const all=[];Object.values(TEMPLATES).forEach(l=>l.forEach(t=>all.push(t)));
-  document.getElementById('sTpls').innerHTML=all.map((t,i)=>`<button class="chip ${sTpl===i?'on':''}" onclick="sTpl=${i};renderSendTpls();updateSendPreview()">${t.n}</button>`).join('');
+  document.getElementById('sTpls').innerHTML=all.map((t,i)=>`<button class="chip ${sTpl===i?'on':''}" onclick="sTpl=${i};renderSendTpls();updateSendPreview()">${esc(t.n)}</button>`).join('');
 }
 function updateSendPreview(){
   const el=document.getElementById('sPreview');
@@ -1154,9 +1283,23 @@ function updateSendPreview(){
   if(p.flags.includes('발송중단'))guards.push('⛔ 발송중단 환자 — 광고성 발송 불가');
   if(p.flags.includes('위기'))guards.push('⚠ 위기관리 중 — 기능성 외 보류');
   if(p.consent==='N'&&t.ch!=='알림톡')guards.push('⚠ 마케팅 미동의 — 친구톡/LMS 발송 불가');
-  el.innerHTML=`<b>${p.name}</b>님에게 <b>${t.n}</b> (${t.ch})<br>`+(guards.length?guards.map(g=>`<span style="color:var(--red)">${g}</span>`).join('<br>'):'<span style="color:var(--ok)">✓ 안전점검 통과 — 야간이면 익일 오전으로 자동 지연</span>');
+  el.innerHTML=`<b>${esc(p.name)}</b>님에게 <b>${esc(t.n)}</b> (${t.ch}) <button class="btn sm" onclick="copyTpl()">📋 문안 복사</button><br>`+(guards.length?guards.map(g=>`<span style="color:var(--red)">${g}</span>`).join('<br>'):'<span style="color:var(--ok)">✓ 안전점검 통과 — 야간이면 익일 오전으로 자동 지연</span>');
 }
-function doSend(){
+function fillTpl(t,p){
+  const ik=p.intake||{};
+  return t.msg.replace(/#\{환자명\}/g,p.name).replace(/#\{프로그램명\}/g,SP.programs[0][0])
+    .replace(/#\{주증상명\}/g,ik.sym||SP.sym[0]).replace(/#\{다른증상명\}/g,(ik.worry&&ik.worry[0])||SP.worry[0])
+    .replace(/#\{남은일수\}/g,'3').replace(/#\{예약일시\}/g,'오늘').replace(/#\{증상팁문구\}/g,'(증상별 관리 팁)');
+}
+function copyTpl(){
+  if(sSel==null||sTpl==null){toast('환자와 템플릿을 먼저 선택해 주세요');return}
+  const p=pById(sSel); const all=[];Object.values(TEMPLATES).forEach(l=>l.forEach(t=>all.push(t)));
+  const txt=fillTpl(all[sTpl],p);
+  const fb=()=>{prompt('아래 문안을 복사하세요 (Ctrl+C)',txt)};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast('문안이 복사되었습니다 — 카카오채널/문자에 붙여넣어 보내세요')).catch(fb);
+  else fb();
+}
+async function doSend(){
   if(sSel==null||sTpl==null){toast('환자와 템플릿을 먼저 선택해 주세요');return}
   const p=pById(sSel);
   const all=[];Object.values(TEMPLATES).forEach(l=>l.forEach(t=>all.push(t)));
@@ -1166,6 +1309,16 @@ function doSend(){
   if(p.flags.includes('위기'))guards.push('위기관리 중 — 안내 발송 보류');
   if(p.consent==='N'&&t.ch!=='알림톡')guards.push('마케팅 미동의 — 광고성 발송 불가');
   if(guards.length){toast('⛔ 발송 차단 — '+guards.join(' · '));return}
+  if(live&&sb){
+    if(!confirm(`${p.name}님(차트 ${p.chart})에게 '${t.n}' (${t.ch})\n\n자동 발송(솔라피/Make) 연결 전이라, 문안을 복사해 드릴게요.\n카카오채널·문자로 직접 보내신 뒤 → 발송 내역에 기록됩니다.\n\n기록할까요?`))return;
+    copyTpl();
+    const {error}=await sb.from('sends').insert({clinic_id:clinicId,patient_id:p.id,scenario:t.c,template:t.n,content_tag:t.c+'@'+Date.now(),channel:t.ch,status:'성공',sent_at:new Date().toISOString()});
+    if(error){reportError('발송 기록 실패: '+error.message);return}
+    await loadLive();
+    toast(`${p.name}님 발송 기록 완료 — 발송 내역에서 확인하세요`);
+    aiSay(`📨 <b>${esc(p.name)}</b>님에게 '${esc(t.n)}'(${t.ch}) 발송을 기록했어요. 문안은 복사해 뒀으니 카카오채널/문자에 붙여넣어 보내주세요. 자동 발송은 채널 연동 후 켜집니다.`);
+    return;
+  }
   if(!confirm(`${p.name}님(차트 ${p.chart})에게\n'${t.n}' (${t.ch})를 보냅니다.\n\n발송 시점: ${document.getElementById('sWhen').value}\n계속할까요?`))return;
   const el=document.getElementById('sPreview');
   el.innerHTML=`⏳ <b>${p.name}</b>님에게 '${t.n}' 발송 대기 중 — <b>5분 홀드</b> 후 실제 발송됩니다. <button class="btn sm" onclick="cancelSend()">지금 취소</button>`;
@@ -1223,7 +1376,7 @@ function renderTCats(){
 }
 function renderTList(sel){
   const list=TEMPLATES[tCat];
-  document.getElementById('tList').innerHTML=list.map((t,i)=>`<div class="titem ${i===sel?'on':''}" onclick="renderTList(${i})"><div class="tn">${t.n} <span class="pill ${t.ch==='알림톡'?'p-pri':'p-amber'}">${t.ch}</span></div><div class="tc">${t.c}</div><div class="tp">${t.msg.split('\n')[0]}</div></div>`).join('');
+  document.getElementById('tList').innerHTML=list.map((t,i)=>`<div class="titem ${i===sel?'on':''}" onclick="renderTList(${i})"><div class="tn">${esc(t.n)} <span class="pill ${t.ch==='알림톡'?'p-pri':'p-amber'}">${t.ch}</span></div><div class="tc">${esc(t.c)}</div><div class="tp">${esc(t.msg.split('\n')[0])}</div></div>`).join('');
   const t=list[sel];
   document.getElementById('tStrip').textContent=t.ch==='알림톡'?'알림톡 도착':'(광고) 친구톡';
   document.getElementById('tStrip').className='strip'+(t.ch==='알림톡'?'':' ad');
@@ -1240,19 +1393,30 @@ function renderRet(){
 function renderContents(){
   const thumbs=['#1f5c3e','#3b6fb5','#c4842c','#5b9a78','#7d4a9e','#0e7490'];
   document.getElementById('cCards').innerHTML=SP.contents.map((c,i)=>`
-    <div class="ccard" onclick="toast('콘텐츠 미리보기 (가상) — 발송 링크는 클릭 추적 리다이렉트로 감싸집니다')">
+    <div class="ccard" onclick="toast('발송 연동 후 이 콘텐츠에 실제 링크·클릭 추적이 연결됩니다')">
       <div class="thumb" style="background:${thumbs[i%thumbs.length]}">▶</div>
       <div class="cb"><div class="cc">${c[0]} | 유튜브</div><div class="ct">${c[1]}</div></div></div>`).join('');
   document.getElementById('cCatSel').innerHTML='<option>항목 전체</option>'+[...new Set(SP.contents.map(c=>c[0]))].map(c=>`<option>${c}</option>`).join('');
   document.getElementById('contentReport').innerHTML=`Report — 최근 30일간 <b>[${SP.contents[0][1]}]</b>을 가장 많이 발송했습니다.`;
 }
 function renderStaff(){
+  if(live){
+    const em=authUser?authUser.email:'로그인 계정';
+    document.getElementById('staffCards').innerHTML=
+      `<div class="scard add" onclick="staffGuide()">＋ 직원(데스크) 추가 방법</div>`+
+      `<div class="scard"><div class="sav">${esc(em[0].toUpperCase())}</div><div><div class="sn">${esc(em)}</div><div class="sr">${myRole==='owner'?'원장 · 전체 권한':'데스크 뷰'}</div></div><div class="cdot" style="background:#2e9e5b"></div></div>`;
+    return;
+  }
   const colors=['#e2554d','#f0a239','#2e9e5b','#4c86e8','#f07f39'];
   const roles=cfg.spec==='한의원'?['대표원장','간호조무사','데스크 실장']:['대표원장','물리치료사','데스크 실장'];
   const names=[cfg.doctor,'이동영','황보서연'];
   document.getElementById('staffCards').innerHTML=
-    `<div class="scard add" onclick="toast('프로토타입 — 담당자 등록은 연동 단계에서 동작합니다')">＋ 담당자 계정 등록</div>`+
+    `<div class="scard add" onclick="toast('데모 모드 — 실사용(LIVE)에서 직원 추가 방법을 안내해 드려요')">＋ 담당자 계정 등록</div>`+
     names.map((n,i)=>`<div class="scard"><div class="sav">${n[0]}</div><div><div class="sn">${n} ${roles[i]}</div><div class="sr">${i===0?'전체 권한':'데스크 뷰'}</div></div><div class="cdot" style="background:${colors[i]}"></div></div>`).join('');
+}
+function staffGuide(){
+  openChat();
+  aiSay(`👥 <b>직원(데스크) 계정 추가 — 3단계</b>\n1️⃣ 직원이 이 사이트에서 <b>회원가입</b>만 해둡니다 (아직 로그인은 안 됨)\n2️⃣ 원장님이 Supabase → Authentication → Users에서 그 직원의 <b>User UID</b>를 복사\n3️⃣ SQL Editor에서 아래 한 줄 실행:\n<code>insert into clinic_members (user_id, clinic_id, role) values ('직원UID붙여넣기', (select clinic_id from clinic_members where role='owner' limit 1), 'desk');</code>\n\n그 직원은 다음 로그인부터 <b>데스크 화면</b>으로 접속됩니다. 초대 버튼 UI는 다음 단계에서 만들게요.`);
 }
 function renderHospital(){
   document.getElementById('hName').textContent=cfg.name;
@@ -1261,7 +1425,9 @@ function renderHospital(){
   document.getElementById('accDoc').textContent=cfg.doctor+' 원장';
   document.getElementById('hColors').innerHTML=COLORS.map((c,i)=>`<button class="swatch ${i===cfg.color?'on':''}" style="background:${c.pri}" onclick="setColor(${i})" aria-label="${c.n}"></button>`).join('');
   document.getElementById('envCh').textContent=`@${cfg.name.replace(/\s/g,'')}`;
-  document.getElementById('blockList').innerHTML=`
+  document.getElementById('blockList').innerHTML=live
+   ?(P.filter(p=>p.flags.includes('발송중단')).map(p=>`<li><span class="d">${esc(p.name)}</span><span>발송중단 등록 <span class="pill p-red">발송중단</span></span></li>`).join('')||'<li><span class="d">—</span><span>발송중단(수신거부) 환자가 없습니다</span></li>')
+   :`
     <li><span class="d">오경자</span><span>080 수신거부 (6/28) — 처리결과 통지 완료 <span class="pill p-red">발송중단</span></span></li>
     <li><span class="d">김철수</span><span>채널 차단 감지 (6/14) <span class="pill p-red">발송중단</span></span></li>
     <li><span class="d">최정길</span><span>부정회신 확인 후 확정 (7/1) <span class="pill p-red">발송중단</span></span></li>
@@ -1640,11 +1806,14 @@ async function loadLive(){
   const monthStart=todayStr().slice(0,8)+'01';
   const {data:mv}=await sb.from('visits').select('*').gte('at',monthStart).order('at');
   MONTH_VISITS=mv||[];
+  const {data:hist}=await sb.from('score_history').select('*').eq('reason','문진').order('at',{ascending:false}).limit(20);
+  INTAKES=(hist||[]).map(h=>{const p=P.find(x=>x.id===h.patient_id);return{name:p?p.name:'—',at:(h.at||'').slice(0,16).replace('T',' '),delta:h.delta}});
   renderLiveAll();
 }
 function renderLiveAll(){
   setDates(); renderPatients(); renderVisits('전체'); renderSendList(); updateSendPreview();
   renderTodayLive(); renderCalLive(); renderDashLive(); renderRxLive(); renderRetLive(); renderSendsLiveExtras();
+  renderIntake(); renderStaff(); renderHospital();
   postBriefing();
 }
 function postBriefing(){
@@ -1859,7 +2028,7 @@ function initApp(){
     {name:'SNS',color:'var(--c4)',data:[1,1,2,3,4,5]}
   ],['2월','3월','4월','5월','6월','7월']);
   barList('chartChRev',[['네이버 검색',260,'260만원'],['지인 소개',190,'190만원'],['카카오톡 채널',110,'110만원'],['유튜브',70,'70만원'],['인스타그램',40,'40만원']],'var(--c1)');
-  updateTodayRev(); aiChips(); applyRole(); setDates();
+  updateTodayRev(); aiChips(); applyRole(); setDates(); restoreSettings();
   document.getElementById('aiMsgs').innerHTML=''; window._briefed=false;
   if(!live)postBriefing();
   const dbc=loadDbCfg();
