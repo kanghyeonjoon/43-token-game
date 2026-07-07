@@ -19,7 +19,7 @@
   --kakao:#ffe94a;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Apple SD Gothic Neo",Pretendard,"Noto Sans KR","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body{font-family:"Apple SD Gothic Neo",Pretendard,"Noto Sans KR","Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
 button{font-family:inherit;cursor:pointer}
 a{color:var(--pri);text-decoration:none}
 .num{font-variant-numeric:tabular-nums}
@@ -43,11 +43,11 @@ a{color:var(--pri);text-decoration:none}
 .crumb{font-size:13px;color:var(--ink2)}
 .crumb b{color:var(--ink)}
 .topbar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
-.clinic{font-size:13px;font-weight:700}
+.clinic{font-size:13px;font-weight:700;white-space:nowrap}
 .clinic .sub{color:var(--mut);font-weight:400}
 .bell{position:relative;background:none;border:0;font-size:16px}
 .bell .dot{position:absolute;top:-2px;right:-4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
-.demo-tag{font-size:11px;font-weight:700;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:2px 10px}
+.demo-tag{font-size:11px;font-weight:700;color:var(--amber);background:var(--amber-soft);border-radius:99px;padding:2px 10px;white-space:nowrap}
 .content{padding:22px 26px 60px;max-width:1240px;width:100%}
 
 /* ===== common ===== */
@@ -184,9 +184,10 @@ svg text{font-family:inherit}
 #aiBadge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:99px;padding:0 6px;line-height:16px;display:none}
 #aiPanel{position:fixed;right:22px;bottom:134px;width:360px;max-width:calc(100vw - 34px);height:520px;max-height:70vh;background:var(--card);border:1px solid var(--line2);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.22);z-index:95;display:none;flex-direction:column;overflow:hidden}
 #aiPanel.on{display:flex}
-.ai-head{background:var(--pri);color:#fff;padding:12px 16px;font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px}
-.ai-head .st{font-size:10.5px;font-weight:600;opacity:.85;display:block}
-.ai-head button{margin-left:auto;background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:6px;padding:2px 10px;font-size:12px}
+.ai-head{background:var(--pri);color:#fff;padding:12px 14px;font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:10px}
+.ai-head .tt{white-space:nowrap;flex-shrink:0}
+.ai-head .st{flex:1;min-width:0;font-size:10.5px;font-weight:600;opacity:.85;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-head button{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:6px;padding:4px 12px;font-size:12px;white-space:nowrap;flex-shrink:0}
 #aiMsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
 .ai-msg,.me-msg{max-width:86%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.55;white-space:pre-wrap}
 .ai-msg{background:var(--card);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
@@ -198,7 +199,7 @@ svg text{font-family:inherit}
 .ai-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
 .ai-input input{flex:1;border:1px solid var(--line2);border-radius:99px;padding:8px 14px;font-size:12.5px;font-family:inherit}
 .ai-input button{background:var(--pri);color:#fff;border:0;border-radius:99px;padding:8px 16px;font-size:12.5px;font-weight:700}
-#roleBtn{border:1px solid var(--line2);background:var(--card);border-radius:99px;padding:4px 12px;font-size:11.5px;font-weight:700;color:var(--pri-deep)}
+#roleBtn{border:1px solid var(--line2);background:var(--card);border-radius:99px;padding:4px 12px;font-size:11.5px;font-weight:700;color:var(--pri-deep);white-space:nowrap}
 #helpBtn{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--ink);color:#fff;border:0;font-size:18px;font-weight:800;box-shadow:0 4px 14px rgba(0,0,0,.22);z-index:90}
 #helpModal{position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px}
 #helpModal.on{display:flex}
@@ -213,8 +214,19 @@ svg text{font-family:inherit}
   .sidebar{position:fixed;left:-240px;transition:left .2s;z-index:80;box-shadow:4px 0 20px rgba(0,0,0,.25)}
   .sidebar.open{left:0}
   #menuBtn{display:block}
-  .gsearch input{width:120px}
+  .gsearch{flex:1;min-width:0}
+  .gsearch input{width:100%;min-width:56px}
   .content{padding:16px 14px 60px}
+  .crumb{display:none}
+  .topbar{gap:8px;padding:0 12px}
+  .topbar .right{gap:8px}
+  .clinic{display:none}
+  #roleBtn{padding:4px 9px}
+  #aiPanel{left:10px;right:10px;bottom:80px;width:auto;max-width:none;height:74vh}
+  .ai-input input{font-size:16px}
+  .qitem{flex-wrap:wrap;row-gap:4px}
+  .qitem .due{margin-left:auto}
+  .qitem button.btn{margin-left:29px}
 }
 input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--pri);outline-offset:1px}
 /* content cards */
@@ -362,7 +374,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
   <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
-  <div class="side-foot">v0.7 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
+  <div class="side-foot">v0.7.2 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -734,7 +746,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
 
 <button id="aiBtn" onclick="openChat()" aria-label="AI 매니저">💬<span id="aiBadge">1</span></button>
 <div id="aiPanel" role="dialog" aria-label="AI 매니저 채팅">
-  <div class="ai-head">🤖 AI 매니저 <span><span class="st">오류·알림이 여기로 도착합니다 · 무엇이든 물어보세요</span></span><button onclick="document.getElementById('aiPanel').classList.remove('on')">닫기</button></div>
+  <div class="ai-head"><span class="tt">🤖 AI 매니저</span><span class="st">오류·알림이 여기로 도착합니다 · 무엇이든 물어보세요</span><button onclick="document.getElementById('aiPanel').classList.remove('on')">닫기</button></div>
   <div id="aiMsgs"></div>
   <div class="ai-chips" id="aiChips"></div>
   <div class="ai-input"><input id="aiIn" placeholder="예: 오늘 요약 / 위기 환자 / 김민정" onkeydown="if(event.key==='Enter'&&!event.isComposing)aiAsk()"><button onclick="aiAsk()">전송</button></div>
@@ -1627,6 +1639,13 @@ async function loadLive(){
 function renderLiveAll(){
   setDates(); renderPatients(); renderVisits('전체'); renderSendList(); updateSendPreview();
   renderTodayLive(); renderCalLive(); renderDashLive(); renderRxLive(); renderRetLive(); renderSendsLiveExtras();
+  postBriefing();
+}
+function postBriefing(){
+  if(window._briefed)return; window._briefed=true;
+  const crisisN=P.filter(p=>p.flags.includes('위기')).length;
+  const acts=live?buildQueue().length:document.querySelectorAll('#v-today .qitem').length;
+  aiSay(`👋 좋은 아침이에요, <b>${esc(cfg.name)}</b>! AI 매니저입니다.\n\n📋 <b>오늘 브리핑</b>\n· 내원 ${VISITS_TODAY.length}건 · 처리할 액션 ${acts}건\n${crisisN?`· 🚨 위기 ${crisisN}건 — 30분 내 전화가 필요해요!`:'· 위기 없음 💚'}\n\n오류·알림은 전부 이 채팅으로 알려드릴게요. 처음이시면 아래 '처음이에요'를 눌러보세요.`);
 }
 function renderAll(){
   renderToday();renderVisits('전체');renderCal();renderIntake();renderMap();renderPatients();
@@ -1835,9 +1854,8 @@ function initApp(){
   ],['2월','3월','4월','5월','6월','7월']);
   barList('chartChRev',[['네이버 검색',260,'260만원'],['지인 소개',190,'190만원'],['카카오톡 채널',110,'110만원'],['유튜브',70,'70만원'],['인스타그램',40,'40만원']],'var(--c1)');
   updateTodayRev(); aiChips(); applyRole(); setDates();
-  const crisisN=P.filter(x=>x.flags.includes('위기')).length;
-  document.getElementById('aiMsgs').innerHTML='';
-  aiSay(`👋 좋은 아침이에요, <b>${esc(cfg.name)}</b>! AI 매니저입니다.\n\n📋 <b>오늘 브리핑</b>\n· 내원 예정 ${VISITS_TODAY.length}건 · 처리할 액션 ${document.querySelectorAll('#v-today .qitem').length}건\n${crisisN?`· 🚨 위기 ${crisisN}건 — 30분 내 전화가 필요해요!`:'· 위기 없음 💚'}\n\n오류·알림은 전부 이 채팅으로 알려드릴게요. 처음이시면 아래 '처음이에요'를 눌러보세요.`);
+  document.getElementById('aiMsgs').innerHTML=''; window._briefed=false;
+  if(!live)postBriefing();
   const dbc=loadDbCfg();
   if(document.getElementById('dbUrl')&&dbc.url){document.getElementById('dbUrl').value=dbc.url;document.getElementById('dbKey').value=dbc.key||'';}
   // 자동 연결은 부트 시 인증 플로우에서 처리 (아래 부트 블록)
