@@ -151,6 +151,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 .bub.ok{border-color:var(--ok);color:var(--ok);font-weight:800}
 .bub.err{border-color:var(--pri);color:var(--pri);font-weight:800;animation:pwork .6s infinite}
 @media(max-width:820px){#office{height:290px}.room i{font-size:9px}}
+/* ---- 업무 보드 · 배속·일시정지 ---- */
+.tq{list-style:none;margin-top:6px}
+.tq li{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer}
+.tq li:last-child{border-bottom:0}
+.tq .tqtxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tq .who{color:var(--mut);font-weight:700;font-size:11px;white-space:nowrap}
+.spdchip{font-size:11px;font-weight:800;border:1px solid var(--line2);background:#fff;border-radius:99px;padding:3px 9px;cursor:pointer;color:var(--ink2);user-select:none}
+.spdchip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+#pauseBtn.on{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
+#office.paused .fig{animation-play-state:paused}
 /* ---- toast ---- */
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#26231f;color:#fff;font-size:12.5px;padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;max-width:90vw}
 #toast.show{opacity:1}
@@ -181,7 +191,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <span class="ochip">👥 <b>5</b>명</span>
       <span class="ochip">작업중 <b id="oWork">0</b></span>
       <span class="ochip">산출물 <b id="oDone">0</b>/6</span>
+      <span class="ochip">대기 업무 <b id="oQueue">0</b></span>
       <span class="ochip" id="oCost">호출 0</span>
+      <button class="btn sm" id="pauseBtn" onclick="togglePause()">⏸ 일시정지</button>
+      <span class="spdchip" data-s="0.5" onclick="setSpeed(0.5)">0.5×</span>
+      <span class="spdchip on" data-s="1" onclick="setSpeed(1)">1×</span>
+      <span class="spdchip" data-s="2" onclick="setSpeed(2)">2×</span>
+      <span class="spdchip" data-s="4" onclick="setSpeed(4)">4×</span>
       <span class="note" style="margin-left:auto">회의가 시작되면 전원이 테이블로 모입니다 · 캐릭터를 누르면 담당 단계로 이동</span>
     </div>
     <div id="office"></div>
@@ -192,6 +208,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
   <!-- ============ 좌측: 브리프 · 팀 · 로그 ============ -->
   <div>
     <div class="card"><h2>📋 채널 브리프</h2><div class="sub">AI 직원 전원이 이 브리프를 기준으로 일합니다 — 구체적일수록 결과가 좋아요</div>
+      <div class="field"><label>저장 채널</label><select id="chSel" style="flex:1" onchange="applyChannel(this.value)"><option value="">— 저장된 채널 —</option></select>
+        <button class="btn sm" onclick="saveChannel()" title="현재 채널 정보(채널명·카테고리·타깃·톤·금지·협찬)를 저장 — 다음 프로젝트부터 선택만 하면 됩니다">💾 저장</button>
+        <button class="btn sm" onclick="delChannel()" title="선택한 저장 채널 삭제">🗑</button></div>
+      <div style="border-top:1px solid var(--line);margin:10px 0"></div>
       <div class="field"><label>채널명</label><input id="bChannel" placeholder="예: 월급의 기술"></div>
       <div class="field"><label>카테고리</label><input id="bCategory" placeholder="예: 재테크·경제"></div>
       <div class="field"><label>타깃</label><input id="bTarget" placeholder="예: 25~34 사회초년생, 투자 경험 없음"></div>
@@ -202,8 +222,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <div class="field"><label>영상 주제</label><textarea id="bTopic" style="min-height:52px" placeholder="예: 월급 300 직장인이 첫 ETF를 시작하는 법 — 계좌 개설부터 첫 매수까지"></textarea></div>
       <div class="field"><label></label><button class="btn sm" onclick="topicIdeate()">💡 주제 발굴 — 팀에게 후보 받기</button><span class="note">주제가 없거나 애매하면 채널 브리프만으로 후보 6개를 만들어 드려요</span></div>
       <div class="field"><label>목표 길이</label><input id="bLength" placeholder="예: 8~10분"></div>
-      <div class="field" style="align-items:flex-start"><label>대표 자료<br><small style="color:var(--mut);font-weight:600">선택</small></label><textarea id="bDoc" style="min-height:76px" placeholder="이미 만든 기획안·구성 메모·레퍼런스를 통째로 붙여넣으세요. 팀이 이 자료를 '기준'으로 회의하고, 기획 PD는 이걸 뒤집는 게 아니라 검토·보강합니다."></textarea></div>
-      <div class="note" id="bDocNote" style="display:none">📎 대표 자료 첨부됨 — 회의는 이 자료의 검토·보강으로 진행되고, 기획안 단계는 대표 안 기준 '실행 기획안'을 만듭니다. (완성된 기획안을 그대로 쓰려면 기획안 탭 산출물 칸에 직접 붙여넣어도 됩니다)</div>
+      <div class="field"><label>기획안</label><button class="btn sm" onclick="openDoc()">📋 기획안·자료 넣기</button><span class="note" id="bDocChip" style="cursor:pointer" onclick="openDoc()">없음 — 팀이 브리프만으로 기획합니다</span></div>
+      <div class="note" id="bDocNote" style="display:none">📎 대표 기획안 첨부됨 — 회의는 이 자료의 검토·보강으로 진행되고, 기획안 단계는 대표 안 기준 '실행 기획안'을 만듭니다. (완성된 기획안을 그대로 쓰려면 기획안 탭 산출물 칸에 직접 붙여넣어도 됩니다)</div>
     </div>
 
     <div class="card"><h2>🤖 AI 직원 팀 <span class="pill p-blue">회의 → 합의서 → 파이프라인</span></h2><div class="sub">대표 가이드라인으로 <b>킥오프 회의</b>(서로 발언을 읽고 반응) → 합의서 확정 → 전 직원이 같은 방향으로 제작합니다</div>
@@ -216,6 +236,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       </ul>
       <div class="note" style="margin-top:8px">🧠 = 빌려온 뇌 — 해당 분야 대가들의 공개된 원칙을 판단 기준으로 씁니다 (사칭이 아니라 기준 차용). 회의에서는 트렌드·콘텐츠 가치·화제성을 의무적으로 논의합니다.</div>
       <div class="note" style="margin-top:10px">🔒 AI는 업로드 버튼을 누르지 않습니다 — 세팅 시트를 유튜브 스튜디오에 옮기고 게시하는 건 사람입니다.</div>
+    </div>
+
+    <div class="card"><h2>📥 업무 보드 <span class="pill p-blue">대표 → 직원 자유 업무</span></h2>
+      <div class="sub">회의·파이프라인과 별개로 급한 업무를 던지면, 직원이 한가해질 때 순서대로 집어갑니다 — 항목을 누르면 결과 확인</div>
+      <div class="fbrow"><input id="tqIn" placeholder="예: 썸네일 문구 5개만 더 뽑아줘" onkeydown="if(event.key==='Enter'&&!event.isComposing)addTask()">
+        <select id="tqWho" style="max-width:112px"><option value="auto">🤖 자동 배정</option><option value="plan">차민준</option><option value="script">윤세아</option><option value="edit">박도현</option><option value="pack">한유진</option><option value="review">서정우</option></select>
+        <button class="btn sm pri" onclick="addTask()">던지기</button></div>
+      <ul class="tq" id="tqList"></ul>
+      <div class="note" id="tqNote" style="display:none;margin-top:8px;font-weight:800">✓ 최근 완료</div>
+      <ul class="tq" id="tqDone"></ul>
     </div>
 
     <div class="card"><h2>🗒 작업 로그</h2><div class="sub">누가 무엇을 했는지 — 오케스트레이션 트레이스</div>
@@ -267,7 +297,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <div class="reviewbox" id="stReview"></div>
     </div>
     <div class="card" style="background:#fbfaf7"><h2 style="font-size:13px">ℹ 사용 순서</h2>
-      <div class="note" style="line-height:1.9">① 채널 브리프(=대표 가이드라인) 입력 — <b>이미 기획안이 있으면 '대표 자료' 칸에 통째로 붙여넣기</b> (팀이 그걸 기준으로 검토·보강) → ② [🗣 제작 회의] — AI 직원 5명이 서로의 발언에 반응하며 방향을 합의하고 <b>제작 방향 합의서</b>를 작성 (합의서는 직접 고칠 수 있고, '미결 사항'은 대표가 결정) → ③ [🚀 전체 실행] — 전 단계가 합의서를 기준으로 제작되어 재작업이 줄어듭니다 → ④ 산출물 수정은 '수정 지시'로, 방향 자체가 바뀌면 회의를 다시 → ⑤ 마지막 [📤 업로드 세팅] 시트대로 게시.<br>
+      <div class="note" style="line-height:1.9">① 채널 브리프 입력 — 자주 쓰는 채널은 <b>[💾 저장]</b>해두면 다음부터 선택만, <b>이미 기획안이 있으면 [📋 기획안·자료 넣기]</b>로 통째로 첨부 (팀이 그걸 기준으로 검토·보강) → ② [🗣 제작 회의] — AI 직원 5명이 서로의 발언에 반응하며 방향을 합의하고 <b>제작 방향 합의서</b>를 작성 (합의서는 직접 고칠 수 있고, '미결 사항'은 대표가 결정) → ③ [🚀 전체 실행] — 전 단계가 합의서를 기준으로 제작되어 재작업이 줄어듭니다 → ④ 산출물 수정은 '수정 지시'로, 방향 자체가 바뀌면 회의를 다시 → ⑤ 마지막 [📤 업로드 세팅] 시트대로 게시.<br>
       데모 모드에서는 실제 AI 호출 없이 예시 산출물로 흐름을 체험합니다. ⚙ 설정에서 Anthropic API 키를 넣으면 브리프 기반 실제 제작으로 전환됩니다.</div>
     </div>
   </div>
@@ -287,8 +317,39 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <b>본인 PC에서만</b> 사용하세요 — 파일을 팀에 공유하거나 웹에 올릴 때는 키를 삭제하고,
       서버 프록시(예: Supabase Edge Function) 방식으로 전환해야 합니다.
       Anthropic 콘솔에서 <b>월 사용 한도(Spend limit)</b>를 걸어두는 것을 권장합니다.</div>
-    <div class="note" style="margin-bottom:14px">모델: claude-opus-4-8 · 업무 1건 = 호출 1회 · 회의 = 6회(반박 라운드 시 11회) · 전체 실행 = 5회 · 주제 발굴 = 1회. 사용량은 상단에 표시됩니다.</div>
+    <div class="note" style="margin-bottom:14px">모델: claude-opus-4-8 · 회의 = 6회(반박 라운드 시 11회) · 전체 실행 = 5회 · 주제 발굴·검수·수정·업무 보드 자유 업무 = 각 1회. 사용량은 상단에 표시됩니다.</div>
     <div style="text-align:right"><button class="btn" onclick="closeSettings()">닫기</button></div>
+  </div>
+</div>
+
+<!-- ============ 기획안 모달 — 대표 기획안·자료 전용 입력 ============ -->
+<div class="modal" id="docModal">
+  <div class="mbox" style="max-width:780px">
+    <h2>📋 대표 기획안·자료</h2>
+    <div class="sub" style="font-size:12px;color:var(--mut);margin-bottom:10px">이미 만든 기획안·구성 메모·레퍼런스를 통째로 넣으세요. 팀은 이 자료를 <b>'기준'</b>으로 회의하고, 기획 PD는 뒤집는 게 아니라 검토·보강합니다. 다르게 제안할 부분엔 [제안] 표시가 붙어요.</div>
+    <textarea id="bDoc" style="width:100%;min-height:45vh;margin-bottom:10px" placeholder="예)&#10;제목: 첫 ETF 12분 완주&#10;타깃: 투자 무경험 사회초년생&#10;구성: ① 훅 — 체결화면 ② 계좌개설 화면녹화 ③ 고르는 기준 3가지 …&#10;레퍼런스: ○○ 채널의 △△ 영상 톤"></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <label class="btn sm" style="cursor:pointer">📂 파일 열기 (.txt/.md)<input type="file" id="docFile" accept=".txt,.md,.markdown,text/plain,text/markdown" style="display:none" onchange="loadDocFile(this)"></label>
+      <span class="note" id="docCount">0자</span>
+      <span style="flex:1"></span>
+      <button class="btn sm" onclick="clearDoc()">비우기</button>
+      <button class="btn pri" onclick="closeDoc()">저장하고 닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 업무 결과 모달 ============ -->
+<div class="modal" id="taskModal">
+  <div class="mbox" style="max-width:740px">
+    <h2 id="tmTitle">업무 결과</h2>
+    <div class="sub" id="tmMeta" style="font-size:12px;color:var(--mut);margin-bottom:10px"></div>
+    <textarea id="tmBody" readonly style="width:100%;min-height:40vh;margin-bottom:10px"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn sm" id="tmRequeue" style="display:none" onclick="requeueTask()">🔁 다시 대기로</button>
+      <button class="btn sm" onclick="copyTask()">📋 복사</button>
+      <button class="btn sm" onclick="delTask()">🗑 삭제</button>
+      <button class="btn" onclick="document.getElementById('taskModal').classList.remove('on')">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -546,6 +607,7 @@ TOPIC: {"t":"주제 한 줄","why":"...","hook":"...","risk":"..."}`+COMMON;
 
 /* ================= 상태 ================= */
 let projects=[], curIdx=0, curStage='meet', busy=false, stopReq=false, aborter=null, pipeActive=false;
+let simSpeed=+(localStorage.getItem('tubecrew-speed')||1)||1, simPaused=false, taskRunning=false;
 function setBusyUI(on){const s=document.getElementById('stopBtn');if(s)s.style.display=on?'':'none'}
 function beginWork(){if(!pipeActive)stopReq=false;setBusyUI(true)}   // 파이프라인 중간 단계는 중지 요청을 이어받는다
 function endWork(){if(!pipeActive)setBusyUI(false)}
@@ -555,14 +617,40 @@ function requestStop(){
   if(aborter)aborter.abort();
   toast('⏹ 중지 요청 — 진행 중인 작업을 끊는 중입니다');
 }
-async function sleepAbort(ms){await new Promise(r=>setTimeout(r,ms));if(stopReq)throw new Error('중단됨')}
+async function sleepAbort(ms){ // 배속(simSpeed) 반영 + 일시정지 게이트 + 중지 즉시 반응
+  let left=ms/simSpeed;
+  while(left>0){
+    if(simPaused)await pauseGate();
+    const step=Math.min(left,120);
+    await new Promise(r=>setTimeout(r,step));
+    if(stopReq)throw new Error('중단됨');
+    left-=step;
+  }
+}
+async function pauseGate(){ // ⏸ 동안 대기 — 라이브는 스텝 경계에서, 데모는 즉시 멈춤
+  while(simPaused){
+    await new Promise(r=>setTimeout(r,150));
+    if(stopReq)throw new Error('중단됨');
+  }
+}
 function isStop(e){return e&&e.message==='중단됨'}
+function setSpeed(v){
+  simSpeed=v;localStorage.setItem('tubecrew-speed',v);
+  document.querySelectorAll('.spdchip').forEach(c=>c.classList.toggle('on',+c.dataset.s===v));
+}
+function togglePause(){
+  simPaused=!simPaused;
+  const b=document.getElementById('pauseBtn');
+  b.textContent=simPaused?'▶ 재개':'⏸ 일시정지';b.classList.toggle('on',simPaused);
+  const o=document.getElementById('office');if(o)o.classList.toggle('paused',simPaused);
+  toast(simPaused?'⏸ 일시정지 — 데모는 즉시, 라이브는 진행 중인 호출을 마친 뒤 멈춥니다':'▶ 재개합니다');
+}
 function P(){return projects[curIdx]}
 function newProject(name){
   return {name:name||'새 프로젝트',
     brief:{channel:'',category:'',target:'',tone:'',banned:'',sponsor:'',topic:'',length:'',doc:''},
     stages:{meet:{content:'',prev:''},plan:{content:'',prev:''},script:{content:'',prev:''},edit:{content:'',prev:''},pack:{content:'',prev:''},upload:{content:'',prev:''}},
-    meeting:[], meetingPrev:[], topics:[], scores:null, scoresPrev:null, log:[], usage:{inp:0,out:0,calls:0}};
+    meeting:[], meetingPrev:[], topics:[], tasks:[], scores:null, scoresPrev:null, log:[], usage:{inp:0,out:0,calls:0}};
 }
 function demoProject(){
   const p=newProject('예시 — 첫 ETF 가이드');
@@ -576,7 +664,7 @@ function load(){
   try{const d=JSON.parse(localStorage.getItem(LS_PROJ));if(d&&d.projects&&d.projects.length){
     projects=d.projects;curIdx=Math.min(d.curIdx||0,projects.length-1);
     // 마이그레이션 — 이전 버전 프로젝트에 없는 단계·회의록 보강
-    projects.forEach(p=>{ORDER.forEach(k=>{if(!p.stages[k])p.stages[k]={content:'',prev:''}});if(!p.meeting)p.meeting=[];if(!p.meetingPrev)p.meetingPrev=[];if(!p.topics)p.topics=[];if(p.scores===undefined)p.scores=null;if(p.scoresPrev===undefined)p.scoresPrev=null;if(p.brief.doc===undefined)p.brief.doc=''});
+    projects.forEach(p=>{ORDER.forEach(k=>{if(!p.stages[k])p.stages[k]={content:'',prev:''}});if(!p.meeting)p.meeting=[];if(!p.meetingPrev)p.meetingPrev=[];if(!p.topics)p.topics=[];if(!p.tasks)p.tasks=[];if(p.scores===undefined)p.scores=null;if(p.scoresPrev===undefined)p.scoresPrev=null;if(p.brief.doc===undefined)p.brief.doc=''});
     return}}catch(e){}
   projects=[demoProject()];curIdx=0;
 }
@@ -598,7 +686,7 @@ function renderBrief(){
   bChannel.value=b.channel;bCategory.value=b.category;bTarget.value=b.target;bTone.value=b.tone;
   bBanned.value=b.banned;bSponsor.value=b.sponsor;bTopic.value=b.topic;bLength.value=b.length;
   bDoc.value=b.doc||'';
-  document.getElementById('bDocNote').style.display=(b.doc||'').trim()?'block':'none';
+  updateDocChip(b.doc);
 }
 function renderTabs(){
   document.getElementById('ptabs').innerHTML=ORDER.map(k=>{
@@ -831,7 +919,7 @@ function renderMode(){
   else{m.textContent='데모 모드 — 예시 산출물';m.className='modetag'}
   document.getElementById('runAllNote').textContent=hasKey()?'단계당 30초~2분 걸릴 수 있어요':'데모: 실제 AI 호출 없이 예시로 흐름 체험';
 }
-function renderAll(){renderProjSel();renderBrief();renderStage();renderLog();renderUsage();renderMode();renderTopics();renderOfficeStats()}
+function renderAll(){renderProjSel();renderBrief();renderStage();renderLog();renderUsage();renderMode();renderTopics();renderTasks();renderOfficeStats()}
 
 /* ================= 브리프/프로젝트 ================= */
 function bindBrief(){
@@ -839,7 +927,7 @@ function bindBrief(){
   Object.keys(map).forEach(id=>{
     document.getElementById(id).addEventListener('input',e=>{
       P().brief[map[id]]=e.target.value;save();
-      if(id==='bDoc')document.getElementById('bDocNote').style.display=e.target.value.trim()?'block':'none';
+      if(id==='bDoc')updateDocChip(e.target.value);
     });
   });
 }
@@ -1068,6 +1156,7 @@ async function runStage(k,feedback,silentUI){
   if(hk)crewSet(hk,(k==='meet'?'합의서 개정':STAGES[k].name+' 작성')+' 중…',true);
   log(s.emp,feedback?`[${s.name}] 수정 지시 반영 중: ${feedback.slice(0,40)}`:`[${s.name}] 작성 시작`);
   try{
+    await pauseGate();
     let outTxt;
     const ta=document.getElementById('stOut');
     const liveOut=t=>{if(curStage===k){ta.value=t;ta.scrollTop=ta.scrollHeight}if(hk)officeSay(hk,oTail(t))};   // 산출물도 타이핑되듯 실시간 표시
@@ -1109,6 +1198,7 @@ async function reviewStage(k){
   crewSet('review','검수 중…',true);
   log('서정우 실장',`[${STAGES[k].name}] 검수 시작`);
   try{
+    await pauseGate();
     let rv;
     const liveRv=t=>{box.textContent=t;officeSay('review',oTail(t))};
     if(hasKey()){
@@ -1142,6 +1232,7 @@ async function runMeeting(){
   MEET_ROLES.forEach(k=>crewSet(k,'회의 참석',false));
   // 발언 1회 — 라이브는 SSE 스트리밍, 데모는 타자 효과로 실시간 표시 (ToT P2)
   const speak=async(key,extra,label)=>{
+    await pauseGate();   // ⏸ 라이브는 발언 경계에서 멈춤
     const h=HUMANS[key];
     pill.textContent='⏳ '+h.name+' '+h.title+' '+label+'…';pill.className='pill p-amber';
     crewSet(key,label+'…',true);renderMeetChat(key);
@@ -1201,6 +1292,7 @@ async function runAll(){
   try{
     for(const k of RUN_ORDER){
       if(stopReq)break;   // 단계 사이에 중지 요청이 들어온 경우
+      await pauseGate();  // ⏸ 단계 경계에서 일시정지 반영
       btn.innerHTML=`<span class="spin">⏳</span> ${STAGES[k].ico} ${STAGES[k].name} 진행 중…`;
       const ok=await runStage(k,null,false);
       if(!ok||stopReq){if(!stopReq)log('스튜디오',`파이프라인 중단 — ${STAGES[k].name} 단계 실패`);break}
@@ -1245,6 +1337,7 @@ async function topicIdeate(fb){
   crewSet('plan','아이템 미팅 중…',true);crewSet('pack','아이템 미팅 중…',true);
   log('차민준·한유진',fb?('주제 재발굴 — 피드백: '+fb.slice(0,40)):'아이템 미팅 시작 — 주제 후보 발굴');
   try{
+    await pauseGate();
     let topics;
     if(hasKey()){
       const user=briefText()
@@ -1276,6 +1369,165 @@ function pickTopic(i){
   log('대표','주제 확정 — '+t.t.slice(0,40));
   topicOpen=false;renderTopics();
   toast('주제 확정 — 이제 [🗣 제작 회의]로 팀 방향을 잡으세요');
+}
+
+/* ================= 📥 업무 보드 — 대표가 던지는 자유 업무를 직원이 순서대로 집어감 ================= */
+const TASK_SYS=`당신은 유튜브 대행사 '튜브크루'의 직원이다. 대표가 회의·파이프라인과 별개로 던진 단발 업무를 처리한다.
+[규칙]
+- 채널 브리프와 (있다면) 제작 방향 합의서를 기준으로, 대표가 바로 쓸 수 있는 결과물만 출력한다. 서두·인사 금지.
+- 업무가 모호하면 가장 합리적인 해석 하나를 골라 첫 줄에 [해석] 한 줄로 밝히고 진행한다.
+- 산출물 끝에 [자가 검증] 한 줄 — 요청 충족 ✅/❌ + 근거.`+COMMON;
+function routeTask(txt){ // 자동 배정 — 키워드 라우팅
+  if(/썸네일|제목|설명문|태그|고정댓글|패키징|클릭|CTR/i.test(txt))return 'pack';
+  if(/대본|멘트|스크립트|나레이션|후킹|훅 문장|말맛|구어체/.test(txt))return 'script';
+  if(/편집|자막|컷|BGM|비롤|B롤|챕터|효과음|인트로/i.test(txt))return 'edit';
+  if(/검수|심의|리스크|법|저작권|정책|고지|의료|광고 표기/.test(txt))return 'review';
+  return 'plan';
+}
+function addTask(){
+  const inp=document.getElementById('tqIn'),txt=inp.value.trim();
+  if(!txt){toast('업무 내용을 입력해 주세요');return}
+  let who=document.getElementById('tqWho').value;
+  if(who==='auto')who=routeTask(txt);
+  P().tasks.push({id:Date.now()+''+Math.floor(Math.random()*1e4),txt,who,status:'queued',result:'',t:nowHM()});
+  inp.value='';save();renderTasks();
+  log(HUMANS[who].s,'업무 접수: '+txt.slice(0,30));
+  officeSay(who,'업무 접수 📥','',2000);
+  toast(HUMANS[who].name+' '+HUMANS[who].title+'에게 배정 — 한가해지면 바로 집어갑니다');
+}
+function renderTasks(){
+  const list=document.getElementById('tqList'),doneL=document.getElementById('tqDone');
+  if(!list)return;
+  const ts=P().tasks||[];
+  const act=ts.filter(t=>t.status!=='done');
+  const done=ts.filter(t=>t.status==='done').slice(-6).reverse();
+  const pill=t=>t.status==='doing'?'<span class="pill p-amber">🔄 작업중</span>':t.status==='error'?'<span class="pill p-red">⛔ 중단</span>':'<span class="pill p-gray">⏳ 대기</span>';
+  list.innerHTML=act.length?act.map(t=>'<li onclick="openTask(\''+t.id+'\')">'+pill(t)+'<span class="tqtxt">'+esc(t.txt)+'</span><span class="who">'+esc(HUMANS[t.who].name)+'</span></li>').join('')
+    :'<li style="cursor:default"><span class="tqtxt" style="color:var(--mut)">대기 중인 업무가 없어요 — 위에 던져보세요</span></li>';
+  document.getElementById('tqNote').style.display=done.length?'block':'none';
+  doneL.innerHTML=done.map(t=>'<li onclick="openTask(\''+t.id+'\')"><span style="color:var(--ok);font-weight:800">✓</span><span class="tqtxt">'+esc(t.txt)+'</span><span class="who">'+esc(HUMANS[t.who].name)+'</span></li>').join('');
+  const q=document.getElementById('oQueue');if(q)q.textContent=ts.filter(t=>t.status==='queued').length;
+}
+function demoTask(task){
+  const h=HUMANS[task.who];
+  const lens={plan:'컨셉·구성 관점',script:'말맛·리텐션 관점',edit:'컷·자막·저작권 관점',pack:'클릭·화제성 관점',review:'심의·리스크 관점'}[task.who];
+  return '[데모 예시 — "'+task.txt.slice(0,40)+'" 업무 결과라고 가정한 예시]\n\n'
+    +h.name+' '+h.title+'가 '+lens+'으로 처리했습니다. 실제 연결(⚙ 설정) 시에는 채널 브리프'
+    +(P().stages.meet.content?'와 제작 방향 합의서':'')+'를 기준으로 바로 쓸 수 있는 결과물이 작성됩니다.\n\n[자가 검증] ✅ 업무 접수→처리→완료 흐름 확인용 데모';
+}
+async function processQueue(){ // 스케줄러가 1.5초마다 호출 — 한가할 때만 맨 앞 업무 픽업
+  if(busy||pipeActive||simPaused||taskRunning)return;
+  const task=(P().tasks||[]).find(t=>t.status==='queued');
+  if(!task)return;
+  taskRunning=true;busy=true;beginWork();
+  const h=HUMANS[task.who];
+  task.status='doing';save();renderTasks();
+  crewSet(task.who,'업무 처리 중…',true);
+  log(h.s,'업무 시작: '+task.txt.slice(0,30));
+  try{
+    await pauseGate();
+    let out;
+    const liveT=t=>officeSay(task.who,oTail(t));
+    if(hasKey()){
+      out=await callClaudeStream(MEET_PERSONA[task.who]+BRAINS[task.who]+TASK_SYS,
+        briefText()+meetCtx()+'\n\n[대표 지시 업무]\n'+task.txt+'\n\n위 업무를 처리해줘.',8000,liveT);
+    }else{
+      await sleepAbort(500);
+      out=demoTask(task);
+      await typeOut(out,liveT);
+    }
+    task.status='done';task.result=out;save();renderTasks();
+    log(h.s,'업무 완료: '+task.txt.slice(0,30)+(hasKey()?'':' (데모)'));
+    officeSay(task.who,'완료 ✓','ok',3200);
+  }catch(e){
+    if(isStop(e)){task.status='error';task.result='⏹ 대표 지시로 중단됨 — 결과 없음. 다시 실행하려면 [🔁 다시 대기로]를 누르세요.';log(h.s,'업무 중지 — 대표 지시')}
+    else{task.status='error';task.result='실패: '+e.message;log(h.s,'업무 실패: '+e.message);officeSay(task.who,'막혔어요!','err',5000)}
+    save();renderTasks();
+  }finally{taskRunning=false;busy=false;crewIdle();endWork()}
+}
+setInterval(processQueue,1500);
+let tmIdx=-1;
+function openTask(id){
+  const i=(P().tasks||[]).findIndex(t=>t.id===id);if(i<0)return;
+  const t=P().tasks[i];tmIdx=i;
+  document.getElementById('tmTitle').textContent='📥 '+t.txt;
+  document.getElementById('tmMeta').textContent='담당: '+HUMANS[t.who].name+' '+HUMANS[t.who].title+' · 접수 '+t.t+' · 상태: '+({queued:'⏳ 대기',doing:'🔄 작업 중',done:'✅ 완료',error:'⛔ 중단/실패'})[t.status];
+  document.getElementById('tmBody').value=t.result||'(아직 결과가 없어요 — 처리 중이거나 대기 중입니다)';
+  document.getElementById('tmRequeue').style.display=t.status==='error'?'':'none';
+  document.getElementById('taskModal').classList.add('on');
+}
+function copyTask(){
+  const v=document.getElementById('tmBody').value;
+  const fb=()=>{prompt('아래 내용을 복사하세요 (Ctrl+C)',v)};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(()=>toast('복사했어요')).catch(fb);else fb();
+}
+function delTask(){
+  if(tmIdx<0)return;
+  const t=P().tasks[tmIdx];
+  if(t&&t.status==='doing'){toast('작업 중인 업무는 삭제할 수 없어요 — 먼저 [⏹ 중지]');return}
+  P().tasks.splice(tmIdx,1);tmIdx=-1;save();renderTasks();
+  document.getElementById('taskModal').classList.remove('on');
+}
+function requeueTask(){
+  if(tmIdx<0)return;
+  const t=P().tasks[tmIdx];
+  t.status='queued';t.result='';save();renderTasks();
+  document.getElementById('taskModal').classList.remove('on');
+  toast('다시 대기열에 올렸어요 — 순서가 되면 처리합니다');
+}
+
+/* ================= 💾 채널 프리셋 — 채널 정보를 저장해 다음 프로젝트에서 재사용 ================= */
+const LS_CH='tubecrew-channels';
+function loadChannels(){try{return JSON.parse(localStorage.getItem(LS_CH))||[]}catch(e){return[]}}
+function renderChannelSel(sel){
+  const el=document.getElementById('chSel');if(!el)return;
+  el.innerHTML='<option value="">— 저장된 채널 —</option>'+loadChannels().map((c,i)=>'<option value="'+i+'">'+esc(c.name)+'</option>').join('');
+  if(sel!==undefined)el.value=sel;
+}
+function saveChannel(){
+  const b=P().brief;
+  if(!(b.channel||'').trim()){toast('채널명을 입력해야 저장할 수 있어요');return}
+  const chs=loadChannels();
+  const c={name:b.channel.trim(),category:b.category,target:b.target,tone:b.tone,banned:b.banned,sponsor:b.sponsor};
+  const i=chs.findIndex(x=>x.name===c.name);
+  if(i>=0){if(!confirm("'"+c.name+"' 채널이 이미 저장돼 있어요. 현재 값으로 갱신할까요?"))return;chs[i]=c}
+  else chs.push(c);
+  localStorage.setItem(LS_CH,JSON.stringify(chs));
+  renderChannelSel(String(i>=0?i:chs.length-1));
+  toast("💾 '"+c.name+"' 저장 — 다음 프로젝트부터 선택만 하면 됩니다");
+}
+function applyChannel(v){
+  if(v==='')return;
+  const c=loadChannels()[+v];if(!c)return;
+  const b=P().brief;
+  b.channel=c.name;b.category=c.category;b.target=c.target;b.tone=c.tone;b.banned=c.banned;b.sponsor=c.sponsor;
+  save();renderBrief();
+  toast("'"+c.name+"' 채널 정보를 불러왔어요 — 주제·기획안만 채우면 됩니다");
+}
+function delChannel(){
+  const el=document.getElementById('chSel');
+  if(el.value===''){toast('삭제할 채널을 먼저 선택해 주세요');return}
+  const chs=loadChannels(),c=chs[+el.value];
+  if(!confirm("저장된 채널 '"+c.name+"'을(를) 삭제할까요? (현재 브리프 값은 유지됩니다)"))return;
+  chs.splice(+el.value,1);localStorage.setItem(LS_CH,JSON.stringify(chs));
+  renderChannelSel();toast('삭제했어요');
+}
+
+/* ================= 📋 기획안 모달 ================= */
+function openDoc(){document.getElementById('docModal').classList.add('on');updateDocChip(document.getElementById('bDoc').value);document.getElementById('bDoc').focus()}
+function closeDoc(){document.getElementById('docModal').classList.remove('on');toast((P().brief.doc||'').trim()?'📎 기획안 저장됨 — 회의가 이 자료를 기준으로 진행됩니다':'기획안 없이 진행합니다')}
+function clearDoc(){const t=document.getElementById('bDoc');t.value='';t.dispatchEvent(new Event('input'))}
+function loadDocFile(inp){
+  const f=inp.files&&inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{const t=document.getElementById('bDoc');t.value=String(r.result||'');t.dispatchEvent(new Event('input'));toast('📂 '+f.name+' 불러옴 — 저장하고 닫기를 누르세요')};
+  r.readAsText(f);inp.value='';
+}
+function updateDocChip(v){
+  v=(v||'').trim();
+  const note=document.getElementById('bDocNote');if(note)note.style.display=v?'block':'none';
+  const chip=document.getElementById('bDocChip');if(chip)chip.textContent=v?('📎 첨부됨 · '+v.length.toLocaleString()+'자 · 눌러서 보기/수정'):'없음 — 팀이 브리프만으로 기획합니다';
+  const dc=document.getElementById('docCount');if(dc)dc.textContent=v.length.toLocaleString()+'자';
 }
 
 /* ================= 설정 ================= */
@@ -1543,7 +1795,7 @@ const DEMO_TOPICS=[
 ];
 
 /* ================= 부트 ================= */
-load();bindBrief();buildOffice();applyOffice();renderAll();
+load();bindBrief();buildOffice();applyOffice();renderChannelSel();setSpeed(simSpeed);renderAll();
 </script>
 </body>
 </html>
