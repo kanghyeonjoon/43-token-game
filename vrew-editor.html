@@ -283,6 +283,10 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
             <span class="ico">🎬</span>
             <span><span class="t">편집본 영상 (.webm)</span><br><span class="d">컷 구간을 건너뛰고 자막을 입혀 실시간 녹화 렌더링</span></span>
         </button>
+        <button class="export-opt" id="exp-xml">
+            <span class="ico">🎞️</span>
+            <span><span class="t">편집툴 XML (.xml)</span><br><span class="d">컷 편집을 시퀀스로 — Premiere Pro·DaVinci Resolve에서 가져오기, 자막은 마커+SRT</span></span>
+        </button>
         <button class="export-opt" id="exp-cutjson">
             <span class="ico">✂️</span>
             <span><span class="t">컷 편집 데이터 (.json)</span><br><span class="d">유지 구간·자막 목록 — 캡컷 등 타 편집툴 이식용 간이 포맷</span></span>
@@ -377,7 +381,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
             <b>3. 자막 수정</b> — 클립 아래 💬 줄을 클릭해 오타를 고치면 단어 칩이 다시 배분됩니다.<br>
             <b>4. 클립 다듬기</b> — 단어를 선택하고 🧩 분할하면 그 단어부터 새 클립, 🔗 병합은 아래 클립과 합칩니다.<br>
             <b>5. 무음 컷</b> — 영상을 불러온 상태에서 🔇를 누르면 오디오를 분석해 0.4초 이상의 무음 구간을 자동으로 컷합니다.<br>
-            <b>6. 내보내기</b> — SRT(컷 반영 타임라인), 편집본 WebM(실시간 렌더), 컷 데이터 JSON, 프로젝트 저장을 지원합니다.<br>
+            <b>6. 내보내기</b> — SRT(컷 반영 타임라인), 편집본 WebM(실시간 렌더), 편집툴 XML(xmeml — Premiere Pro·DaVinci Resolve 호환), 컷 데이터 JSON, 프로젝트 저장을 지원합니다.<br>
+            <b>6-1. XML 활용법</b> — XML 파일을 원본 영상과 같은 폴더에 두고 프리미어 <kbd>파일→가져오기</kbd>(리졸브는 <kbd>File→Import→Timeline</kbd>)로 열면 컷 편집이 시퀀스로 복원됩니다. 자막 문장은 타임라인 마커로 들어가며, 자막 트랙이 필요하면 SRT를 함께 가져오세요.<br>
             <b>단축키</b> — <kbd>Space</kbd> 재생 · <kbd>Delete</kbd> 컷 · <kbd>Ctrl+Z</kbd> 실행취소 · <kbd>Ctrl+Y</kbd> 다시실행
         </div>
         <div class="close-row"><button class="top-btn" data-close>닫기</button></div>
@@ -941,6 +946,46 @@ function buildCutJson() {
         style: state.style,
     }, null, 2);
 }
+// Final Cut Pro 7 XML(xmeml v4) — Vrew의 프리미어 내보내기와 같은 규격.
+// 유지 구간을 V1/A1 클립으로, 자막은 시퀀스 마커로 기록 (자막 트랙 자체는 SRT로 가져오는 게 안정적)
+function buildXmeml() {
+    const FPS = 30;
+    const fr = t => Math.round(t * FPS);
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const D = state.video.duration;
+    const keep = []; let t0 = 0;
+    for (const [s, e] of cutRanges()) { if (s > t0) keep.push([t0, s]); t0 = e; }
+    if (t0 < D) keep.push([t0, D]);
+    let acc = 0;
+    const segs = keep.map(([s, e]) => { const o = { s, e, ts: acc }; acc += e - s; return o; });
+    const srcName = state.video.name || 'demo-video.mp4';
+    const w = (state.video.loaded && video.videoWidth) || 1920;
+    const h = (state.video.loaded && video.videoHeight) || 1080;
+    const rate = `<rate><timebase>${FPS}</timebase><ntsc>FALSE</ntsc></rate>`;
+    const fileDef = `<file id="file-1"><name>${esc(srcName)}</name><pathurl>file://localhost/${encodeURIComponent(srcName)}</pathurl>${rate}` +
+        `<duration>${fr(D)}</duration><media><video><samplecharacteristics>${rate}<width>${w}</width><height>${h}</height></samplecharacteristics></video>` +
+        `<audio><samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics><channelcount>2</channelcount></audio></media></file>`;
+    const clipCommon = sg =>
+        `<name>${esc(srcName)}</name><enabled>TRUE</enabled>${rate}<duration>${fr(sg.e - sg.s)}</duration>` +
+        `<start>${fr(sg.ts)}</start><end>${fr(sg.ts + (sg.e - sg.s))}</end><in>${fr(sg.s)}</in><out>${fr(sg.e)}</out>`;
+    const vItems = segs.map((sg, i) =>
+        `<clipitem id="v-${i + 1}">${clipCommon(sg)}${i === 0 ? fileDef : '<file id="file-1"/>'}` +
+        `<link><linkclipref>v-${i + 1}</linkclipref><mediatype>video</mediatype></link>` +
+        `<link><linkclipref>a-${i + 1}</linkclipref><mediatype>audio</mediatype></link></clipitem>`).join('');
+    const aItems = segs.map((sg, i) =>
+        `<clipitem id="a-${i + 1}" premiereChannelType="stereo">${clipCommon(sg)}<file id="file-1"/>` +
+        `<sourcetrack><mediatype>audio</mediatype><trackindex>1</trackindex></sourcetrack></clipitem>`).join('');
+    const markers = state.clips.filter(c => keptWords(c).length).map(c =>
+        `<marker><name>자막</name><comment>${esc(clipText(c))}</comment>` +
+        `<in>${fr(toEditedTime(keptWords(c)[0].start))}</in><out>-1</out></marker>`).join('');
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE xmeml>\n` +
+        `<xmeml version="4"><sequence id="sequence-1"><name>${esc(srcName.replace(/\.[^.]+$/, ''))} (컷 편집)</name>` +
+        `<duration>${fr(editedDuration())}</duration>${rate}` +
+        `<media><video><format><samplecharacteristics>${rate}<width>${w}</width><height>${h}</height></samplecharacteristics></format>` +
+        `<track>${vItems}</track></video><audio><track>${aItems}</track></audio></media>` +
+        `<timecode>${rate}<string>00:00:00:00</string><frame>0</frame><displayformat>NDF</displayformat></timecode>` +
+        `${markers}</sequence></xmeml>`;
+}
 function saveProject() {
     download('vrew-project.json', JSON.stringify({
         format: 'vrew-clone-project/1', duration: state.video.duration, videoName: state.video.name,
@@ -1443,6 +1488,10 @@ $('#btn-export').addEventListener('click', () => $('#modal-export').classList.ad
 $('#btn-save-project').addEventListener('click', saveProject);
 $('#exp-srt').addEventListener('click', () => { download('vrew-subtitles.srt', buildSrt()); toast('SRT 자막을 저장했습니다 (컷 반영 타임라인)'); });
 $('#exp-cutjson').addEventListener('click', () => { download('vrew-cutlist.json', buildCutJson(), 'application/json'); toast('컷 편집 데이터를 저장했습니다'); });
+$('#exp-xml').addEventListener('click', () => {
+    download('vrew-sequence.xml', buildXmeml(), 'application/xml;charset=utf-8');
+    toast('편집툴 XML을 저장했습니다 — 원본 영상과 같은 폴더에 두고 프리미어/리졸브에서 가져오세요');
+});
 $('#exp-project').addEventListener('click', saveProject);
 $('#exp-webm').addEventListener('click', exportWebm);
 $$('.modal-back').forEach(m => {
@@ -1464,7 +1513,7 @@ window.addEventListener('keydown', e => {
 
 // ── E2E 테스트 훅 ─────────────────────────────────
 window.__vrew = {
-    state, cutRanges, editedDuration, toEditedTime, buildSrt, buildCutJson,
+    state, cutRanges, editedDuration, toEditedTime, buildSrt, buildCutJson, buildXmeml,
     setT, getT, play, pause, loadDemo, undo, redo,
     wordsToClips, applyTranscript, extractAudio16k, encodeWav16k,
 };
