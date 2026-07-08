@@ -70,6 +70,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 .fbrow{display:flex;gap:8px;margin-top:10px}
 .fbrow input{flex:1}
 .reviewbox{white-space:pre-wrap;border:1px dashed var(--line2);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:12.5px;background:#fffdf7;display:none}
+/* ---- 회의록 ---- */
+.chat{display:none;margin-bottom:12px;max-height:420px;overflow-y:auto}
+.cb{display:flex;gap:10px;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:#fcfbf9;margin-bottom:8px;font-size:12.5px;line-height:1.7}
+.cb .who{width:96px;flex-shrink:0;font-weight:800;color:var(--ink2)}
+.cb .say{white-space:pre-wrap;flex:1;min-width:0}
 .runallbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 /* ---- modal ---- */
 .modal{position:fixed;inset:0;background:rgba(20,18,15,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
@@ -111,7 +116,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <div class="field"><label>목표 길이</label><input id="bLength" placeholder="예: 8~10분"></div>
     </div>
 
-    <div class="card"><h2>🤖 AI 직원 팀 <span class="pill p-blue">파이프라인 + 검수 게이트</span></h2><div class="sub">단계 산출물이 다음 직원에게 자동으로 전달됩니다</div>
+    <div class="card"><h2>🤖 AI 직원 팀 <span class="pill p-blue">회의 → 합의서 → 파이프라인</span></h2><div class="sub">대표 가이드라인으로 <b>킥오프 회의</b>(서로 발언을 읽고 반응) → 합의서 확정 → 전 직원이 같은 방향으로 제작합니다</div>
       <ul class="crew">
         <li><span class="who">📌 기획 PD</span><span class="what">컨셉·훅 3안·타임라인 구성안·리스크 체크</span></li>
         <li><span class="who">✍ 방송 작가</span><span class="what">타임코드 풀 대본 — 훅·리텐션 장치·CTA</span></li>
@@ -132,6 +137,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
     <div class="card">
       <div class="runallbar">
         <h2 style="margin-right:4px">🎬 제작 파이프라인</h2>
+        <button class="btn" onclick="runStage('meet')">🗣 제작 회의 (전원)</button>
         <button class="btn pri" id="runAllBtn" onclick="runAll()">🚀 전체 실행 (기획→대본→편집→패키징→업로드 세팅)</button>
         <span class="note" id="runAllNote"></span>
       </div>
@@ -145,6 +151,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
         <button class="btn sm" onclick="restorePrev(curStage)">↩ 이전 버전</button>
         <button class="btn sm" onclick="copyStage()">📋 복사</button>
       </div>
+      <div class="chat" id="meetChat"></div>
       <textarea id="stOut" placeholder="아직 산출물이 없어요 — [🤖 맡기기]를 누르거나 직접 작성·수정하세요. 수정한 내용은 자동 저장됩니다." oninput="saveStageText()"></textarea>
       <div class="fbrow">
         <input id="stFb" placeholder="수정 지시 — 예: 훅을 더 자극적으로, 3번 구간은 절반으로 줄여줘" onkeydown="if(event.key==='Enter'&&!event.isComposing)applyFeedback()">
@@ -153,7 +160,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <div class="reviewbox" id="stReview"></div>
     </div>
     <div class="card" style="background:#fbfaf7"><h2 style="font-size:13px">ℹ 사용 순서</h2>
-      <div class="note" style="line-height:1.9">① 채널 브리프 입력 → ② [🚀 전체 실행] 또는 단계별 [🤖 맡기기] → ③ 산출물을 직접 고치거나 '수정 지시'로 AI에게 개정시키기 → ④ 마지막 [📤 업로드 세팅]에서 검수 실장이 전 단계를 교차 검수하고 유튜브 스튜디오에 그대로 옮길 세팅 시트를 완성 → 시트대로 게시.<br>
+      <div class="note" style="line-height:1.9">① 채널 브리프(=대표 가이드라인) 입력 → ② [🗣 제작 회의] — AI 직원 5명이 서로의 발언에 반응하며 방향을 합의하고 <b>제작 방향 합의서</b>를 작성 (합의서는 직접 고칠 수 있고, '미결 사항'은 대표가 결정) → ③ [🚀 전체 실행] — 전 단계가 합의서를 기준으로 제작되어 재작업이 줄어듭니다 → ④ 산출물 수정은 '수정 지시'로, 방향 자체가 바뀌면 회의를 다시 → ⑤ 마지막 [📤 업로드 세팅] 시트대로 게시.<br>
       데모 모드에서는 실제 AI 호출 없이 예시 산출물로 흐름을 체험합니다. ⚙ 설정에서 Anthropic API 키를 넣으면 브리프 기반 실제 제작으로 전환됩니다.</div>
     </div>
   </div>
@@ -185,13 +192,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 const MODEL='claude-opus-4-8';
 const LS_PROJ='tubecrew-projects', LS_KEY='tubecrew-key';
 const STAGES={
+  meet:  {name:'제작 회의',   ico:'🗣', emp:'전원 참석'},
   plan:  {name:'기획안',     ico:'📌', emp:'기획 PD'},
   script:{name:'대본',       ico:'✍', emp:'방송 작가'},
   edit:  {name:'편집 지시서', ico:'🎞', emp:'편집 디렉터'},
   pack:  {name:'패키징',     ico:'📦', emp:'패키징 매니저'},
   upload:{name:'업로드 세팅', ico:'📤', emp:'검수 실장'},
 };
-const ORDER=['plan','script','edit','pack','upload'];
+const ORDER=['meet','plan','script','edit','pack','upload'];   // 탭 순서
+const RUN_ORDER=['plan','script','edit','pack','upload'];      // 전체 실행(제작) 순서 — 회의는 별도 버튼
 
 /* ================= AI 직원 시스템 프롬프트 ================= */
 const COMMON=`
@@ -281,14 +290,44 @@ const SYSTEMS={
 과잉 검열은 하지 않되, 애매하면 안전측으로 판정한다.`+COMMON,
 };
 
+/* ================= 제작 킥오프 회의 (멀티 에이전트 대화) ================= */
+const MEET_ROLES=[['plan','기획 PD'],['script','방송 작가'],['edit','편집 디렉터'],['pack','패키징 매니저'],['review','검수 실장']];
+const MEET_PERSONA={
+  plan:'당신은 유튜브 대행사의 기획 PD — 컨셉·타깃·구성의 큰 그림 담당. 회의를 여는 첫 발언자라면 이번 영상의 방향(컨셉·훅·구성 뼈대)을 제안합니다.',
+  script:'당신은 유튜브 대행사의 방송 작가 — 대본·말맛·리텐션 담당. 제안된 방향이 대본으로 옮겨질 때 무리가 없는지, 어떤 정보가 기획안에 있어야 대본을 다시 쓰지 않아도 되는지를 봅니다.',
+  edit:'당신은 유튜브 대행사의 편집 디렉터 — 촬영·편집 실현 가능성, 컷 호흡, 소스 수급 담당. 이 방향이면 촬영 전에 무엇을 준비해야 재촬영·재편집이 없는지를 짚습니다.',
+  pack:'당신은 유튜브 대행사의 패키징 매니저 — 제목·썸네일·CTR 앵글 담당. 기획 단계에서 패키징 각도가 정해져야 제목-썸네일-본문이 어긋나 재작업하는 일이 없습니다.',
+  review:'당신은 유튜브 대행사의 검수 실장 — 정책·저작권·고지 리스크 담당. 방향 단계에서 가드레일을 쳐서, 다 만들고 나서 뒤집히는 일을 막습니다.',
+};
+const MEET_RULES=`
+[회의 규칙]
+- 유튜브 대행사 제작 킥오프 회의의 발언입니다. 350자 이내로 짧고 구체적으로.
+- 앞선 발언을 읽고 반응하세요: ① 동의하는 결정 ② 다르게 보는 점(이유+대안) ③ 내 담당에서의 요구사항.
+- 두루뭉술한 덕담 금지. 나중에 재작업을 만들 위험을 지금 짚습니다.
+- 방향은 결정형으로 말합니다: "~로 갑시다". 대표 가이드라인과 충돌하면 그 사실을 명시하고 절충안을 냅니다.
+- 발언 본문만 출력합니다 (이름·인사말 없이).`;
+const MEET_SYNTH=`당신은 유튜브 대행사의 기획 PD입니다. 킥오프 회의록을 종합해 전 직원이 따를 '제작 방향 합의서'를 작성합니다.
+[합의서 구성 — 이 순서 그대로]
+1) 확정 컨셉 (한 줄)
+2) 훅 방향
+3) 구성 뼈대 (구간과 각 구간의 목적만 — 상세는 기획안에서)
+4) 톤 & 스타일
+5) 편집 방향 (컷 호흡·자막·소스 수급)
+6) 패키징 앵글 (제목·썸네일 방향)
+7) 하지 않기로 한 것
+8) 리스크 가드레일 (검수 실장 지적 반영)
+9) 미결 사항 — 대표(사람)의 결정이 필요한 것
+- 각 항목은 회의에서 나온 결정을 근거로 작성. 의견이 갈린 쟁점은 절충안 또는 미결로 올린다.
+- 이 문서는 이후 기획안·대본·편집·패키징·업로드 전 단계의 기준이 된다.`+COMMON;
+
 /* ================= 상태 ================= */
-let projects=[], curIdx=0, curStage='plan', busy=false;
+let projects=[], curIdx=0, curStage='meet', busy=false;
 function P(){return projects[curIdx]}
 function newProject(name){
   return {name:name||'새 프로젝트',
     brief:{channel:'',category:'',target:'',tone:'',banned:'',sponsor:'',topic:'',length:''},
-    stages:{plan:{content:'',prev:''},script:{content:'',prev:''},edit:{content:'',prev:''},pack:{content:'',prev:''},upload:{content:'',prev:''}},
-    log:[], usage:{inp:0,out:0,calls:0}};
+    stages:{meet:{content:'',prev:''},plan:{content:'',prev:''},script:{content:'',prev:''},edit:{content:'',prev:''},pack:{content:'',prev:''},upload:{content:'',prev:''}},
+    meeting:[], log:[], usage:{inp:0,out:0,calls:0}};
 }
 function demoProject(){
   const p=newProject('예시 — 첫 ETF 가이드');
@@ -301,8 +340,8 @@ function save(){localStorage.setItem(LS_PROJ,JSON.stringify({projects,curIdx}))}
 function load(){
   try{const d=JSON.parse(localStorage.getItem(LS_PROJ));if(d&&d.projects&&d.projects.length){
     projects=d.projects;curIdx=Math.min(d.curIdx||0,projects.length-1);
-    // 마이그레이션 — 이전 버전 프로젝트에 없는 단계 보강
-    projects.forEach(p=>{ORDER.forEach(k=>{if(!p.stages[k])p.stages[k]={content:'',prev:''}})});
+    // 마이그레이션 — 이전 버전 프로젝트에 없는 단계·회의록 보강
+    projects.forEach(p=>{ORDER.forEach(k=>{if(!p.stages[k])p.stages[k]={content:'',prev:''}});if(!p.meeting)p.meeting=[]});
     return}}catch(e){}
   projects=[demoProject()];curIdx=0;
 }
@@ -331,15 +370,29 @@ function renderTabs(){
   }).join('');
 }
 function renderStage(){
-  const s=STAGES[curStage],st=P().stages[curStage];
-  document.getElementById('stEmp').textContent=s.ico+' 담당: '+s.emp;
-  document.getElementById('stOut').value=st.content;
+  const s=STAGES[curStage],st=P().stages[curStage],meet=curStage==='meet';
+  document.getElementById('stEmp').textContent=meet?'🗣 참석: 기획 PD · 작가 · 편집 · 패키징 · 검수 (전원)':s.ico+' 담당: '+s.emp;
+  document.getElementById('stRunBtn').textContent=meet?'🗣 회의 시작 (전원)':'🤖 맡기기';
+  const ta=document.getElementById('stOut');
+  ta.value=st.content;
+  ta.placeholder=meet
+    ?'회의가 끝나면 여기에 [제작 방향 합의서]가 작성됩니다 — 대표가 직접 고칠 수 있고, 고친 버전이 전 단계의 기준이 됩니다.'
+    :'아직 산출물이 없어요 — [🤖 맡기기]를 누르거나 직접 작성·수정하세요. 수정한 내용은 자동 저장됩니다.';
   const pill=document.getElementById('stStatus');
-  if(st.content){pill.textContent='작성됨 · 수정 가능';pill.className='pill p-ok'}
-  else{pill.textContent='대기';pill.className='pill p-gray'}
+  if(st.content){pill.textContent=meet?'합의서 확정 · 수정 가능':'작성됨 · 수정 가능';pill.className='pill p-ok'}
+  else{pill.textContent=meet?'회의 전':'대기';pill.className='pill p-gray'}
   document.getElementById('stReview').style.display='none';
   document.getElementById('stFb').value='';
+  renderMeetChat();
   renderTabs();
+}
+function renderMeetChat(){
+  const c=document.getElementById('meetChat');
+  const m=P().meeting||[];
+  if(curStage!=='meet'||!m.length){c.style.display='none';c.innerHTML='';return}
+  c.style.display='block';
+  c.innerHTML=m.map(x=>'<div class="cb"><span class="who">'+esc(x.who)+'</span><span class="say">'+esc(x.text)+'</span></div>').join('');
+  c.scrollTop=c.scrollHeight;
 }
 function renderLog(){
   const l=P().log;
@@ -397,12 +450,12 @@ function restorePrev(k){
 }
 
 /* ================= Claude 호출 (브라우저 직접) ================= */
-async function callClaude(system,user){
+async function callClaude(system,user,maxTokens){
   const key=localStorage.getItem(LS_KEY);
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:MODEL,max_tokens:16000,thinking:{type:'adaptive'},system,messages:[{role:'user',content:user}]}),
+    body:JSON.stringify({model:MODEL,max_tokens:maxTokens||16000,thinking:{type:'adaptive'},system,messages:[{role:'user',content:user}]}),
   });
   const out=await res.json().catch(()=>({}));
   if(!res.ok){
@@ -432,24 +485,35 @@ function briefText(){
 - 주제/요청: ${b.topic||'(미입력)'}
 - 목표 길이: ${b.length||'8~10분'}`;
 }
+function meetCtx(){
+  const m=P().stages.meet;
+  return (m&&m.content)?`\n\n[제작 방향 합의서 — 킥오프 회의에서 전원 합의. 이 방향을 벗어나지 말 것. 불가피하게 벗어나면 산출물 첫머리에 '합의서와 다른 점'을 명시할 것]\n${m.content}`:'';
+}
 function stageTask(k,feedback){
   const st=P().stages;
   if(feedback){
-    return `${briefText()}
+    const label=k==='meet'?'제작 방향 합의서':STAGES[k].name;
+    return `${briefText()}${k==='meet'?'':meetCtx()}
 
-[현재 ${STAGES[k].name}]
+[현재 ${label}]
 ${st[k].content}
 
-[수정 지시]
+[수정 지시 — 대표]
 ${feedback}
 
-수정 지시를 반영한 ${STAGES[k].name} 전체 개정본을 출력해줘. 지시와 무관한 부분은 유지.`;
+수정 지시를 반영한 ${label} 전체 개정본을 출력해줘. 지시와 무관한 부분은 유지.`;
   }
-  if(k==='plan')return `${briefText()}\n\n위 브리프로 기획안을 작성해줘.`;
-  if(k==='script')return `${briefText()}\n\n[확정 기획안]\n${st.plan.content||'(기획안 없음 — 브리프만으로 작성하되, 기획안 없이 작성했음을 첫 줄에 표시)'}\n\n위 기획안대로 촬영용 풀 대본을 작성해줘.`;
-  if(k==='edit')return `${briefText()}\n\n[확정 대본]\n${st.script.content}\n\n위 대본으로 편집 지시서를 작성해줘.`;
-  if(k==='pack')return `${briefText()}\n\n[기획안]\n${st.plan.content||'(없음)'}\n\n[대본]\n${st.script.content||'(없음)'}\n\n위 자료로 업로드 패키지를 작성해줘.`;
-  if(k==='upload')return `${briefText()}\n\n[기획안]\n${st.plan.content||'(없음)'}\n\n[대본]\n${st.script.content||'(없음)'}\n\n[편집 지시서]\n${st.edit.content||'(없음)'}\n\n[패키징]\n${st.pack.content}\n\n전체 산출물을 최종 교차 검수하고, 유튜브 스튜디오에 그대로 옮길 업로드 세팅 시트를 완성해줘.`;
+  if(k==='plan')return `${briefText()}${meetCtx()}\n\n위 브리프${st.meet.content?'와 합의서':''}로 기획안을 작성해줘.`;
+  if(k==='script')return `${briefText()}${meetCtx()}\n\n[확정 기획안]\n${st.plan.content||'(기획안 없음 — 브리프만으로 작성하되, 기획안 없이 작성했음을 첫 줄에 표시)'}\n\n위 기획안대로 촬영용 풀 대본을 작성해줘.`;
+  if(k==='edit')return `${briefText()}${meetCtx()}\n\n[확정 대본]\n${st.script.content}\n\n위 대본으로 편집 지시서를 작성해줘.`;
+  if(k==='pack')return `${briefText()}${meetCtx()}\n\n[기획안]\n${st.plan.content||'(없음)'}\n\n[대본]\n${st.script.content||'(없음)'}\n\n위 자료로 업로드 패키지를 작성해줘.`;
+  if(k==='upload')return `${briefText()}${meetCtx()}\n\n[기획안]\n${st.plan.content||'(없음)'}\n\n[대본]\n${st.script.content||'(없음)'}\n\n[편집 지시서]\n${st.edit.content||'(없음)'}\n\n[패키징]\n${st.pack.content}\n\n전체 산출물을 최종 교차 검수하고, 유튜브 스튜디오에 그대로 옮길 업로드 세팅 시트를 완성해줘.`;
+}
+function meetTask(title){
+  const st=P().stages;
+  const prior=st.meet.content?`\n\n[기존 합의서 — 이번 회의에서 재검토 대상]\n${st.meet.content}`:'';
+  const talk=(P().meeting||[]).map(m=>`${m.who}: ${m.text}`).join('\n\n')||'(아직 발언 없음 — 당신이 첫 발언자입니다)';
+  return `[대표 가이드라인]\n${briefText()}${prior}\n\n[회의 목표] 이번 영상의 제작 방향 합의 — 컨셉·훅 방향·구성 뼈대·톤·편집 스타일·패키징 앵글·리스크 가드레일\n\n[지금까지의 회의록]\n${talk}\n\n${title}인 당신의 발언 차례입니다.`;
 }
 function stageReady(k){
   if(k==='edit'&&!P().stages.script.content){toast('편집 지시서는 대본이 있어야 해요 — 대본 단계를 먼저 진행해 주세요');return false}
@@ -462,6 +526,7 @@ function stageReady(k){
 /* ================= 단계 실행 ================= */
 async function runStage(k,feedback,silentUI){
   if(busy){toast('이전 업무가 아직 진행 중이에요');return false}
+  if(k==='meet'&&!feedback)return runMeeting();   // 회의는 전원 참석 멀티 에이전트 대화로
   if(!stageReady(k))return false;
   const s=STAGES[k];
   busy=true;
@@ -472,7 +537,7 @@ async function runStage(k,feedback,silentUI){
   try{
     let outTxt;
     if(hasKey()){
-      outTxt=await callClaude(SYSTEMS[k],stageTask(k,feedback));
+      outTxt=await callClaude(k==='meet'?MEET_SYNTH:SYSTEMS[k],stageTask(k,feedback));
     }else{
       await new Promise(r=>setTimeout(r,900));
       outTxt=demoOut(k,feedback);
@@ -518,12 +583,51 @@ async function reviewStage(k){
   }catch(e){box.textContent='검수 실패: '+e.message;log('검수 실장','검수 실패: '+e.message)}
   finally{busy=false}
 }
+async function runMeeting(){
+  if(busy){toast('이전 업무가 아직 진행 중이에요');return false}
+  if(hasKey()&&!P().brief.topic){toast('대표 가이드라인(영상 주제)을 먼저 입력해 주세요');return false}
+  busy=true;
+  if(curStage!=='meet')switchStage('meet');
+  const btn=document.getElementById('stRunBtn');btn.disabled=true;
+  const pill=document.getElementById('stStatus');
+  log('AI PD','제작 킥오프 회의 시작 — 대표 가이드라인 기준, 전원 참석');
+  P().meeting=[];save();renderMeetChat();
+  try{
+    // 1) 전원 발언 — 각자 앞선 발언을 읽고 반응하며 방향을 좁힌다
+    for(const [key,title] of MEET_ROLES){
+      pill.textContent='⏳ '+title+' 발언 중…';pill.className='pill p-amber';
+      let text;
+      if(hasKey())text=await callClaude(MEET_PERSONA[key]+MEET_RULES,meetTask(title),4000);
+      else{await new Promise(r=>setTimeout(r,650));text=DEMO_MEETING[key]}
+      P().meeting.push({who:title,text});save();renderMeetChat();
+      log(title,'회의 발언');
+    }
+    // 2) 기획 PD가 회의록을 종합해 제작 방향 합의서 작성
+    pill.textContent='⏳ 합의서 정리 중…';
+    let sheet;
+    if(hasKey())sheet=await callClaude(MEET_SYNTH,meetTask('기획 PD')+'\n\n이제 발언이 아니라, 위 회의록 전체를 종합한 제작 방향 합의서를 작성하세요.');
+    else{await new Promise(r=>setTimeout(r,650));sheet=DEMO_MEET_SHEET}
+    const st=P().stages.meet;
+    if(st.content)st.prev=st.content;
+    st.content=sheet;save();
+    log('기획 PD','제작 방향 합의서 작성 완료'+(hasKey()?'':' (데모)'));
+    renderStage();
+    toast('회의 완료 — 합의서를 확인·수정한 뒤 [🚀 전체 실행]을 누르세요');
+    return true;
+  }catch(e){
+    log('AI PD','회의 중단: '+e.message);toast('회의 실패: '+e.message);renderStage();return false;
+  }finally{busy=false;btn.disabled=false}
+}
 async function runAll(){
   if(busy){toast('이전 업무가 아직 진행 중이에요');return}
+  if(!P().stages.meet.content){
+    if(!confirm('제작 회의 없이 바로 진행할까요?\n\n[🗣 제작 회의]를 먼저 하면 AI 직원들이 서로 대화하며 방향을 합의하고, 전 단계가 그 합의서를 기준으로 진행되어 재작업이 줄어듭니다.\n\n확인 = 회의 없이 바로 진행 / 취소 = 회의부터'))
+      {switchStage('meet');return}
+  }
   const btn=document.getElementById('runAllBtn');btn.disabled=true;btn.innerHTML='<span class="spin">⏳</span> 파이프라인 진행 중…';
-  log('AI PD','전체 파이프라인 시작 — 기획 → 대본 → 편집 → 패키징');
+  log('AI PD','전체 파이프라인 시작 — 기획 → 대본 → 편집 → 패키징 → 업로드 세팅'+(P().stages.meet.content?' (합의서 기준)':''));
   try{
-    for(const k of ORDER){
+    for(const k of RUN_ORDER){
       btn.innerHTML=`<span class="spin">⏳</span> ${STAGES[k].ico} ${STAGES[k].name} 진행 중…`;
       const ok=await runStage(k,null,false);
       if(!ok){log('AI PD',`파이프라인 중단 — ${STAGES[k].name} 단계 실패`);break}
@@ -725,6 +829,51 @@ const DEMO_REVIEW=`판정: ⚠ 수정 후 납품
 - ③ 저작권 — BGM 라이선스 확인 항목 미해소. 편집 지시서 체크리스트 완료 후 납품
 
 수정안: 제목은 ①안 채택, 썸네일 ①안과 약속 일치. 수치 2건 출처 각주 추가 후 ✅ 가능`;
+
+/* 데모 회의록 — 실제 연결 시 각 직원이 앞선 발언을 읽고 실시간으로 발언합니다 */
+const DEMO_MEETING={
+plan:`대표 가이드라인 정리하면 "개념 설명이 아니라 절차 완주"가 핵심입니다. 컨셉은 "이 영상 하나로 오늘 저녁 첫 매수까지 끝낸다"로 갑시다. 훅은 결과 먼저형 — "퇴근길 12분 만에 첫 ETF를 샀다". 구성은 개념 최소화(1.5분) → 계좌 개설 → 고르는 기준 → 실제 매수 → 요약, 9분. 걱정되는 건 하나 — 기준 설명 구간이 길어지면 '절차 완주' 컨셉이 흐려집니다. 기준은 3개로 못 박고 싶습니다.`,
+script:`컨셉 동의합니다. 다만 대본 관점에서 두 가지. ① 화면 녹화 구간(계좌 개설·매수)이 4분 이상인데, 절차 나레이션만 이어지면 중간 이탈이 납니다 — 실시간 리액션체("어 이거 생각보다 빠르네요")로 쓰겠습니다. ② 기획안에 각 구간마다 '시청자가 이 구간에서 얻는 것' 한 줄을 박아주세요. 그게 없으면 대본 쓰다가 구간 목적을 제가 다시 정하게 되고, 그러면 기획과 어긋나서 재작업이 납니다. 훅 A안 좋습니다. "12분"은 실측 가능해야 하니 촬영 때 타이머를 실제로 돌립시다.`,
+edit:`작가님 리액션체 좋습니다 — 편집에서 리액션 지점마다 줌인 걸겠습니다. 제작 실현성에서 세 가지. ① 훅에 체결 화면을 쓰려면 촬영 '전에' 계좌와 매수가 준비돼 있어야 합니다. 촬영 순서를 본편 먼저 → 훅 컷 마지막으로 잡읍시다. ② 화면 녹화는 개인정보 마스킹이 필수라 원본을 4K로 받아야 후반에서 살립니다. ③ 개념 구간 그래픽(과일바구니)은 외부 이미지 말고 자체 제작으로 — 저작권 이슈 원천 차단. 컷 호흡은 훅 1.5초, 본편 4초로 갑니다.`,
+pack:`패키징 앵글부터 확정합시다 — 금지사항 때문에 수익률 어그로는 못 씁니다. 그래서 "시간 절약" 앵글로 갑니다: 제목 "첫 ETF, 퇴근길 12분이면 끝납니다", 썸네일 "퇴근길 12분" + 체결 화면. 훅 영상과 썸네일이 같은 장면이어야 CTR과 리텐션이 같이 삽니다 — 편집님, 훅 컷 찍을 때 썸네일용 스틸도 같이 부탁드립니다. 그리고 "12분"이 제목에 들어가는 순간 이건 약속입니다. 실측 못 하면 제목을 다시 잡아야 하니 회의에서 확정해 주세요.`,
+review:`가드레일 세 개 칩니다. ① "12분"은 제목·훅·썸네일에 모두 걸리는 약속 — 촬영 때 실측하고, 편차가 크면 "점심시간 안에"로 대체(미결로 올립니다). ② 금융 콘텐츠 필수 고지 — "투자 판단 책임은 본인" 문구를 대본 첫 화면과 설명문에 이중 배치. ③ 특정 종목·상품 추천으로 읽히는 표현 금지 — '고르는 기준'은 일반 기준(지수·보수·규모)까지만. BGM은 라이선스 확인 전 픽스 금지. 이 세 개만 지키면 이 방향 ✅입니다.`,
+};
+const DEMO_MEET_SHEET=`[데모 예시 — 제작 방향 합의서 · 실제 연결 시 회의록을 종합해 새로 작성됩니다]
+
+1) 확정 컨셉
+"개념 설명이 아니라 절차 완주 — 이 영상 하나로 오늘 저녁 첫 매수까지 끝낸다" (기획 PD 제안, 전원 동의)
+
+2) 훅 방향
+결과 먼저형: "퇴근길 12분 만에 첫 ETF를 샀다" + 체결 화면. 썸네일과 같은 장면 사용 (패키징 요청)
+
+3) 구성 뼈대
+훅(0:30) → 개념 최소화 1.5분: 바구니 비유까지만 → 계좌 개설(녹화) → 고르는 기준 3개 고정 → 실제 매수(녹화) → 3줄 요약. 총 9분
+· 각 구간에 '시청자가 얻는 것' 한 줄 명시 — 기획안 필수 항목 (작가 요청)
+
+4) 톤 & 스타일
+친근한 존댓말 + 화면 녹화 구간은 실시간 리액션체 (작가 제안) — 늘어짐 방지
+
+5) 편집 방향
+컷 호흡: 훅 1.5초 / 본편 4초. 리액션 지점 줌인. 화면 녹화 4K 원본 + 개인정보 마스킹.
+그래픽은 전량 자체 제작 (편집 디렉터 — 저작권 원천 차단)
+촬영 순서: 본편 먼저 → 훅 컷 마지막 (체결 화면 확보 후) + 썸네일 스틸 동시 촬영
+
+6) 패키징 앵글
+"시간 절약" 앵글 확정 (수익률 앵글은 금지사항으로 배제). 제목 방향: "첫 ETF, 퇴근길 12분이면 끝납니다"
+
+7) 하지 않기로 한 것
+· 수익률·수익 보장 뉘앙스 일절 (금지사항) · 개념 설명 확장 (절차 완주 컨셉 보호) · 외부 이미지 사용
+
+8) 리스크 가드레일 (검수 실장)
+· "12분" 촬영 실측 필수 — 제목·훅·썸네일 공통 약속
+· 투자 판단 고지 — 대본 첫 화면 + 설명문 이중 배치
+· '고르는 기준'은 일반 기준(지수·보수·규모)까지만 — 특정 상품 추천 금지
+· BGM 라이선스 확인 전 픽스 금지
+
+9) 미결 사항 — 대표 결정 필요
+· "12분" 실측이 크게 어긋날 경우 대체 카피: "점심시간 안에" 승인 여부
+· 다음 편(자동 매수 세팅) 예고를 이번 편에 넣을지`;
+DEMO.meet=DEMO_MEET_SHEET;
 
 /* ================= 부트 ================= */
 load();bindBrief();renderAll();
