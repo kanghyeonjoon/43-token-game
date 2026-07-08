@@ -399,6 +399,8 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
   <div class="menu">
     <button class="mitem" data-view="today"><span class="ico">☑</span>오늘의 액션<span class="badge" id="todayBadge">8</span></button>
     <button class="mitem" data-view="dash"><span class="ico">📊</span>대시보드</button>
+    <div class="mgroup">AI</div>
+    <button class="mitem" data-view="aistaff"><span class="ico">🤖</span>AI 직원</button>
     <div class="mgroup">내원관리</div>
     <button class="mitem" data-view="visits"><span class="ico">🗒</span>내원목록</button>
     <button class="mitem" data-view="cal"><span class="ico">📅</span>캘린더</button>
@@ -422,7 +424,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
   <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
-  <div class="side-foot">v0.9 · 자동 발송 지원<br>기획서 v3.0 기반</div>
+  <div class="side-foot">v0.10 · AI 직원(β)<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -703,6 +705,49 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <div class="filters"><input placeholder="콘텐츠 제목 검색" style="width:200px"><select id="cCatSel"><option>항목 전체</option></select><select><option>유형 전체</option><option>유튜브</option><option>이미지</option></select></div>
     <div class="ccards" id="cCards"></div>
     <div class="note" style="margin-top:12px">매칭되는 콘텐츠가 없는 증상은 '공통 건강관리 콘텐츠'로 폴백되고, 제작 필요 알림이 기록됩니다.</div>
+  </section>
+
+  <!-- AI 직원 (에이전트 오케스트레이션) -->
+  <section class="view" id="v-aistaff">
+    <div class="page-h"><h1>AI 직원</h1><span class="desc">에이전트 오케스트레이션 — AI 실장이 병원 데이터를 조회하고 전문 AI 직원에게 업무를 배분합니다</span></div>
+    <div class="card" style="margin-bottom:14px"><h2>업무 지시</h2><div class="sub">자연어로 지시하면 AI 실장이 데이터를 조회하고 담당 직원을 배정해 결과를 보고합니다 · <b>모든 문안은 초안 — 발송 버튼은 사람이 누릅니다</b></div>
+      <div class="field"><label>담당</label>
+        <select id="aiEmp" style="border:1px solid var(--line2);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:12.5px">
+          <option value="auto">자동 배정 — AI 실장이 판단</option>
+          <option value="writer">✍ 메시지 작가에게 직접</option>
+          <option value="compliance">🛡 컴플라이언스 검수관에게 직접</option>
+          <option value="analyst">📈 데이터 분석가에게 직접</option>
+          <option value="briefer">📋 브리핑 비서에게 직접</option>
+        </select>
+        <span class="note">병원 데이터 조회가 필요한 업무는 '자동 배정'을 쓰세요 — 데이터 조회 권한은 AI 실장에게만 있습니다</span></div>
+      <div class="field" style="align-items:flex-start"><label>업무 내용</label><textarea id="aiTask" style="flex:1;min-height:64px;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6" placeholder="예: 오늘 현황 브리핑 만들어줘 / 김민정님 프로그램 종료 전 재안내 문안 작성하고 검수까지 해줘"></textarea></div>
+      <div class="field"><label>빠른 지시</label>
+        <button class="btn sm" data-t="오늘 현황 브리핑 만들어줘. 위기·체크포인트·팔로업 순으로 우선순위를 정리해줘." onclick="aiTaskChip(this)">오늘 브리핑</button>
+        <button class="btn sm" data-t="치료 중단추정 환자를 정리하고, 오늘 연락할 우선순위와 이유를 알려줘." onclick="aiTaskChip(this)">이탈 위험 정리</button>
+        <button class="btn sm" data-t="위기 상태 환자를 찾아서 상황을 요약하고, 원장 전화 후 보낼 안부 문안 초안을 검수까지 마쳐서 제안해줘." onclick="aiTaskChip(this)">위기 대응 문안</button>
+        <button class="btn sm" data-t="프로그램 종료 3일 전 재안내가 도래한 환자를 찾아 개인화 문안을 작성하고 컴플라이언스 검수까지 해줘." onclick="aiTaskChip(this)">재안내 문안</button></div>
+      <div class="field"><label></label><button class="btn pri" id="aiRunBtn" onclick="aiStaffRun()">🤖 업무 지시</button><span class="note" id="aiRunNote"></span></div></div>
+    <div class="card" id="aiResultCard" style="display:none;margin-bottom:14px"><h2>작업 결과</h2><div class="sub" id="aiResultMeta"></div>
+      <ul class="tl" id="aiTrace" style="margin-bottom:10px"></ul>
+      <div id="aiResult" style="white-space:pre-wrap;font-size:13px;line-height:1.75;border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--bg,#fafaf9)"></div>
+      <div style="margin-top:10px"><button class="btn sm" onclick="aiCopyResult()">📋 결과 복사</button></div></div>
+    <div class="grid g3" style="margin-bottom:14px">
+      <div class="card"><h2>🧑‍💼 AI 실장 <span class="pill p-pri">오케스트레이터</span></h2><div class="sub">업무 접수 → 데이터 조회 → 직원 배정 → 결과 종합</div>
+        <ul class="tl"><li><span class="d">권한</span><span>환자·내원·프로그램·발송 데이터 조회 (전화번호 제외)</span></li><li><span class="d">원칙</span><span>추측 금지 — 실데이터 조회 후 업무 배분</span></li></ul></div>
+      <div class="card"><h2>✍ 메시지 작가</h2><div class="sub">환자 개인화 케어 문안 초안</div>
+        <ul class="tl"><li><span class="d">스타일</span><span>원장 명의 1인칭 · 진심 어린 담백한 문체</span></li><li><span class="d">기본기</span><span>(광고) 표기 · 완곡 표현 · 유인 표현 금지 내장</span></li></ul></div>
+      <div class="card"><h2>🛡 컴플라이언스 검수관</h2><div class="sub">의료법·정보통신망법 8항목 검수</div>
+        <ul class="tl"><li><span class="d">체크</span><span>유인·과장·광고 표기·야간·완곡 표현·대상 적정성</span></li><li><span class="d">판정</span><span>✅ 통과 / ⚠ 수정안 제시 / ⛔ 발송 불가</span></li></ul></div>
+      <div class="card"><h2>📈 데이터 분석가</h2><div class="sub">재내원·이탈·KPI 해석</div>
+        <ul class="tl"><li><span class="d">원칙</span><span>있는 숫자만 · 표본 크기 명시(n=)</span></li><li><span class="d">산출물</span><span>핵심 발견 + 오늘의 실행 제안 1~3개</span></li></ul></div>
+      <div class="card"><h2>📋 브리핑 비서</h2><div class="sub">진료 전 10초 환자 브리핑</div>
+        <ul class="tl"><li><span class="d">구성</span><span>한 줄 요약 → 임상 흐름 → ⚠ 주의 → 오늘 포인트</span></li><li><span class="d">순서</span><span>임상 먼저, CRM 지표는 뒤 (원장 관점)</span></li></ul></div>
+      <div class="card"><h2>🔒 안전 원칙</h2><div class="sub">AI 직원이 절대 하지 않는 것</div>
+        <ul class="tl"><li><span class="d">발송</span><span>AI는 발송 권한 없음 — 문안은 전부 초안, 발송은 사람</span></li><li><span class="d">개인정보</span><span>전화번호·발송토큰은 AI에게 전달되지 않음</span></li><li><span class="d">차단 존중</span><span>발송중단·미동의·위기 환자에겐 광고성 제안 금지</span></li></ul></div></div>
+    <div class="card"><h2>연동 (Anthropic Claude)</h2><div class="sub">Supabase Edge Function <b>ai-employee</b> + ANTHROPIC_API_KEY 시크릿 — 가이드: docs/AI-직원-오케스트레이션-가이드.md</div>
+      <div class="field"><label>상태</label><span id="aiStaffSt" class="pill p-gray">데모 모드</span><button class="btn sm pri" onclick="aiStaffTest()">연동 테스트</button></div>
+      <div class="field"><label>연동 방법</label><span class="note">① Anthropic 콘솔에서 API Key 발급 → ② Supabase → Edge Functions → 새 함수 <b>ai-employee</b>에 저장소 <b>db/edge-ai-employee.ts</b> 코드 붙여넣기 → Deploy → ③ Secrets에 <b>ANTHROPIC_API_KEY</b> 추가 → ④ [연동 테스트]</span></div>
+      <div class="field"><label>비용</label><span class="note">업무 1건당 Claude 호출 2~8회 — 결과 하단에 호출 수·토큰이 표시됩니다. 데이터 연동(Supabase) 전에는 데모 시뮬레이션으로 동작합니다.</span></div></div>
   </section>
 
   <!-- 병원 정보 -->
@@ -1097,7 +1142,7 @@ function buildData(){
 }
 
 /* ================= 라우터 ================= */
-const CRUMBS={today:'오늘의 액션',dash:'대시보드',visits:'내원관리 / 내원목록',cal:'내원관리 / 캘린더',intake:'내원관리 / 문진표',visitset:'내원관리 / 내원 CRM 설정',patients:'환자관리 / 환자DB',retention:'환자관리 / 재내원·이탈',send1:'CRM / 개별 발송',rx:'CRM / 프로그램 트래커',sends:'CRM / 발송 내역',templates:'CRM / 메시지 템플릿',perf:'CRM / 발송 성과',contents:'콘텐츠 / 콘텐츠 목록',hospital:'병원관리 / 병원 정보',staff:'병원관리 / 담당자 관리',billing:'병원관리 / 결제 관리',env:'병원관리 / 환경설정',p360:'환자관리 / 환자 360'};
+const CRUMBS={today:'오늘의 액션',dash:'대시보드',aistaff:'AI / AI 직원',visits:'내원관리 / 내원목록',cal:'내원관리 / 캘린더',intake:'내원관리 / 문진표',visitset:'내원관리 / 내원 CRM 설정',patients:'환자관리 / 환자DB',retention:'환자관리 / 재내원·이탈',send1:'CRM / 개별 발송',rx:'CRM / 프로그램 트래커',sends:'CRM / 발송 내역',templates:'CRM / 메시지 템플릿',perf:'CRM / 발송 성과',contents:'콘텐츠 / 콘텐츠 목록',hospital:'병원관리 / 병원 정보',staff:'병원관리 / 담당자 관리',billing:'병원관리 / 결제 관리',env:'병원관리 / 환경설정',p360:'환자관리 / 환자 360'};
 function go(v){
   document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
   document.getElementById('v-'+v).classList.add('on');
@@ -1893,6 +1938,7 @@ function setLiveTag(on){
   else{t.textContent='DEMO · 가상 데이터';t.style.background='';t.style.color='';}
   const st=document.getElementById('dbStatus');
   if(st){st.textContent=on?'연결됨 (LIVE)':'목데이터 모드';st.className='pill '+(on?'p-ok':'p-gray');}
+  aiStaffStatus();
 }
 async function testDb(){
   const url=sanitizeUrl(document.getElementById('dbUrl').value);
@@ -2138,6 +2184,177 @@ async function addProgram(){
 
 /* ================= 오류 신호 (장애 알림) ================= */
 const errLog=[];
+/* ================= AI 직원 (에이전트 오케스트레이션) ================= */
+const AI_EMP_TITLES={auto:'AI 실장',writer:'메시지 작가',compliance:'컴플라이언스 검수관',analyst:'데이터 분석가',briefer:'브리핑 비서'};
+let aiBusy=false;
+function aiTaskChip(b){document.getElementById('aiTask').value=b.dataset.t;document.getElementById('aiEmp').value='auto';document.getElementById('aiTask').focus()}
+function aiStaffStatus(){
+  const st=document.getElementById('aiStaffSt');if(!st)return;
+  if(live&&sb){
+    if(localStorage.getItem('careloop-ai')==='1'){st.textContent='연동됨 (지난 테스트 기준)';st.className='pill p-ok'}
+    else{st.textContent='연동 확인 필요 — [연동 테스트]를 눌러주세요';st.className='pill p-amber'}
+  }else{st.textContent='데모 모드 — 목데이터 시뮬레이션';st.className='pill p-gray'}
+  const note=document.getElementById('aiRunNote');
+  if(note)note.textContent=(live&&sb)?'':'데모 모드 — 실제 AI 호출 없이 오케스트레이션 과정을 시뮬레이션합니다';
+}
+async function aiStaffTest(){
+  if(!(live&&sb)){toast('환경설정에서 Supabase 연동 후 테스트할 수 있어요 — 지금은 데모 시뮬레이션으로 동작합니다');return}
+  const st=document.getElementById('aiStaffSt');st.textContent='테스트 중…';st.className='pill p-gray';
+  try{
+    const {data,error}=await sb.functions.invoke('ai-employee',{body:{ping:true}});
+    if(error)throw error; if(data&&data.error)throw new Error(data.error);
+    localStorage.setItem('careloop-ai','1');
+    st.textContent='연동됨 · '+(data.model||'Claude');st.className='pill p-ok';
+    toast('AI 직원 연동 성공');
+    aiSay('🤖 <b>AI 직원 연동 성공!</b> 이제 [업무 지시]가 실제 Claude 호출로 동작합니다. 병원 실데이터를 조회해 브리핑·문안·검수·분석을 처리해요.');
+  }catch(e){
+    localStorage.removeItem('careloop-ai');
+    st.textContent='미연동';st.className='pill p-gray';
+    reportError('AI 직원 연동 실패: '+(e.message||e)+' — Edge Function(ai-employee) 배포와 ANTHROPIC_API_KEY 시크릿을 확인해 주세요 (docs/AI-직원-오케스트레이션-가이드.md)');
+  }
+}
+async function aiStaffRun(){
+  if(aiBusy){toast('이전 업무가 아직 진행 중이에요');return}
+  const task=document.getElementById('aiTask').value.trim();
+  if(!task){toast('업무 내용을 입력해 주세요');document.getElementById('aiTask').focus();return}
+  const emp=document.getElementById('aiEmp').value;
+  const card=document.getElementById('aiResultCard');
+  card.style.display='';
+  document.getElementById('aiTrace').innerHTML='';
+  document.getElementById('aiResult').textContent='';
+  document.getElementById('aiResultMeta').textContent='';
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(live&&sb){
+    aiBusy=true;const btn=document.getElementById('aiRunBtn');btn.disabled=true;btn.textContent='⏳ AI 직원이 일하는 중… (복잡한 업무는 1~2분)';
+    document.getElementById('aiTrace').innerHTML='<li><span class="d">진행</span><span>AI 실장에게 업무를 전달했어요 — 데이터 조회와 직원 배정이 끝나면 결과가 표시됩니다</span></li>';
+    try{
+      const {data,error}=await sb.functions.invoke('ai-employee',{body:{task,employee:emp}});
+      if(error)throw error; if(data&&data.error)throw new Error(data.error);
+      renderAiOutcome(data,false);
+    }catch(e){
+      document.getElementById('aiTrace').innerHTML='';
+      document.getElementById('aiResultMeta').textContent='실패 — 아래 연동 카드의 [연동 테스트]로 상태를 확인해 주세요';
+      reportError('AI 업무 실패: '+(e.message||e));
+    }finally{aiBusy=false;btn.disabled=false;btn.textContent='🤖 업무 지시'}
+    return;
+  }
+  aiStaffDemo(task,emp);
+}
+function renderAiOutcome(data,demo){
+  const tr=document.getElementById('aiTrace');
+  tr.innerHTML=(data.trace||[]).map(s=>'<li><span class="d">'+esc(s.actor)+'</span><span>'+esc(s.detail||s.action||'')+'</span></li>').join('');
+  document.getElementById('aiResult').textContent=data.result||'';
+  const u=data.usage||{};
+  document.getElementById('aiResultMeta').textContent=demo
+    ?'데모 시뮬레이션 — 실제 AI 호출이 아닙니다. Supabase + ai-employee 연동 시 병원 실데이터로 동작합니다'
+    :'담당: '+(AI_EMP_TITLES[data.employee]||'AI 실장')+(u.calls?' · Claude 호출 '+u.calls+'회 · 토큰 입력 '+(u.input_tokens||0).toLocaleString()+' / 출력 '+(u.output_tokens||0).toLocaleString():'');
+}
+function aiCopyResult(){
+  const txt=document.getElementById('aiResult').textContent;
+  if(!txt){toast('복사할 결과가 없어요');return}
+  const fb=()=>{prompt('아래 내용을 복사하세요 (Ctrl+C)',txt)};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast('결과를 복사했어요')).catch(fb);
+  else fb();
+}
+function aiStaffDemo(task,emp){
+  aiBusy=true;const btn=document.getElementById('aiRunBtn');btn.disabled=true;btn.textContent='⏳ 시뮬레이션 중…';
+  const tr=document.getElementById('aiTrace');
+  const steps=emp==='auto'?[
+    ['AI 실장','업무 접수 — 필요한 데이터와 담당 직원을 판단합니다'],
+    ['AI 실장','오늘 현황 조회 (내원·위기·프로그램 체크포인트·중단추정)'],
+    ['데이터 분석가','조회 데이터 해석 · 우선순위 정리'],
+    ['메시지 작가','대상 환자 케어 문안 초안 작성'],
+    ['컴플라이언스 검수관','의료법·광고 표기 8항목 검수 — ✅ 통과'],
+    ['AI 실장','결과 종합 · 최종 보고'],
+  ]:[
+    ['AI 실장','업무 접수 — '+AI_EMP_TITLES[emp]+'에게 직접 위임합니다'],
+    [AI_EMP_TITLES[emp],'업무 수행: '+task.slice(0,60)],
+    ['AI 실장','결과 확인 · 보고'],
+  ];
+  const RESULTS={
+    auto:`[데모 결과 예시 — 오늘 우선 처리 3건]
+
+1) 이순자님 ⚠ 위기 — D+5 경과체크 '불편해요' 응답
+   → 문안보다 원장 전화가 먼저입니다 (SLA 30분). 통화 후 회복 처리하면 보류된 안내가 다시 켜집니다.
+
+2) 김민정님 — 프로그램 종료 3일 전 재안내 도래 (오전 11시 예약)
+   제안 문안(초안, 검수 통과 ✅):
+   ─────────────────
+   #{환자명}님, 원장입니다.
+   보름 동안 정말 잘 따라와 주셨어요.
+   마무리 상태를 보고 다음 단계를 정하는 게
+   회복에 가장 중요합니다.
+   이번 주 편하신 시간에 뵐 수 있을까요?
+   ─────────────────
+   · 제안 채널: 알림톡(정보성 — 광고 표기 불필요)
+
+3) 정혜란님 — 치료 중단추정 D+7, 안부 문안 준비됨 → 발송 확인
+
+※ 모든 문안은 초안입니다. 발송은 [개별 발송] 화면에서 사람이 확인 후 진행하세요.`,
+    writer:`[데모 결과 예시 — 메시지 작가]
+
+문안 초안:
+─────────────────
+#{환자명}님, 원장입니다.
+지난번보다 움직임이 한결 편해지셨다니
+저도 참 기뻤습니다.
+지금 흐름을 잘 이어가는 게 중요해서,
+다음 내원 때 회복 상태를 꼼꼼히 봐드리겠습니다.
+─────────────────
+· 제안 채널: 알림톡 (정보성 — (광고) 표기 불필요)
+· 발송 전 확인: 환자 상태 플래그(위기/발송중단) 확인 후 발송
+
+※ 초안입니다 — 컴플라이언스 검수 후 발송하세요.`,
+    compliance:`[데모 결과 예시 — 컴플라이언스 검수]
+
+판정: ⚠ 수정 필요
+
+· ③ 광고성 표기 — 재내원 유도 문안인데 "(광고)" 표기와 무료수신거부 안내가 없습니다.
+· ② 과장 표현 — "확실히 낫습니다"는 치료효과 보장 표현으로 의료광고 위반 소지.
+· ⑤ 민감 병명 — "치매 예방"은 "기억력·뇌 건강 관리"로 완곡 표현 권장.
+
+수정안:
+─────────────────
+(광고) ○○의원
+#{환자명}님, 원장입니다.
+기억력·뇌 건강 관리는 꾸준함이 가장 중요합니다.
+환절기 점검을 원하시면 편한 시간에 연락 주세요.
+무료거부 080-XXX-XXXX
+─────────────────`,
+    analyst:`[데모 결과 예시 — 데이터 분석가]
+
+1) 핵심 발견
+· 치료 중단추정 2명(정혜란·외 1명) — 마지막 방문 14일+ 경과, 팔로업 미반응 (n=2, 신호 수준)
+· D+5 경과체크 응답률이 이번 주 하락 — 미응답 1건(박성호)은 내일 리마인드 예정
+
+2) 근거 숫자
+· 중단추정 전환: 이번 주 2명 · 위기 1명(이순자) · 재안내 도래 1명(김민정)
+
+3) 오늘의 실행 제안
+① 이순자님 원장 전화 (위기 SLA)
+② 김민정님 재안내 발송 후 반응 확인
+③ 정혜란님 안부 발송 결과 확인 — 3일 무반응 시 전화 전환`,
+    briefer:`[데모 결과 예시 — 진료 전 브리핑]
+
+· 한 줄 요약: 김민정(34) — 프로그램 15일차 마무리 단계, 오늘 재안내 예정. 반응 좋음.
+· 임상 흐름: 방문 5회 · 마지막 방문 7/2 · 주증상 목·어깨 통증 · 15일 프로그램 D+15 (D+5 응답 '좋음')
+· ⚠ 주의: 특이 플래그 없음 · 마케팅 수신동의 ✅
+· 오늘 포인트: "지난번 좋아졌다고 하셨는데 유지되는지" 한 마디 — 재처방 결정에 가장 큰 신뢰 신호입니다.`,
+  };
+  let i=0;
+  const tick=()=>{
+    if(i<steps.length){
+      tr.innerHTML+='<li><span class="d">'+esc(steps[i][0])+'</span><span>'+esc(steps[i][1])+'</span></li>';
+      i++;setTimeout(tick,550);return;
+    }
+    renderAiOutcome({result:RESULTS[emp]||RESULTS.auto,trace:[],usage:{}},true);
+    tr.innerHTML=steps.map(s=>'<li><span class="d">'+esc(s[0])+'</span><span>'+esc(s[1])+'</span></li>').join('');
+    aiBusy=false;btn.disabled=false;btn.textContent='🤖 업무 지시';
+  };
+  tick();
+}
+(function(){const b=document.querySelector('[data-view="aistaff"]');if(b)b.addEventListener('click',aiStaffStatus);aiStaffStatus()})();
+
 function reportError(msg){
   errLog.push({t:new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}),msg});
   const bar=document.getElementById('errbar');
