@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vrew 스타일 자막 편집기 — 클론 프로토타입</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --accent: #00a3ff; --accent-soft: rgba(0, 163, 255, 0.12); --accent-border: #7fd0ff;
+    --bg: #f4f6f8; --panel: #ffffff; --line: #e4e8ec; --line-strong: #cfd6dc;
+    --text: #26303a; --text-sub: #6b7684; --text-faint: #9aa4ae;
+    --danger: #ef4444; --ok: #10b981;
+    --radius: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; overflow: hidden; font-size: 14px; }
+button { font-family: inherit; cursor: pointer; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── 상단 메뉴바 ─────────────────────────────── */
+#menubar { display: flex; align-items: center; gap: 2px; background: var(--panel);
+    border-bottom: 1px solid var(--line); padding: 6px 12px 0; flex-shrink: 0; }
+#menubar .logo { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #00a3ff, #0066ff);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; margin-right: 10px; }
+.menu-tab { border: none; background: none; padding: 8px 14px 10px; font-size: 13.5px; color: var(--text-sub);
+    border-bottom: 2.5px solid transparent; font-weight: 500; }
+.menu-tab:hover { color: var(--text); }
+.menu-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+#menubar .spacer { flex: 1; }
+.top-btn { border: 1px solid var(--line-strong); background: #fff; border-radius: 8px; padding: 6px 14px;
+    font-size: 13px; color: var(--text-sub); margin-bottom: 6px; margin-left: 6px; }
+.top-btn:hover { border-color: var(--accent); color: var(--accent); }
+.top-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.top-btn.primary:hover { background: #0090e6; color: #fff; }
+
+/* ── 리본 (탭별 도구 모음) ────────────────────── */
+#ribbon { display: flex; align-items: stretch; gap: 6px; background: var(--panel);
+    border-bottom: 1px solid var(--line); padding: 8px 14px; flex-shrink: 0; min-height: 74px; overflow-x: auto; }
+.ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    min-width: 76px; padding: 6px 10px; border: 1px solid transparent; background: none; border-radius: var(--radius);
+    font-size: 11.5px; color: var(--text-sub); line-height: 1.25; text-align: center; }
+.ribbon-btn .ico { font-size: 21px; line-height: 1; }
+.ribbon-btn:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent-border); color: var(--text); }
+.ribbon-sep { width: 1px; background: var(--line); margin: 4px 4px; flex-shrink: 0; }
+.ribbon-group { display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 10px; font-size: 12px; color: var(--text-sub); }
+.ribbon-group label { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.ribbon-group input[type="range"] { width: 110px; accent-color: var(--accent); }
+.ribbon-group input[type="color"] { width: 30px; height: 22px; border: 1px solid var(--line-strong); border-radius: 5px; padding: 1px; background: #fff; }
+.ribbon-group select { border: 1px solid var(--line-strong); border-radius: 6px; padding: 3px 6px; font-family: inherit; font-size: 12px; }
+.ribbon-group input[type="checkbox"] { accent-color: var(--accent); }
+
+/* ── 메인 3단 레이아웃 ───────────────────────── */
+#main { flex: 1; display: flex; min-height: 0; }
+
+/* 좌: 미리보기 */
+#preview-pane { width: 420px; min-width: 320px; background: #1c2229; display: flex; flex-direction: column; flex-shrink: 0; }
+#stage-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+#stage-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
+#stage-demo { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #3d2b1f 0%, #7a5c3e 45%, #c9a06c 100%); color: rgba(255,255,255,0.85); }
+#stage-demo .demo-inner { text-align: center; }
+#stage-demo .demo-emoji { font-size: 52px; }
+#stage-demo .demo-label { font-size: 12px; margin-top: 8px; letter-spacing: 0.06em; color: rgba(255,255,255,0.65); }
+#subtitle-overlay { position: absolute; left: 0; right: 0; padding: 0 5%; display: flex; pointer-events: none; z-index: 5; }
+#subtitle-overlay .sub-text { font-weight: 700; white-space: pre-wrap; word-break: keep-all; line-height: 1.35; }
+#overlay-layer { position: absolute; inset: 0; z-index: 6; }
+.sticker { position: absolute; transform: translate(-50%, -50%); cursor: grab; user-select: none; line-height: 1; }
+.sticker:active { cursor: grabbing; }
+.sticker .del { position: absolute; top: -10px; right: -12px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--danger); color: #fff; border: none; font-size: 11px; line-height: 1; display: none; align-items: center; justify-content: center; }
+.sticker:hover .del { display: flex; }
+/* display:none이면 브라우저가 프레임 캡처를 생략할 수 있어 화면 밖에 살려둠 */
+#export-canvas { position: fixed; right: 0; bottom: 0; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; }
+
+#transport { padding: 10px 14px 6px; color: #cdd6df; }
+#scrubber { position: relative; height: 14px; border-radius: 7px; background: #39424c; cursor: pointer; overflow: hidden; }
+#scrubber .seg { position: absolute; top: 0; bottom: 0; }
+#scrubber .seg.keep { background: linear-gradient(180deg, #37b6ff, #0d8fdd); }
+#scrubber .seg.cut { background: #232a31; }
+#playhead { position: absolute; top: -2px; bottom: -2px; width: 2.5px; background: #fff; border-radius: 2px; pointer-events: none; }
+#transport-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.tp-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #4a545f; background: #2a323b; color: #e6edf3; font-size: 14px; }
+.tp-btn:hover { border-color: var(--accent); color: var(--accent); }
+#time-display { font-variant-numeric: tabular-nums; font-size: 12.5px; }
+#time-display .edited { color: #7fd0ff; }
+#speed-select { margin-left: auto; background: #2a323b; color: #cdd6df; border: 1px solid #4a545f; border-radius: 6px; padding: 3px 6px; font-size: 12px; font-family: inherit; }
+#clip-name-bar { margin-top: auto; padding: 10px 14px; border-top: 1px solid #333c45; color: #8b98a5; font-size: 12.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 중앙: 클립 목록 */
+#clip-pane { flex: 1; min-width: 0; overflow-y: auto; padding: 22px 26px 120px; }
+.clip-row { display: flex; gap: 12px; background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 12px; max-width: 860px; margin-left: auto; margin-right: auto; }
+.clip-row.current { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.clip-row.playing-now { background: #f4fbff; }
+.clip-row.all-cut { opacity: 0.55; }
+.clip-no { width: 26px; text-align: center; color: var(--text-faint); font-size: 13px; padding-top: 3px; flex-shrink: 0; }
+.clip-no .mark { display: block; width: 14px; height: 14px; margin: 6px auto 0; border: 1.5px solid var(--line-strong); border-radius: 4px; }
+.clip-row.current .clip-no .mark { border-color: var(--accent); background: var(--accent); }
+.clip-body { flex: 1; min-width: 0; }
+.clip-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.clip-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-sub);
+    border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; background: #fafbfc; flex-shrink: 0; }
+.chip { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 7px;
+    padding: 2.5px 9px; font-size: 13.5px; background: #fff; cursor: pointer; user-select: none; }
+.chip:hover { border-color: var(--accent); }
+.chip.selected { border-color: var(--accent); background: var(--accent-soft); color: #0077bd; font-weight: 700; }
+.chip.cut { text-decoration: line-through; color: var(--danger); border-color: #f3c1c1; background: #fef2f2; }
+.chip.speaking { box-shadow: 0 0 0 2.5px var(--accent-border); }
+.clip-sub { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-left: 6px; }
+.clip-sub .sub-ico { font-size: 13px; color: var(--text-faint); flex-shrink: 0; }
+.sub-line { flex: 1; min-width: 0; font-size: 14px; color: var(--text); padding: 3px 8px; border-radius: 6px;
+    border: 1px dashed transparent; cursor: text; word-break: keep-all; white-space: pre-wrap; }
+.sub-line:hover { border-color: var(--line-strong); background: #fafbfc; }
+.sub-line:focus { outline: none; border: 1px solid var(--accent); background: #fff; }
+.sub-line.empty-cut { color: var(--text-faint); font-style: italic; text-decoration: line-through; }
+.clip-side { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
+.thumb { width: 64px; height: 40px; border-radius: 6px; background: linear-gradient(135deg, #5a4632, #b18a5c);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; position: relative; }
+.thumb canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.clip-time { font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#empty-hint { max-width: 860px; margin: 40px auto; text-align: center; color: var(--text-faint); line-height: 2; }
+
+/* 우: 애셋 패널 */
+#asset-pane { width: 300px; flex-shrink: 0; background: var(--panel); border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; }
+#asset-pane.hidden { display: none; }
+#asset-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; font-weight: 700; font-size: 14.5px; }
+#asset-head button { border: none; background: none; font-size: 15px; color: var(--text-faint); }
+#asset-search { margin: 0 16px 10px; display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--line-strong);
+    border-radius: 9px; padding: 7px 12px; }
+#asset-search input { border: none; outline: none; flex: 1; font-family: inherit; font-size: 13px; min-width: 0; }
+#asset-tags { display: flex; gap: 6px; padding: 0 16px 8px; flex-wrap: wrap; }
+.a-tag { border: 1px solid var(--line); background: #fafbfc; border-radius: 14px; padding: 3px 11px; font-size: 12px; color: var(--text-sub); }
+.a-tag:hover, .a-tag.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+#asset-cats { display: flex; gap: 14px; padding: 4px 18px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.a-cat { border: none; background: none; color: var(--text-sub); padding: 4px 2px; border-bottom: 2px solid transparent; }
+.a-cat.on { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+#asset-grid { flex: 1; overflow-y: auto; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-content: start; }
+.asset-card { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; background: #fff; }
+.asset-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,163,255,0.15); }
+.asset-card .art { height: 84px; display: flex; align-items: center; justify-content: center; font-size: 38px; }
+.asset-card .cap { font-size: 11px; color: var(--text-sub); padding: 5px 8px; display: flex; justify-content: space-between; }
+#asset-empty { grid-column: 1 / -1; text-align: center; color: var(--text-faint); padding: 30px 0; font-size: 12.5px; }
+
+/* ── 모달 ────────────────────────────────────── */
+.modal-back { position: fixed; inset: 0; background: rgba(15,23,32,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-back.open { display: flex; }
+.modal { background: #fff; border-radius: 14px; width: min(560px, 92vw); max-height: 86vh; overflow-y: auto; padding: 24px 26px; }
+.modal h2 { font-size: 17px; margin-bottom: 4px; }
+.modal .m-desc { font-size: 12.5px; color: var(--text-sub); margin-bottom: 16px; }
+.export-opt { display: flex; align-items: center; gap: 14px; border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px; width: 100%; background: #fff; text-align: left; }
+.export-opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.export-opt .ico { font-size: 26px; }
+.export-opt .t { font-weight: 700; font-size: 14px; }
+.export-opt .d { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.modal .close-row { text-align: right; margin-top: 12px; }
+.modal textarea { width: 100%; min-height: 140px; border: 1.5px solid var(--line-strong); border-radius: 10px;
+    padding: 10px 12px; font-family: inherit; font-size: 13.5px; resize: vertical; }
+.modal .help-body { font-size: 13px; line-height: 1.9; color: var(--text-sub); }
+.modal .help-body b { color: var(--text); }
+.modal .help-body kbd { background: #eef1f4; border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; font-size: 11.5px; }
+#export-progress { display: none; margin-top: 14px; }
+#export-progress .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+#export-progress .fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
+#export-progress .lbl { font-size: 12px; color: var(--text-sub); margin-top: 6px; }
+
+/* STT 모달 */
+.stt-modes { display: flex; gap: 8px; margin-bottom: 14px; }
+.stt-mode { flex: 1; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; text-align: left; font-size: 13px; color: var(--text-sub); }
+.stt-mode b { display: block; color: var(--text); font-size: 13.5px; margin-bottom: 2px; }
+.stt-mode.on { border-color: var(--accent); background: var(--accent-soft); }
+.stt-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.stt-form label { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-sub); }
+.stt-form label span:first-child { width: 92px; flex-shrink: 0; }
+.stt-form select, .stt-form input[type="text"], .stt-form input[type="password"] {
+    flex: 1; border: 1.5px solid var(--line-strong); border-radius: 8px; padding: 7px 10px; font-family: inherit; font-size: 13px; min-width: 0; }
+.stt-note { font-size: 12px; color: var(--text-faint); line-height: 1.7; background: #f7f9fb; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+#stt-progress { display: none; margin-bottom: 12px; }
+#stt-progress .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+#stt-progress .fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
+#stt-progress .lbl { font-size: 12px; color: var(--text-sub); margin-top: 6px; }
+
+/* 토스트 */
+#toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); background: #26303a;
+    color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: all 0.25s; z-index: 200; max-width: 80vw; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 1100px) { #asset-pane { position: absolute; right: 0; top: 0; bottom: 0; z-index: 50; box-shadow: -8px 0 24px rgba(0,0,0,0.12); } #main { position: relative; } }
+@media (max-width: 860px) { #preview-pane { width: 320px; } }
+</style>
+</head>
+<body>
+
+<!-- 상단 메뉴 -->
+<div id="menubar">
+    <div class="logo">V</div>
+    <button class="menu-tab" data-tab="file">파일</button>
+    <button class="menu-tab active" data-tab="edit">편집</button>
+    <button class="menu-tab" data-tab="subtitle">자막</button>
+    <button class="menu-tab" data-tab="format">서식</button>
+    <button class="menu-tab" data-tab="insert">삽입</button>
+    <button class="menu-tab" data-tab="help">도움말</button>
+    <div class="spacer"></div>
+    <button class="top-btn" id="btn-save-project">💾 프로젝트 저장</button>
+    <button class="top-btn primary" id="btn-export">📤 내보내기</button>
+</div>
+
+<!-- 리본 -->
+<div id="ribbon"></div>
+
+<!-- 메인 -->
+<div id="main">
+    <!-- 좌: 미리보기 -->
+    <div id="preview-pane">
+        <div id="stage-wrap">
+            <video id="stage-video" playsinline></video>
+            <div id="stage-demo">
+                <div class="demo-inner">
+                    <div class="demo-emoji">🥣🍓</div>
+                    <div class="demo-label">데모 프로젝트 · 영상 파일을 불러오면 여기에 표시됩니다</div>
+                </div>
+            </div>
+            <div id="overlay-layer"></div>
+            <div id="subtitle-overlay"><div class="sub-text" id="sub-text"></div></div>
+        </div>
+        <canvas id="export-canvas" width="1280" height="720"></canvas>
+        <div id="transport">
+            <div id="scrubber"><div id="playhead"></div></div>
+            <div id="transport-row">
+                <button class="tp-btn" id="btn-play" title="재생/일시정지 (Space)">▶</button>
+                <button class="tp-btn" id="btn-stop" title="처음으로">⏹</button>
+                <span id="time-display">00:00 / 00:00</span>
+                <select id="speed-select" title="재생 속도">
+                    <option value="0.5">0.5x</option>
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                </select>
+            </div>
+        </div>
+        <div id="clip-name-bar">클립 없음</div>
+    </div>
+
+    <!-- 중앙: 클립 목록 -->
+    <div id="clip-pane">
+        <div id="clip-list"></div>
+        <div id="empty-hint" style="display:none">
+            아직 클립이 없습니다.<br>
+            <b>파일 탭</b>에서 영상·자막을 불러오거나 <b>데모 프로젝트</b>를 열어보세요.
+        </div>
+    </div>
+
+    <!-- 우: 무료 애셋 -->
+    <div id="asset-pane">
+        <div id="asset-head"><span>무료 애셋</span><button id="btn-asset-close" title="닫기">✕</button></div>
+        <div id="asset-search">🔍 <input id="asset-search-input" placeholder="검색 (예: 요거트)"></div>
+        <div id="asset-tags"></div>
+        <div id="asset-cats">
+            <button class="a-cat on" data-cat="all">전체</button>
+            <button class="a-cat" data-cat="image">이미지</button>
+            <button class="a-cat" data-cat="shape">도형</button>
+        </div>
+        <div id="asset-grid"></div>
+    </div>
+</div>
+
+<!-- 내보내기 모달 -->
+<div class="modal-back" id="modal-export">
+    <div class="modal">
+        <h2>내보내기</h2>
+        <div class="m-desc">컷 편집이 반영된 결과물을 파일로 내보냅니다.</div>
+        <button class="export-opt" id="exp-srt">
+            <span class="ico">💬</span>
+            <span><span class="t">자막 파일 (.srt)</span><br><span class="d">컷 이후 타임라인으로 재계산된 자막</span></span>
+        </button>
+        <button class="export-opt" id="exp-webm">
+            <span class="ico">🎬</span>
+            <span><span class="t">편집본 영상 (.webm)</span><br><span class="d">컷 구간을 건너뛰고 자막을 입혀 실시간 녹화 렌더링</span></span>
+        </button>
+        <button class="export-opt" id="exp-xml">
+            <span class="ico">🎞️</span>
+            <span><span class="t">편집툴 XML (.xml)</span><br><span class="d">컷 편집을 시퀀스로 — Premiere Pro·DaVinci Resolve에서 가져오기, 자막은 마커+SRT</span></span>
+        </button>
+        <button class="export-opt" id="exp-cutjson">
+            <span class="ico">✂️</span>
+            <span><span class="t">컷 편집 데이터 (.json)</span><br><span class="d">유지 구간·자막 목록 — 캡컷 등 타 편집툴 이식용 간이 포맷</span></span>
+        </button>
+        <button class="export-opt" id="exp-project">
+            <span class="ico">💾</span>
+            <span><span class="t">프로젝트 파일 (.json)</span><br><span class="d">클립·컷·스타일 전체 저장 (파일 탭에서 다시 열기)</span></span>
+        </button>
+        <div id="export-progress">
+            <div class="bar"><div class="fill" id="export-fill"></div></div>
+            <div class="lbl" id="export-lbl">렌더링 중…</div>
+        </div>
+        <div class="close-row"><button class="top-btn" data-close>닫기</button></div>
+    </div>
+</div>
+
+<!-- 대본 입력 모달 -->
+<div class="modal-back" id="modal-script">
+    <div class="modal">
+        <h2>대본으로 클립 만들기</h2>
+        <div class="m-desc">한 줄이 클립 하나가 됩니다. 전체 길이에 글자 수 비율로 시간이 배분됩니다. (SRT가 있다면 SRT 불러오기가 더 정확합니다)</div>
+        <textarea id="script-input" placeholder="안녕하세요&#10;오늘 출근 도시락은 그릭 요거트에요&#10;..."></textarea>
+        <div class="close-row">
+            <button class="top-btn" data-close>취소</button>
+            <button class="top-btn primary" id="btn-script-apply">클립 생성</button>
+        </div>
+    </div>
+</div>
+
+<!-- AI 자동 자막 모달 -->
+<div class="modal-back" id="modal-stt">
+    <div class="modal">
+        <h2>AI 자동 자막 (음성 인식)</h2>
+        <div class="m-desc">영상의 음성을 인식해 단어 타임스탬프가 달린 클립을 자동 생성합니다. 기존 클립은 대체됩니다(Ctrl+Z로 복구 가능).</div>
+        <div class="stt-modes">
+            <button class="stt-mode on" data-mode="local"><b>🖥️ 브라우저 로컬</b>API 키 불필요 · 무료 · 음성이 밖으로 나가지 않음</button>
+            <button class="stt-mode" data-mode="api"><b>☁️ Whisper API</b>OpenAI 호환 API · 빠르고 정확 · 키 필요</button>
+        </div>
+        <div class="stt-form" id="stt-form-local">
+            <label><span>모델 크기</span>
+                <select id="stt-model-size">
+                    <option value="tiny">tiny — 약 40MB, 빠름, 정확도 낮음</option>
+                    <option value="base" selected>base — 약 80MB, 균형 (권장 시작점)</option>
+                    <option value="small">small — 약 250MB, 느리지만 가장 정확</option>
+                </select></label>
+            <label><span>언어</span>
+                <select id="stt-lang-local">
+                    <option value="korean" selected>한국어</option>
+                    <option value="english">영어</option>
+                    <option value="auto">자동 감지</option>
+                </select></label>
+        </div>
+        <div class="stt-form" id="stt-form-api" style="display:none">
+            <label><span>API 주소</span><input type="text" id="stt-endpoint" value="https://api.openai.com/v1/audio/transcriptions"></label>
+            <label><span>API 키</span><input type="password" id="stt-key" placeholder="sk-..."></label>
+            <label><span>모델</span><input type="text" id="stt-model-api" value="whisper-1"></label>
+            <label><span>언어</span>
+                <select id="stt-lang-api">
+                    <option value="ko" selected>한국어</option>
+                    <option value="en">영어</option>
+                    <option value="">자동 감지</option>
+                </select></label>
+        </div>
+        <div class="stt-note" id="stt-note-local">
+            처음 실행 시 모델을 내려받으며(인터넷 필요) 이후엔 브라우저에 캐시되어 오프라인으로도 동작합니다.
+            인식은 CPU(WASM)에서 실행되어 영상 길이에 따라 수 분이 걸릴 수 있습니다. 한국어는 base 이상을 권장합니다.
+        </div>
+        <div class="stt-note" id="stt-note-api" style="display:none">
+            음성은 16kHz 모노 WAV로 변환되어 입력한 API 주소로만 전송됩니다. 키는 이 브라우저의 localStorage에만 저장됩니다.
+            Groq 등 OpenAI 호환 서버도 주소/모델만 바꾸면 사용할 수 있습니다.
+        </div>
+        <div id="stt-progress">
+            <div class="bar"><div class="fill" id="stt-fill"></div></div>
+            <div class="lbl" id="stt-lbl">준비 중…</div>
+        </div>
+        <div class="close-row">
+            <button class="top-btn" data-close>닫기</button>
+            <button class="top-btn primary" id="btn-stt-start">🎙️ 자막 생성 시작</button>
+        </div>
+    </div>
+</div>
+
+<!-- 도움말 모달 -->
+<div class="modal-back" id="modal-help">
+    <div class="modal">
+        <h2>사용법</h2>
+        <div class="m-desc">Vrew 방식의 "텍스트로 영상 편집" 클론 프로토타입입니다. 모든 처리가 브라우저 안에서만 이루어집니다(업로드 없음).</div>
+        <div class="help-body">
+            <b>1. 불러오기</b> — 파일 탭에서 영상(mp4/webm)을 불러온 뒤, SRT 자막을 불러오거나 대본을 붙여넣으면 단어 단위 클립이 생성됩니다.<br>
+            <b>1-1. AI 자동 자막</b> — 자막 탭에서 음성 인식으로 클립을 자동 생성할 수 있습니다. 브라우저 로컬(Whisper, 무료·키 불필요) 또는 OpenAI 호환 API 중 선택하세요.<br>
+            <b>2. 단어 컷 편집</b> — 단어 칩 클릭으로 선택(<kbd>Shift</kbd> 범위, <kbd>Ctrl</kbd> 다중), <kbd>Delete</kbd> 또는 편집 탭 ✂️로 컷. 컷한 단어의 영상 구간은 재생·내보내기에서 건너뜁니다. 다시 선택해 ♻️ 복원.<br>
+            <b>3. 자막 수정</b> — 클립 아래 💬 줄을 클릭해 오타를 고치면 단어 칩이 다시 배분됩니다.<br>
+            <b>4. 클립 다듬기</b> — 단어를 선택하고 🧩 분할하면 그 단어부터 새 클립, 🔗 병합은 아래 클립과 합칩니다.<br>
+            <b>5. 무음 컷</b> — 영상을 불러온 상태에서 🔇를 누르면 오디오를 분석해 0.4초 이상의 무음 구간을 자동으로 컷합니다.<br>
+            <b>6. 내보내기</b> — SRT(컷 반영 타임라인), 편집본 WebM(실시간 렌더), 편집툴 XML(xmeml — Premiere Pro·DaVinci Resolve 호환), 컷 데이터 JSON, 프로젝트 저장을 지원합니다.<br>
+            <b>6-1. XML 활용법</b> — XML 파일을 원본 영상과 같은 폴더에 두고 프리미어 <kbd>파일→가져오기</kbd>(리졸브는 <kbd>File→Import→Timeline</kbd>)로 열면 컷 편집이 시퀀스로 복원됩니다. 자막 문장은 타임라인 마커로 들어가며, 자막 트랙이 필요하면 SRT를 함께 가져오세요.<br>
+            <b>단축키</b> — <kbd>Space</kbd> 재생 · <kbd>Delete</kbd> 컷 · <kbd>Ctrl+Z</kbd> 실행취소 · <kbd>Ctrl+Y</kbd> 다시실행
+        </div>
+        <div class="close-row"><button class="top-btn" data-close>닫기</button></div>
+    </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="file-video" accept="video/*" style="display:none">
+<input type="file" id="file-srt" accept=".srt,.vtt,text/plain" style="display:none">
+<input type="file" id="file-project" accept=".json,application/json" style="display:none">
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════════════════════
+   Vrew 스타일 자막 기반 영상 편집기 — 클론 프로토타입
+   데이터 모델: clips[] → words[{text, start, end, cut}]
+   컷 = 단어에 cut 플래그 → 재생/내보내기에서 해당 소스 구간 스킵
+   ══════════════════════════════════════════════════════════════ */
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+// ── 상태 ─────────────────────────────────────────
+const state = {
+    video: { loaded: false, name: '', duration: 14.04, url: null },
+    clips: [],            // {id, words:[{id,text,start,end,cut}]}
+    silenceCuts: [],      // {start,end} — 무음 자동 컷 구간
+    overlays: [],         // {id, clipId, char, x, y, size} x/y는 0~1 비율
+    style: { size: 42, color: '#ffffff', outline: true, box: false, pos: 'bottom-left' },
+    currentClipId: null,
+    selection: new Set(), // 'clipId:wordId'
+    playing: false,
+    clock: 0,             // 데모(영상 없음) 모드 가상 시계
+    speed: 1,
+    exporting: false,
+};
+let idSeq = 1;
+const nid = () => idSeq++;
+const undoStack = [], redoStack = [];
+
+const video = $('#stage-video');
+
+// ── 유틸 ─────────────────────────────────────────
+function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function fmt(t) {
+    t = Math.max(0, t);
+    const m = Math.floor(t / 60), s = Math.floor(t % 60);
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+function download(name, blobOrText, type) {
+    const blob = blobOrText instanceof Blob ? blobOrText : new Blob([blobOrText], { type: type || 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+// 글자 수 비례로 [s,e] 구간을 단어들에 배분
+function distributeWords(text, s, e) {
+    const parts = text.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return [];
+    const weights = parts.map(w => Math.max(1, w.length));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let t = s; const dur = e - s;
+    return parts.map((w, i) => {
+        const wd = dur * weights[i] / total;
+        const word = { id: nid(), text: w, start: t, end: (i === parts.length - 1) ? e : t + wd, cut: false };
+        t += wd; return word;
+    });
+}
+const clipStart = c => c.words.length ? c.words[0].start : 0;
+const clipEnd = c => c.words.length ? c.words[c.words.length - 1].end : 0;
+const keptWords = c => c.words.filter(w => !w.cut);
+const clipText = c => keptWords(c).map(w => w.text).join(' ');
+
+// ── 컷 구간 계산 ─────────────────────────────────
+function cutRanges() {
+    const raw = [];
+    for (const c of state.clips) for (const w of c.words) if (w.cut) raw.push([w.start, w.end]);
+    for (const r of state.silenceCuts) raw.push([r.start, r.end]);
+    raw.sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    for (const r of raw) {
+        if (merged.length && r[0] <= merged[merged.length - 1][1] + 0.001) {
+            merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], r[1]);
+        } else merged.push([...r]);
+    }
+    return merged;
+}
+function editedDuration() {
+    const cut = cutRanges().reduce((a, r) => a + (r[1] - r[0]), 0);
+    return Math.max(0, state.video.duration - cut);
+}
+// 소스 시간 → 편집본 시간
+function toEditedTime(t) {
+    let cutBefore = 0;
+    for (const [s, e] of cutRanges()) {
+        if (t <= s) break;
+        cutBefore += Math.min(t, e) - s;
+    }
+    return t - cutBefore;
+}
+
+// ── Undo / Redo ──────────────────────────────────
+function snapshot() {
+    return JSON.stringify({ clips: state.clips, silenceCuts: state.silenceCuts, overlays: state.overlays });
+}
+function pushUndo() {
+    undoStack.push(snapshot());
+    if (undoStack.length > 60) undoStack.shift();
+    redoStack.length = 0;
+}
+function restore(snap) {
+    const d = JSON.parse(snap);
+    state.clips = d.clips; state.silenceCuts = d.silenceCuts; state.overlays = d.overlays || [];
+    state.selection.clear();
+    if (!state.clips.find(c => c.id === state.currentClipId)) state.currentClipId = state.clips[0]?.id ?? null;
+    renderAll();
+}
+function undo() { if (!undoStack.length) return toast('되돌릴 작업이 없습니다'); redoStack.push(snapshot()); restore(undoStack.pop()); toast('실행취소'); }
+function redo() { if (!redoStack.length) return toast('다시 실행할 작업이 없습니다'); undoStack.push(snapshot()); restore(redoStack.pop()); toast('다시실행'); }
+
+// ── 데모 프로젝트 ─────────────────────────────────
+function loadDemo() {
+    const script = [
+        ['안녕하세요', 0.00, 1.38],
+        ['오늘 출근 도시락은 그릭 요거트에요', 1.38, 3.72],
+        ['요즘 건강한 음식으로 식사를 하니까', 3.72, 6.10],
+        ['몸도 가볍고 상쾌한 기분도 들더라고요', 6.10, 8.58],
+        ['집에서 그릭 요거트 만드는 거 생각보다 어렵지도 않고', 8.58, 10.95],
+        ['내가 원하는 대로', 10.95, 11.64],
+        ['토핑을 올려 먹을 수 있어서 정말 좋아요', 11.64, 14.04],
+    ];
+    state.clips = script.map(([text, s, e]) => ({ id: nid(), words: distributeWords(text, s, e) }));
+    state.video = { loaded: false, name: '데모 (그릭 요거트 브이로그)', duration: 14.04, url: null };
+    state.silenceCuts = []; state.overlays = []; state.selection.clear();
+    state.currentClipId = state.clips[0].id;
+    setT(0); pause();
+    undoStack.length = 0; redoStack.length = 0;
+    renderAll();
+}
+
+// ── 재생 엔진 (영상 or 가상 시계 공용) ─────────────
+function getT() { return state.video.loaded ? video.currentTime : state.clock; }
+function setT(t) {
+    t = Math.min(Math.max(0, t), state.video.duration);
+    if (state.video.loaded) video.currentTime = t; else state.clock = t;
+    syncUI();
+}
+function play() {
+    if (getT() >= state.video.duration - 0.02) setT(firstKeptTime(0));
+    state.playing = true;
+    if (state.video.loaded) {
+        video.playbackRate = state.speed;
+        // 내보내기에서 오디오를 AudioContext로 라우팅한 뒤 컨텍스트가 잠들면 소리가 사라짐
+        if (audioRouted && audioRouted.ac.state === 'suspended') audioRouted.ac.resume();
+        const p = video.play();
+        if (p) p.catch(e => { pause(); toast('재생이 차단되었습니다: ' + e.message); });
+        checkAudioPresence();
+    }
+    $('#btn-play').textContent = '❚❚';
+}
+// 재생 시작 후에도 오디오가 전혀 디코딩되지 않으면 원인을 안내 (파일별 1회)
+let audioWarnedFor = '';
+function checkAudioPresence() {
+    if (video.webkitAudioDecodedByteCount === undefined) return; // 크롬 계열 외에는 감지 불가
+    if (audioWarnedFor === state.video.name) return;
+    setTimeout(() => {
+        if (!state.playing || !state.video.loaded || audioWarnedFor === state.video.name) return;
+        if (video.currentTime > 0.8 && video.webkitAudioDecodedByteCount === 0) {
+            audioWarnedFor = state.video.name;
+            toast('⚠️ 이 영상에서 오디오가 감지되지 않습니다 — 오디오 트랙이 없거나 브라우저가 지원하지 않는 코덱(AC-3 등)일 수 있어요. 영상을 AAC 오디오의 MP4로 변환해 보세요.');
+        }
+    }, 1800);
+}
+function pause() {
+    state.playing = false;
+    if (state.video.loaded) video.pause();
+    $('#btn-play').textContent = '▶';
+}
+function firstKeptTime(t) {
+    for (const [s, e] of cutRanges()) { if (t >= s - 0.01 && t < e) t = e; }
+    return t;
+}
+let lastTs = null;
+function tick(ts) {
+    if (lastTs == null) lastTs = ts;
+    const dt = (ts - lastTs) / 1000; lastTs = ts;
+    if (state.playing && !state.video.loaded) state.clock += dt * state.speed;
+    let t = getT();
+    // 컷 구간 스킵
+    if (state.playing || state.exporting) {
+        for (const [s, e] of cutRanges()) {
+            if (t >= s - 0.005 && t < e) { setT(e + 0.001); t = getT(); break; }
+        }
+    }
+    if (t >= state.video.duration && state.playing) { pause(); setT(state.video.duration); }
+    syncUI();
+    requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// ── UI 동기화 (매 프레임) ─────────────────────────
+let lastUIKey = '';
+function syncUI() {
+    const t = getT();
+    $('#playhead').style.left = (state.video.duration ? (t / state.video.duration) * 100 : 0) + '%';
+    $('#time-display').innerHTML =
+        `${fmt(t)} / ${fmt(state.video.duration)} · <span class="edited">편집본 ${fmt(editedDuration())}</span>`;
+    // 현재 자막 + 하이라이트
+    const cur = state.clips.find(c => t >= clipStart(c) - 0.001 && t < clipEnd(c));
+    const subText = cur ? clipText(cur) : '';
+    const speakWord = cur ? cur.words.find(w => !w.cut && t >= w.start && t < w.end) : null;
+    const key = (cur?.id ?? '') + ':' + (speakWord?.id ?? '') + ':' + subText;
+    if (key !== lastUIKey) {
+        lastUIKey = key;
+        $('#sub-text').textContent = subText;
+        $$('.chip.speaking').forEach(el => el.classList.remove('speaking'));
+        $$('.clip-row.playing-now').forEach(el => el.classList.remove('playing-now'));
+        if (speakWord) $(`.chip[data-word="${speakWord.id}"]`)?.classList.add('speaking');
+        if (cur) $(`.clip-row[data-clip="${cur.id}"]`)?.classList.add('playing-now');
+        renderOverlayLayer(cur?.id ?? null);
+    }
+}
+
+// ── 렌더링 ───────────────────────────────────────
+function renderAll() { renderClips(); renderScrubber(); applySubtitleStyle(); syncUI(); lastUIKey = '~'; syncUI(); }
+
+function renderClips() {
+    const list = $('#clip-list');
+    list.innerHTML = '';
+    $('#empty-hint').style.display = state.clips.length ? 'none' : 'block';
+    state.clips.forEach((c, idx) => {
+        const row = document.createElement('div');
+        row.className = 'clip-row' + (c.id === state.currentClipId ? ' current' : '') + (keptWords(c).length ? '' : ' all-cut');
+        row.dataset.clip = c.id;
+        const chips = c.words.map(w =>
+            `<span class="chip${w.cut ? ' cut' : ''}${state.selection.has(c.id + ':' + w.id) ? ' selected' : ''}"
+                data-clip="${c.id}" data-word="${w.id}">${escapeHtml(w.text)}</span>`).join('');
+        const text = clipText(c);
+        row.innerHTML = `
+            <div class="clip-no">${idx + 1}<span class="mark"></span></div>
+            <div class="clip-body">
+                <div class="clip-head"><span class="clip-tag">🎬 영상 편집</span>${chips}</div>
+                <div class="clip-sub">
+                    <span class="sub-ico">💬</span>
+                    <div class="sub-line${text ? '' : ' empty-cut'}" data-clip="${c.id}" contenteditable="plaintext-only"
+                        spellcheck="false">${escapeHtml(text || c.words.map(w => w.text).join(' '))}</div>
+                </div>
+            </div>
+            <div class="clip-side">
+                <div class="thumb"><canvas data-thumb="${c.id}" width="128" height="80"></canvas></div>
+                <span class="clip-time">${fmt(clipStart(c))} + ${(clipEnd(c) - clipStart(c)).toFixed(2)}초</span>
+            </div>`;
+        list.appendChild(row);
+    });
+    drawThumbs();
+}
+function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderScrubber() {
+    const sc = $('#scrubber');
+    sc.querySelectorAll('.seg').forEach(el => el.remove());
+    const D = state.video.duration || 1;
+    const cuts = cutRanges();
+    let t = 0;
+    const addSeg = (s, e, cls) => {
+        const el = document.createElement('div');
+        el.className = 'seg ' + cls;
+        el.style.left = (s / D * 100) + '%'; el.style.width = (Math.max(0, e - s) / D * 100) + '%';
+        sc.insertBefore(el, $('#playhead'));
+    };
+    for (const [s, e] of cuts) { if (s > t) addSeg(t, s, 'keep'); addSeg(s, e, 'cut'); t = e; }
+    if (t < D) addSeg(t, D, 'keep');
+    const cur = state.clips.find(c => c.id === state.currentClipId);
+    $('#clip-name-bar').textContent = cur
+        ? `클립${state.clips.indexOf(cur) + 1} · ${state.video.name || '(영상 없음)'}`
+        : (state.video.name || '클립 없음');
+}
+
+// 클립 썸네일 — 영상이 있으면 프레임 캡처, 없으면 데모 그라데이션
+const thumbQueue = [];
+let thumbBusy = false;
+function drawThumbs() {
+    $$('canvas[data-thumb]').forEach(cv => {
+        const c = state.clips.find(x => x.id === +cv.dataset.thumb);
+        if (!c) return;
+        const ctx = cv.getContext('2d');
+        if (!state.video.loaded) {
+            const g = ctx.createLinearGradient(0, 0, 128, 80);
+            g.addColorStop(0, '#5a4632'); g.addColorStop(1, '#c9a06c');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 80);
+            ctx.font = '28px serif'; ctx.textAlign = 'center'; ctx.fillText('🥣', 64, 50);
+        } else {
+            thumbQueue.push({ cv, t: clipStart(c) + 0.05 });
+        }
+    });
+    if (state.video.loaded) pumpThumbs();
+}
+function pumpThumbs() {
+    if (thumbBusy || !thumbQueue.length || state.playing || state.exporting) return;
+    thumbBusy = true;
+    const job = thumbQueue.shift();
+    const seeker = document.createElement('video');
+    seeker.muted = true; seeker.src = state.video.url;
+    seeker.addEventListener('loadeddata', () => { seeker.currentTime = job.t; });
+    seeker.addEventListener('seeked', () => {
+        try { job.cv.getContext('2d').drawImage(seeker, 0, 0, 128, 80); } catch (e) { /* 프레임 캡처 실패는 무시 */ }
+        seeker.src = ''; thumbBusy = false; pumpThumbs();
+    });
+    seeker.addEventListener('error', () => { thumbBusy = false; pumpThumbs(); });
+}
+
+// ── 자막 스타일 ──────────────────────────────────
+function applySubtitleStyle() {
+    const st = state.style, ov = $('#subtitle-overlay'), tx = $('#sub-text');
+    const wrapH = $('#stage-wrap').clientHeight || 236;
+    tx.style.fontSize = (st.size / 720 * wrapH * 1.7) + 'px';
+    tx.style.color = st.color;
+    tx.style.textShadow = st.outline
+        ? '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 3px 6px rgba(0,0,0,0.6)' : 'none';
+    tx.style.background = st.box ? 'rgba(0,0,0,0.55)' : 'none';
+    tx.style.padding = st.box ? '2px 10px' : '0';
+    tx.style.borderRadius = st.box ? '6px' : '0';
+    ov.style.alignItems = 'flex-start';
+    if (st.pos === 'bottom-left') { ov.style.top = 'auto'; ov.style.bottom = '7%'; ov.style.justifyContent = 'flex-start'; tx.style.textAlign = 'left'; }
+    if (st.pos === 'bottom-center') { ov.style.top = 'auto'; ov.style.bottom = '7%'; ov.style.justifyContent = 'center'; tx.style.textAlign = 'center'; }
+    if (st.pos === 'top-center') { ov.style.top = '6%'; ov.style.bottom = 'auto'; ov.style.justifyContent = 'center'; tx.style.textAlign = 'center'; }
+}
+
+// ── 오버레이(애셋 스티커) ─────────────────────────
+function renderOverlayLayer(activeClipId) {
+    const layer = $('#overlay-layer');
+    layer.innerHTML = '';
+    for (const o of state.overlays) {
+        if (o.clipId !== activeClipId) continue;
+        const el = document.createElement('div');
+        el.className = 'sticker'; el.dataset.ov = o.id;
+        el.style.left = (o.x * 100) + '%'; el.style.top = (o.y * 100) + '%';
+        el.style.fontSize = (o.size * (layer.clientHeight || 236)) + 'px';
+        el.innerHTML = `<span>${o.char}</span><button class="del" title="삭제">✕</button>`;
+        layer.appendChild(el);
+    }
+}
+// 스티커 드래그/삭제
+$('#overlay-layer').addEventListener('pointerdown', e => {
+    const st = e.target.closest('.sticker'); if (!st) return;
+    if (e.target.classList.contains('del')) {
+        pushUndo();
+        state.overlays = state.overlays.filter(o => o.id !== +st.dataset.ov);
+        lastUIKey = '~'; syncUI(); return;
+    }
+    const o = state.overlays.find(x => x.id === +st.dataset.ov); if (!o) return;
+    const layer = $('#overlay-layer'), rect = layer.getBoundingClientRect();
+    const move = ev => {
+        o.x = Math.min(1, Math.max(0, (ev.clientX - rect.left) / rect.width));
+        o.y = Math.min(1, Math.max(0, (ev.clientY - rect.top) / rect.height));
+        st.style.left = (o.x * 100) + '%'; st.style.top = (o.y * 100) + '%';
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+});
+
+// ── 편집 동작 ─────────────────────────────────────
+function selectedEntries() {
+    const out = [];
+    for (const key of state.selection) {
+        const [cid, wid] = key.split(':').map(Number);
+        const c = state.clips.find(x => x.id === cid);
+        const w = c?.words.find(x => x.id === wid);
+        if (c && w) out.push({ c, w });
+    }
+    return out;
+}
+function cutSelection(flag) {
+    const sel = selectedEntries();
+    if (!sel.length) return toast('먼저 단어 칩을 클릭해 선택하세요');
+    pushUndo();
+    sel.forEach(({ w }) => w.cut = flag);
+    state.selection.clear();
+    renderAll();
+    toast(flag ? `${sel.length}개 단어를 컷했습니다 (영상에서 건너뜀)` : `${sel.length}개 단어를 복원했습니다`);
+}
+function splitClip() {
+    const sel = selectedEntries();
+    if (sel.length !== 1) return toast('분할 기준이 될 단어 1개를 선택하세요');
+    const { c, w } = sel[0];
+    const i = c.words.indexOf(w);
+    if (i === 0) return toast('첫 단어 앞에서는 분할할 수 없습니다');
+    pushUndo();
+    const newClip = { id: nid(), words: c.words.splice(i) };
+    state.clips.splice(state.clips.indexOf(c) + 1, 0, newClip);
+    state.currentClipId = newClip.id;
+    state.selection.clear();
+    renderAll(); toast('클립을 분할했습니다');
+}
+function mergeClip() {
+    const i = state.clips.findIndex(c => c.id === state.currentClipId);
+    if (i < 0 || i >= state.clips.length - 1) return toast('병합할 아래 클립이 없습니다');
+    pushUndo();
+    state.clips[i].words.push(...state.clips[i + 1].words);
+    state.clips.splice(i + 1, 1);
+    renderAll(); toast('아래 클립과 병합했습니다');
+}
+function cutWholeClip() {
+    const c = state.clips.find(x => x.id === state.currentClipId);
+    if (!c) return toast('클립을 먼저 선택하세요');
+    pushUndo();
+    c.words.forEach(w => w.cut = true);
+    renderAll(); toast('클립 전체를 컷했습니다 (♻️로 복원 가능)');
+}
+
+// ── 무음 자동 컷 (Web Audio) ──────────────────────
+async function autoSilenceCut() {
+    if (!state.video.loaded || !state.video.file) return toast('영상 파일을 불러온 뒤 사용할 수 있습니다');
+    toast('오디오 분석 중…');
+    try {
+        const buf = await state.video.file.arrayBuffer();
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const audio = await ac.decodeAudioData(buf);
+        const ch = audio.getChannelData(0);
+        const win = Math.floor(audio.sampleRate * 0.05); // 50ms 창
+        const rms = [];
+        for (let i = 0; i + win <= ch.length; i += win) {
+            let s = 0; for (let j = i; j < i + win; j++) s += ch[j] * ch[j];
+            rms.push(Math.sqrt(s / win));
+        }
+        const peak = Math.max(...rms, 0.0001);
+        const thresh = peak * 0.06;
+        const minSilence = 0.4, pad = 0.08;
+        const found = [];
+        let start = null;
+        for (let i = 0; i <= rms.length; i++) {
+            const silent = i < rms.length && rms[i] < thresh;
+            if (silent && start === null) start = i * 0.05;
+            if (!silent && start !== null) {
+                const end = i * 0.05;
+                if (end - start >= minSilence) found.push({ start: start + pad, end: end - pad });
+                start = null;
+            }
+        }
+        ac.close();
+        if (!found.length) return toast('0.4초 이상의 무음 구간을 찾지 못했습니다');
+        pushUndo();
+        state.silenceCuts = found;
+        renderAll();
+        toast(`무음 ${found.length}개 구간(${found.reduce((a, r) => a + r.end - r.start, 0).toFixed(1)}초)을 컷했습니다`);
+    } catch (e) {
+        toast('오디오 분석 실패: ' + e.message);
+    }
+}
+
+// ── 파일 불러오기 ─────────────────────────────────
+$('#file-video').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (state.video.url) URL.revokeObjectURL(state.video.url);
+    const url = URL.createObjectURL(f);
+    video.src = url;
+    const ready = dur => {
+        video.muted = false; video.volume = 1;
+        state.video = { loaded: true, name: f.name, duration: dur, url, file: f };
+        $('#stage-video').style.display = 'block';
+        $('#stage-demo').style.display = 'none';
+        state.clips = []; state.silenceCuts = []; state.overlays = []; state.selection.clear();
+        undoStack.length = 0; redoStack.length = 0;
+        setT(0); pause(); renderAll();
+        toast(`영상 로드 완료 (${fmt(dur)}) — SRT 불러오기 또는 대본 입력으로 클립을 만드세요`);
+    };
+    video.addEventListener('loadedmetadata', function once() {
+        video.removeEventListener('loadedmetadata', once);
+        if (isFinite(video.duration)) return ready(video.duration);
+        // MediaRecorder 녹화본 등 duration 메타데이터가 없는 webm은 끝으로 시크해 길이를 알아냄
+        video.currentTime = 1e10;
+        video.addEventListener('seeked', function fix() {
+            video.removeEventListener('seeked', fix);
+            const d = video.duration;
+            video.currentTime = 0;
+            ready(isFinite(d) && d > 0 ? d : 60);
+        });
+    });
+    e.target.value = '';
+});
+
+function parseSrtTime(s) {
+    const m = s.trim().match(/(\d+):(\d+):(\d+)[,.](\d+)/);
+    return m ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) + (+m[4]) / 1000 : 0;
+}
+$('#file-srt').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    const text = await f.text();
+    const blocks = text.replace(/\r/g, '').replace(/^WEBVTT.*\n+/, '').split(/\n\n+/).filter(b => b.includes('-->'));
+    const clips = [];
+    for (const b of blocks) {
+        const lines = b.split('\n');
+        const ti = lines.findIndex(l => l.includes('-->'));
+        if (ti < 0) continue;
+        const [ss, es] = lines[ti].split('-->');
+        const s = parseSrtTime(ss), en = parseSrtTime(es);
+        const txt = lines.slice(ti + 1).join(' ').replace(/<[^>]+>/g, '').trim();
+        if (txt && en > s) clips.push({ id: nid(), words: distributeWords(txt, s, en) });
+    }
+    if (!clips.length) return toast('SRT에서 자막을 찾지 못했습니다');
+    pushUndo();
+    state.clips = clips;
+    if (!state.video.loaded) state.video.duration = clipEnd(clips[clips.length - 1]) + 0.5;
+    state.currentClipId = clips[0].id;
+    renderAll();
+    toast(`SRT에서 클립 ${clips.length}개를 만들었습니다`);
+    e.target.value = '';
+});
+$('#file-project').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+        const d = JSON.parse(await f.text());
+        if (!Array.isArray(d.clips)) throw new Error('클립 데이터가 없습니다');
+        pushUndo();
+        state.clips = d.clips; state.silenceCuts = d.silenceCuts || []; state.overlays = d.overlays || [];
+        state.style = Object.assign(state.style, d.style || {});
+        if (!state.video.loaded && d.duration) state.video.duration = d.duration;
+        idSeq = Math.max(idSeq, ...state.clips.flatMap(c => [c.id, ...c.words.map(w => w.id)])) + 1;
+        state.currentClipId = state.clips[0]?.id ?? null;
+        renderAll(); buildRibbon(activeTab);
+        toast('프로젝트를 불러왔습니다 (영상 파일은 보안상 다시 불러와야 합니다)');
+    } catch (err) { toast('프로젝트 열기 실패: ' + err.message); }
+    e.target.value = '';
+});
+$('#btn-script-apply').addEventListener('click', () => {
+    const lines = $('#script-input').value.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return toast('대본을 입력하세요');
+    const total = state.video.loaded ? state.video.duration
+        : Math.max(8, lines.join(' ').length * 0.18);
+    const weights = lines.map(l => Math.max(1, l.length));
+    const wsum = weights.reduce((a, b) => a + b, 0);
+    pushUndo();
+    let t = 0;
+    state.clips = lines.map((l, i) => {
+        const d = total * weights[i] / wsum;
+        const c = { id: nid(), words: distributeWords(l, t, t + d) };
+        t += d; return c;
+    });
+    if (!state.video.loaded) state.video.duration = total;
+    state.currentClipId = state.clips[0].id;
+    $('#modal-script').classList.remove('open');
+    renderAll();
+    toast(`대본으로 클립 ${lines.length}개를 만들었습니다`);
+});
+
+// ── 내보내기 ─────────────────────────────────────
+function buildSrt() {
+    const cues = [];
+    for (const c of state.clips) {
+        const kept = keptWords(c);
+        if (!kept.length) continue;
+        cues.push({ s: toEditedTime(kept[0].start), e: toEditedTime(kept[kept.length - 1].end), text: clipText(c) });
+    }
+    const st = t => {
+        const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = Math.floor(t % 60), ms = Math.round((t % 1) * 1000);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+    };
+    return cues.map((c, i) => `${i + 1}\n${st(c.s)} --> ${st(c.e)}\n${c.text}\n`).join('\n');
+}
+function buildCutJson() {
+    const D = state.video.duration;
+    const cuts = cutRanges();
+    const keep = []; let t = 0;
+    for (const [s, e] of cuts) { if (s > t) keep.push({ source_start: t, source_end: s }); t = e; }
+    if (t < D) keep.push({ source_start: t, source_end: D });
+    let acc = 0;
+    keep.forEach(k => { k.target_start = acc; acc += k.source_end - k.source_start; k.target_end = acc; });
+    return JSON.stringify({
+        format: 'vrew-clone-cutlist/1', note: '간이 이식 포맷 — 캡컷 등에서 구간 참조용',
+        source: state.video.name, source_duration: D, edited_duration: editedDuration(),
+        keep_segments: keep,
+        subtitles: state.clips.filter(c => keptWords(c).length).map(c => ({
+            text: clipText(c),
+            target_start: toEditedTime(keptWords(c)[0].start),
+            target_end: toEditedTime(keptWords(c)[keptWords(c).length - 1].end),
+        })),
+        style: state.style,
+    }, null, 2);
+}
+// Final Cut Pro 7 XML(xmeml v4) — Vrew의 프리미어 내보내기와 같은 규격.
+// 유지 구간을 V1/A1 클립으로, 자막은 시퀀스 마커로 기록 (자막 트랙 자체는 SRT로 가져오는 게 안정적)
+function buildXmeml() {
+    const FPS = 30;
+    const fr = t => Math.round(t * FPS);
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const D = state.video.duration;
+    const keep = []; let t0 = 0;
+    for (const [s, e] of cutRanges()) { if (s > t0) keep.push([t0, s]); t0 = e; }
+    if (t0 < D) keep.push([t0, D]);
+    let acc = 0;
+    const segs = keep.map(([s, e]) => { const o = { s, e, ts: acc }; acc += e - s; return o; });
+    const srcName = state.video.name || 'demo-video.mp4';
+    const w = (state.video.loaded && video.videoWidth) || 1920;
+    const h = (state.video.loaded && video.videoHeight) || 1080;
+    const rate = `<rate><timebase>${FPS}</timebase><ntsc>FALSE</ntsc></rate>`;
+    const fileDef = `<file id="file-1"><name>${esc(srcName)}</name><pathurl>file://localhost/${encodeURIComponent(srcName)}</pathurl>${rate}` +
+        `<duration>${fr(D)}</duration><media><video><samplecharacteristics>${rate}<width>${w}</width><height>${h}</height></samplecharacteristics></video>` +
+        `<audio><samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics><channelcount>2</channelcount></audio></media></file>`;
+    const clipCommon = sg =>
+        `<name>${esc(srcName)}</name><enabled>TRUE</enabled>${rate}<duration>${fr(sg.e - sg.s)}</duration>` +
+        `<start>${fr(sg.ts)}</start><end>${fr(sg.ts + (sg.e - sg.s))}</end><in>${fr(sg.s)}</in><out>${fr(sg.e)}</out>`;
+    const vItems = segs.map((sg, i) =>
+        `<clipitem id="v-${i + 1}">${clipCommon(sg)}${i === 0 ? fileDef : '<file id="file-1"/>'}` +
+        `<link><linkclipref>v-${i + 1}</linkclipref><mediatype>video</mediatype></link>` +
+        `<link><linkclipref>a-${i + 1}</linkclipref><mediatype>audio</mediatype></link></clipitem>`).join('');
+    const aItems = segs.map((sg, i) =>
+        `<clipitem id="a-${i + 1}" premiereChannelType="stereo">${clipCommon(sg)}<file id="file-1"/>` +
+        `<sourcetrack><mediatype>audio</mediatype><trackindex>1</trackindex></sourcetrack></clipitem>`).join('');
+    const markers = state.clips.filter(c => keptWords(c).length).map(c =>
+        `<marker><name>자막</name><comment>${esc(clipText(c))}</comment>` +
+        `<in>${fr(toEditedTime(keptWords(c)[0].start))}</in><out>-1</out></marker>`).join('');
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE xmeml>\n` +
+        `<xmeml version="4"><sequence id="sequence-1"><name>${esc(srcName.replace(/\.[^.]+$/, ''))} (컷 편집)</name>` +
+        `<duration>${fr(editedDuration())}</duration>${rate}` +
+        `<media><video><format><samplecharacteristics>${rate}<width>${w}</width><height>${h}</height></samplecharacteristics></format>` +
+        `<track>${vItems}</track></video><audio><track>${aItems}</track></audio></media>` +
+        `<timecode>${rate}<string>00:00:00:00</string><frame>0</frame><displayformat>NDF</displayformat></timecode>` +
+        `${markers}</sequence></xmeml>`;
+}
+function saveProject() {
+    download('vrew-project.json', JSON.stringify({
+        format: 'vrew-clone-project/1', duration: state.video.duration, videoName: state.video.name,
+        clips: state.clips, silenceCuts: state.silenceCuts, overlays: state.overlays, style: state.style,
+    }, null, 2), 'application/json');
+    toast('프로젝트 파일을 저장했습니다');
+}
+
+// WebM 실시간 렌더 내보내기
+let audioRouted = null;
+async function exportWebm() {
+    if (state.exporting) return;
+    // 자막 클립 없이 무음 컷만 한 영상도 내보낼 수 있어야 함
+    if (!state.clips.length && !state.video.loaded) return toast('영상을 불러오거나 클립을 만들어주세요');
+    const canvas = $('#export-canvas'), ctx = canvas.getContext('2d');
+    const vStream = canvas.captureStream(30);
+    const vTrack = vStream.getVideoTracks()[0];
+    const streams = [vStream];
+    if (state.video.loaded) {
+        try {
+            if (!audioRouted) {
+                const ac = new (window.AudioContext || window.webkitAudioContext)();
+                const src = ac.createMediaElementSource(video);
+                const dest = ac.createMediaStreamDestination();
+                src.connect(ac.destination); src.connect(dest);
+                audioRouted = { ac, dest };
+            }
+            await audioRouted.ac.resume();
+            streams.push(audioRouted.dest.stream);
+        } catch (e) { toast('오디오 라우팅 실패 — 영상만 녹화합니다'); }
+    }
+    const tracks = streams.flatMap(s => s.getTracks());
+    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm';
+    const rec = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 5_000_000 });
+    const parts = [];
+    rec.ondataavailable = e => e.data.size && parts.push(e.data);
+
+    state.exporting = true;
+    $('#export-progress').style.display = 'block';
+    const D = state.video.duration;
+    setT(firstKeptTime(0)); play();
+    rec.start(250);
+
+    const drawFrame = () => {
+        if (!state.exporting) return;
+        const t = getT();
+        // 배경
+        if (state.video.loaded && video.videoWidth) {
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const r = Math.min(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+            const w = video.videoWidth * r, h = video.videoHeight * r;
+            ctx.drawImage(video, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+        } else {
+            const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            g.addColorStop(0, '#3d2b1f'); g.addColorStop(0.45, '#7a5c3e'); g.addColorStop(1, '#c9a06c');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        const cur = state.clips.find(c => t >= clipStart(c) - 0.001 && t < clipEnd(c));
+        // 스티커
+        for (const o of state.overlays) {
+            if (!cur || o.clipId !== cur.id) continue;
+            ctx.font = `${o.size * canvas.height}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(o.char, o.x * canvas.width, o.y * canvas.height);
+        }
+        // 자막
+        if (cur) {
+            const text = clipText(cur);
+            if (text) {
+                const st = state.style;
+                const fs = st.size / 720 * canvas.height * 1.7;
+                ctx.font = `700 ${fs}px 'Noto Sans KR', sans-serif`;
+                ctx.textBaseline = 'bottom';
+                let x, align;
+                if (st.pos === 'bottom-left') { x = canvas.width * 0.05; align = 'left'; }
+                else { x = canvas.width / 2; align = 'center'; }
+                const y = st.pos === 'top-center' ? canvas.height * 0.06 + fs : canvas.height * 0.93;
+                ctx.textAlign = align;
+                if (st.box) {
+                    const m = ctx.measureText(text);
+                    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+                    const bx = align === 'left' ? x - 8 : x - m.width / 2 - 8;
+                    ctx.fillRect(bx, y - fs - 6, m.width + 16, fs + 14);
+                }
+                if (st.outline) { ctx.lineWidth = fs / 8; ctx.strokeStyle = '#000'; ctx.lineJoin = 'round'; ctx.strokeText(text, x, y); }
+                ctx.fillStyle = st.color; ctx.fillText(text, x, y);
+            }
+        }
+        if (vTrack.requestFrame) vTrack.requestFrame(); // 컴포지터와 무관하게 프레임 캡처 강제
+        const done = editedDuration() ? toEditedTime(t) / editedDuration() : 1;
+        $('#export-fill').style.width = Math.min(100, done * 100) + '%';
+        $('#export-lbl').textContent = `렌더링 중… ${fmt(toEditedTime(t))} / ${fmt(editedDuration())} (실시간 녹화)`;
+        if (t >= D - 0.03 || !state.playing) {
+            finish();
+        } else {
+            requestAnimationFrame(drawFrame);
+        }
+    };
+    const finish = () => {
+        if (!state.exporting) return;
+        state.exporting = false;
+        pause();
+        rec.onstop = () => {
+            download('vrew-edited.webm', new Blob(parts, { type: 'video/webm' }), 'video/webm');
+            $('#export-progress').style.display = 'none';
+            $('#modal-export').classList.remove('open');
+            toast('편집본 영상(webm)을 저장했습니다');
+        };
+        rec.stop();
+        tracks.forEach(t => t.kind === 'video' && t.stop());
+    };
+    requestAnimationFrame(drawFrame);
+}
+
+// ── AI 자동 자막 (STT) ────────────────────────────
+// 공통: 오디오 16kHz 모노 추출
+async function extractAudio16k(file) {
+    const buf = await file.arrayBuffer();
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await ac.decodeAudioData(buf);
+    ac.close();
+    const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+    const src = off.createBufferSource();
+    src.buffer = decoded; src.connect(off.destination); src.start();
+    return (await off.startRendering()).getChannelData(0);
+}
+function encodeWav16k(f32) {
+    const n = f32.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 16000, true);
+    v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    ws(36, 'data'); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f32[i])) * 0x7fff, true);
+    return new Blob([buf], { type: 'audio/wav' });
+}
+// 단어 목록 → 클립 그룹핑 (0.6초 이상 휴지 / 문장부호 / 12단어 초과에서 분할)
+function wordsToClips(words) {
+    const ws = (words || [])
+        .map(w => ({ text: String(w.text || '').trim(), start: +w.start, end: +w.end }))
+        .filter(w => w.text && isFinite(w.start))
+        .sort((a, b) => a.start - b.start);
+    for (let i = 0; i < ws.length; i++) {
+        if (!isFinite(ws[i].end) || ws[i].end <= ws[i].start)
+            ws[i].end = ws[i].start + Math.max(0.15, ws[i].text.length * 0.07); // 마지막 단어 end가 null인 whisper 출력 보정
+        if (i > 0 && ws[i].start < ws[i - 1].end) ws[i].start = ws[i - 1].end;
+        if (ws[i].end <= ws[i].start) ws[i].end = ws[i].start + 0.1;
+    }
+    const clips = []; let cur = [];
+    const flush = () => {
+        if (cur.length) clips.push({ id: nid(), words: cur.map(w => ({ id: nid(), text: w.text, start: w.start, end: w.end, cut: false })) });
+        cur = [];
+    };
+    for (const w of ws) {
+        const prev = cur[cur.length - 1];
+        if (prev && (w.start - prev.end > 0.6 || cur.length >= 12 || /[.?!…]$/.test(prev.text))) flush();
+        cur.push(w);
+    }
+    flush();
+    return clips;
+}
+function applyTranscript(words, label) {
+    const clips = wordsToClips(words);
+    if (!clips.length) { toast('인식된 음성이 없습니다'); return 0; }
+    pushUndo();
+    state.clips = clips;
+    if (!state.video.loaded) state.video.duration = Math.max(state.video.duration, clipEnd(clips[clips.length - 1]) + 0.5);
+    state.currentClipId = clips[0].id;
+    state.selection.clear();
+    renderAll();
+    toast(`${label}: 클립 ${clips.length}개 / 단어 ${clips.reduce((a, c) => a + c.words.length, 0)}개 생성`);
+    return clips.length;
+}
+
+let sttBusy = false, sttMode = 'local';
+const sttProgress = (pct, msg) => {
+    $('#stt-progress').style.display = 'block';
+    if (pct != null) $('#stt-fill').style.width = Math.min(100, pct) + '%';
+    $('#stt-lbl').textContent = msg;
+};
+const TRANSFORMERS_CDNS = [
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/dist/transformers.min.js',
+    'https://unpkg.com/@huggingface/transformers@3.3.3/dist/transformers.min.js',
+];
+let transformersMod = null, asrPipe = null, asrPipeKey = '';
+async function sttLocal() {
+    const size = $('#stt-model-size').value, lang = $('#stt-lang-local').value;
+    sttProgress(2, 'transformers.js 로드 중…');
+    if (!transformersMod) {
+        let lastErr;
+        for (const url of TRANSFORMERS_CDNS) {
+            try { transformersMod = await import(url); break; } catch (e) { lastErr = e; }
+        }
+        if (!transformersMod) throw new Error('transformers.js 로드 실패 — 인터넷 연결을 확인하세요 (' + (lastErr?.message || '') + ')');
+    }
+    const key = 'Xenova/whisper-' + size;
+    if (!asrPipe || asrPipeKey !== key) {
+        const files = {};
+        asrPipe = await transformersMod.pipeline('automatic-speech-recognition', key, {
+            dtype: 'q8',
+            progress_callback: p => {
+                if (p.status === 'progress' && p.total) {
+                    files[p.file] = [p.loaded, p.total];
+                    const [l, t] = Object.values(files).reduce((a, b) => [a[0] + b[0], a[1] + b[1]], [0, 0]);
+                    sttProgress(l / t * 60, `모델 다운로드 중… ${(l / 1048576).toFixed(1)} / ${(t / 1048576).toFixed(1)} MB (최초 1회, 이후 캐시)`);
+                }
+            },
+        });
+        asrPipeKey = key;
+    }
+    sttProgress(62, '오디오 추출 중…');
+    const audio = await extractAudio16k(state.video.file);
+    sttProgress(70, `음성 인식 중… (${size} 모델, CPU 실행이라 다소 걸립니다)`);
+    const out = await asrPipe(audio, {
+        language: lang === 'auto' ? null : lang, task: 'transcribe',
+        return_timestamps: 'word', chunk_length_s: 30, stride_length_s: 5,
+    });
+    sttProgress(95, '클립 생성 중…');
+    return (out.chunks || []).map(c => ({ text: c.text, start: c.timestamp?.[0], end: c.timestamp?.[1] }));
+}
+async function sttApi() {
+    const endpoint = $('#stt-endpoint').value.trim(), key = $('#stt-key').value.trim();
+    const model = $('#stt-model-api').value.trim() || 'whisper-1', lang = $('#stt-lang-api').value;
+    if (!endpoint) throw new Error('API 주소를 입력하세요');
+    if (!key) throw new Error('API 키를 입력하세요');
+    localStorage.setItem('vrew-clone-stt', JSON.stringify({ endpoint, key, model }));
+    sttProgress(10, '오디오 추출 → 16kHz WAV 변환 중…');
+    const wav = encodeWav16k(await extractAudio16k(state.video.file));
+    if (wav.size > 25 * 1048576) throw new Error(`오디오가 ${(wav.size / 1048576).toFixed(0)}MB로 API 한도(25MB)를 넘습니다 — 영상을 나눠주세요`);
+    sttProgress(35, `API 전송 중… (${(wav.size / 1048576).toFixed(1)}MB)`);
+    const form = new FormData();
+    form.append('file', wav, 'audio.wav');
+    form.append('model', model);
+    form.append('response_format', 'verbose_json');
+    form.append('timestamp_granularities[]', 'word');
+    form.append('timestamp_granularities[]', 'segment');
+    if (lang) form.append('language', lang);
+    const res = await fetch(endpoint, { method: 'POST', headers: { Authorization: 'Bearer ' + key }, body: form });
+    if (!res.ok) throw new Error(`API 오류 ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    sttProgress(85, '응답 해석 중…');
+    const data = await res.json();
+    if (Array.isArray(data.words) && data.words.length)
+        return data.words.map(w => ({ text: w.word, start: w.start, end: w.end }));
+    // 단어 타임스탬프 미지원 서버 → 세그먼트를 글자 수 비례로 배분
+    if (Array.isArray(data.segments))
+        return data.segments.flatMap(s => distributeWords(s.text || '', s.start, s.end)
+            .map(w => ({ text: w.text, start: w.start, end: w.end })));
+    throw new Error('응답에 words/segments가 없습니다');
+}
+async function runStt() {
+    if (sttBusy) return;
+    if (!state.video.loaded || !state.video.file) { toast('영상 파일을 먼저 불러오세요 (파일 탭)'); return; }
+    sttBusy = true;
+    $('#btn-stt-start').disabled = true;
+    try {
+        const words = sttMode === 'local' ? await sttLocal() : await sttApi();
+        const n = applyTranscript(words, sttMode === 'local' ? '브라우저 음성 인식' : 'Whisper API');
+        if (n) $('#modal-stt').classList.remove('open');
+    } catch (e) {
+        sttProgress(0, '실패: ' + e.message);
+        toast('자막 생성 실패: ' + e.message);
+    } finally {
+        sttBusy = false;
+        $('#btn-stt-start').disabled = false;
+        setTimeout(() => { if (!sttBusy) $('#stt-progress').style.display = 'none'; }, 4000);
+    }
+}
+function openSttModal(mode) {
+    sttMode = mode;
+    $$('.stt-mode').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    $('#stt-form-local').style.display = mode === 'local' ? '' : 'none';
+    $('#stt-note-local').style.display = mode === 'local' ? '' : 'none';
+    $('#stt-form-api').style.display = mode === 'api' ? '' : 'none';
+    $('#stt-note-api').style.display = mode === 'api' ? '' : 'none';
+    $('#modal-stt').classList.add('open');
+}
+$$('.stt-mode').forEach(b => b.addEventListener('click', () => openSttModal(b.dataset.mode)));
+$('#btn-stt-start').addEventListener('click', runStt);
+try {
+    const saved = JSON.parse(localStorage.getItem('vrew-clone-stt') || 'null');
+    if (saved) { $('#stt-endpoint').value = saved.endpoint || $('#stt-endpoint').value; $('#stt-key').value = saved.key || ''; $('#stt-model-api').value = saved.model || 'whisper-1'; }
+} catch (e) { /* 저장값 손상 시 기본값 유지 */ }
+
+// ── 애셋 데이터 ──────────────────────────────────
+const ASSETS = [
+    { char: '🥣', name: '그릭 요거트', tags: '그릭 요거트 요거트 식사 아침', cat: 'image', bg: '#fdf1e0' },
+    { char: '🍓', name: '딸기', tags: '딸기 과일 토핑', cat: 'image', bg: '#feeaea' },
+    { char: '🥝', name: '키위', tags: '키위 과일 토핑', cat: 'image', bg: '#eefbe7' },
+    { char: '🫐', name: '블루베리', tags: '블루베리 과일 토핑', cat: 'image', bg: '#e9edfb' },
+    { char: '🍯', name: '꿀', tags: '꿀 토핑 디저트', cat: 'image', bg: '#fdf6df' },
+    { char: '🥛', name: '우유', tags: '우유 음료 식사', cat: 'image', bg: '#f2f6f9' },
+    { char: '🍱', name: '도시락', tags: '도시락 출근 식사 점심', cat: 'image', bg: '#f0f4ea' },
+    { char: '🥗', name: '샐러드', tags: '샐러드 건강 식사 다이어트', cat: 'image', bg: '#eaf7ee' },
+    { char: '🏃', name: '운동', tags: '운동 건강 상쾌', cat: 'image', bg: '#eaf2fd' },
+    { char: '✨', name: '반짝임', tags: '반짝 강조 효과 기분', cat: 'shape', bg: '#fbf3e2' },
+    { char: '💬', name: '말풍선', tags: '말풍선 대사 도형', cat: 'shape', bg: '#eef3f8' },
+    { char: '❤️', name: '하트', tags: '하트 좋아요 도형', cat: 'shape', bg: '#fdeef1' },
+    { char: '⬆️', name: '화살표', tags: '화살표 방향 도형 강조', cat: 'shape', bg: '#eef1f6' },
+    { char: '⭐', name: '별', tags: '별 강조 도형 좋아요', cat: 'shape', bg: '#fdf8e3' },
+];
+let assetCat = 'all', assetQuery = '';
+function renderAssets() {
+    const grid = $('#asset-grid');
+    grid.innerHTML = '';
+    const q = assetQuery.trim();
+    const items = ASSETS.filter(a =>
+        (assetCat === 'all' || a.cat === assetCat) &&
+        (!q || a.name.includes(q) || a.tags.includes(q)));
+    if (!items.length) { grid.innerHTML = '<div id="asset-empty">검색 결과가 없습니다</div>'; return; }
+    for (const a of items) {
+        const card = document.createElement('div');
+        card.className = 'asset-card';
+        card.innerHTML = `<div class="art" style="background:${a.bg}">${a.char}</div>
+            <div class="cap"><span>${a.name}</span><span>${a.cat === 'shape' ? '도형' : '이미지'}</span></div>`;
+        card.addEventListener('click', () => {
+            if (!state.clips.length) return toast('먼저 클립을 만들어주세요');
+            const cid = state.currentClipId ?? state.clips[0].id;
+            pushUndo();
+            state.overlays.push({ id: nid(), clipId: cid, char: a.char, x: 0.72, y: 0.3, size: 0.18 });
+            state.currentClipId = cid;
+            const c = state.clips.find(x => x.id === cid);
+            if (c) setT(clipStart(c));
+            lastUIKey = '~'; syncUI();
+            toast(`'${a.name}' 스티커를 클립${state.clips.findIndex(x => x.id === cid) + 1}에 추가했습니다 (드래그로 이동)`);
+        });
+        grid.appendChild(card);
+    }
+    // 태그 버튼
+    const tagWrap = $('#asset-tags');
+    tagWrap.innerHTML = '';
+    ['도시락', '토핑', '그릭 요거트', '식사', '건강', '도형'].forEach(t => {
+        const b = document.createElement('button');
+        b.className = 'a-tag' + (assetQuery === t ? ' on' : '');
+        b.textContent = t;
+        b.addEventListener('click', () => { assetQuery = assetQuery === t ? '' : t; $('#asset-search-input').value = assetQuery; renderAssets(); });
+        tagWrap.appendChild(b);
+    });
+}
+$('#asset-search-input').addEventListener('input', e => { assetQuery = e.target.value; renderAssets(); });
+$$('.a-cat').forEach(b => b.addEventListener('click', () => {
+    $$('.a-cat').forEach(x => x.classList.remove('on')); b.classList.add('on');
+    assetCat = b.dataset.cat; renderAssets();
+}));
+$('#btn-asset-close').addEventListener('click', () => $('#asset-pane').classList.add('hidden'));
+
+// ── 리본 구성 ─────────────────────────────────────
+let activeTab = 'edit';
+const RIBBONS = {
+    file: [
+        { ico: '🎬', label: '영상<br>불러오기', act: () => $('#file-video').click() },
+        { ico: '💬', label: 'SRT 자막<br>불러오기', act: () => $('#file-srt').click() },
+        { ico: '📝', label: '대본으로<br>클립 만들기', act: () => $('#modal-script').classList.add('open') },
+        { sep: true },
+        { ico: '📂', label: '프로젝트<br>열기', act: () => $('#file-project').click() },
+        { ico: '💾', label: '프로젝트<br>저장', act: saveProject },
+        { sep: true },
+        { ico: '✨', label: '데모 프로젝트<br>다시 열기', act: () => { loadDemo(); toast('데모 프로젝트를 열었습니다'); } },
+    ],
+    edit: [
+        { ico: '↩️', label: '실행취소<br>Ctrl+Z', act: undo },
+        { ico: '↪️', label: '다시실행<br>Ctrl+Y', act: redo },
+        { sep: true },
+        { ico: '✂️', label: '선택 단어 컷<br>Delete', act: () => cutSelection(true) },
+        { ico: '♻️', label: '선택 단어<br>복원', act: () => cutSelection(false) },
+        { ico: '🔇', label: '무음 구간<br>자동 컷', act: autoSilenceCut },
+        { sep: true },
+        { ico: '🧩', label: '클립 분할<br>(선택 단어 앞)', act: splitClip },
+        { ico: '🔗', label: '아래 클립과<br>병합', act: mergeClip },
+        { ico: '🗑️', label: '클립 전체<br>컷', act: cutWholeClip },
+    ],
+    subtitle: [
+        { ico: '🤖', label: 'AI 자동 자막<br>(브라우저 로컬)', act: () => openSttModal('local') },
+        { ico: '☁️', label: 'AI 자동 자막<br>(Whisper API)', act: () => openSttModal('api') },
+        { sep: true },
+        { ico: '💬', label: 'SRT 자막<br>불러오기', act: () => $('#file-srt').click() },
+        { ico: '📝', label: '대본으로<br>클립 만들기', act: () => $('#modal-script').classList.add('open') },
+    ],
+    insert: [
+        { ico: '🖼️', label: '무료 이미지<br>·비디오', act: () => { $('#asset-pane').classList.remove('hidden'); assetCat = 'all'; syncCat(); renderAssets(); } },
+        { ico: '⬛', label: '도형', act: () => { $('#asset-pane').classList.remove('hidden'); assetCat = 'shape'; syncCat(); renderAssets(); } },
+    ],
+    help: [
+        { ico: '❓', label: '사용법', act: () => $('#modal-help').classList.add('open') },
+    ],
+};
+function syncCat() { $$('.a-cat').forEach(x => x.classList.toggle('on', x.dataset.cat === assetCat)); }
+function buildRibbon(tab) {
+    activeTab = tab;
+    $$('.menu-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    const r = $('#ribbon');
+    r.innerHTML = '';
+    if (tab === 'format') {
+        r.insertAdjacentHTML('beforeend', `
+            <div class="ribbon-group">
+                <label>글자 크기 <input type="range" id="st-size" min="20" max="80" value="${state.style.size}"> <span id="st-size-val">${state.style.size}</span></label>
+                <label>글자 색 <input type="color" id="st-color" value="${state.style.color}"></label>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <label><input type="checkbox" id="st-outline" ${state.style.outline ? 'checked' : ''}> 외곽선</label>
+                <label><input type="checkbox" id="st-box" ${state.style.box ? 'checked' : ''}> 배경 상자</label>
+            </div>
+            <div class="ribbon-sep"></div>
+            <div class="ribbon-group">
+                <label>위치 <select id="st-pos">
+                    <option value="bottom-left" ${state.style.pos === 'bottom-left' ? 'selected' : ''}>하단 왼쪽</option>
+                    <option value="bottom-center" ${state.style.pos === 'bottom-center' ? 'selected' : ''}>하단 가운데</option>
+                    <option value="top-center" ${state.style.pos === 'top-center' ? 'selected' : ''}>상단 가운데</option>
+                </select></label>
+            </div>`);
+        $('#st-size').addEventListener('input', e => { state.style.size = +e.target.value; $('#st-size-val').textContent = e.target.value; applySubtitleStyle(); });
+        $('#st-color').addEventListener('input', e => { state.style.color = e.target.value; applySubtitleStyle(); });
+        $('#st-outline').addEventListener('change', e => { state.style.outline = e.target.checked; applySubtitleStyle(); });
+        $('#st-box').addEventListener('change', e => { state.style.box = e.target.checked; applySubtitleStyle(); });
+        $('#st-pos').addEventListener('change', e => { state.style.pos = e.target.value; applySubtitleStyle(); });
+        return;
+    }
+    for (const item of (RIBBONS[tab] || [])) {
+        if (item.sep) { r.insertAdjacentHTML('beforeend', '<div class="ribbon-sep"></div>'); continue; }
+        const b = document.createElement('button');
+        b.className = 'ribbon-btn';
+        b.innerHTML = `<span class="ico">${item.ico}</span><span>${item.label}</span>`;
+        b.addEventListener('click', item.act);
+        r.appendChild(b);
+    }
+}
+$$('.menu-tab').forEach(b => b.addEventListener('click', () => buildRibbon(b.dataset.tab)));
+
+// ── 이벤트: 클립 목록 ─────────────────────────────
+$('#clip-list').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    const row = e.target.closest('.clip-row');
+    if (row) state.currentClipId = +row.dataset.clip;
+    if (e.target.closest('.sub-line')) {
+        // 자막 편집 중에는 재렌더링하면 포커스를 잃으므로 강조 클래스만 갱신
+        $$('.clip-row.current').forEach(el => el.classList.remove('current'));
+        row?.classList.add('current');
+        return;
+    }
+    if (chip) {
+        const key = chip.dataset.clip + ':' + chip.dataset.word;
+        const c = state.clips.find(x => x.id === +chip.dataset.clip);
+        const w = c.words.find(x => x.id === +chip.dataset.word);
+        if (e.shiftKey && state.selection.size) {
+            // 같은 클립 내 범위 선택
+            const anchorKey = [...state.selection][state.selection.size - 1];
+            const [ac] = anchorKey.split(':').map(Number);
+            if (ac === c.id) {
+                const anchorW = +anchorKey.split(':')[1];
+                const i1 = c.words.findIndex(x => x.id === anchorW), i2 = c.words.indexOf(w);
+                const [lo, hi] = [Math.min(i1, i2), Math.max(i1, i2)];
+                for (let i = lo; i <= hi; i++) state.selection.add(c.id + ':' + c.words[i].id);
+            } else state.selection.add(key);
+        } else if (e.ctrlKey || e.metaKey) {
+            state.selection.has(key) ? state.selection.delete(key) : state.selection.add(key);
+        } else {
+            state.selection.clear(); state.selection.add(key);
+            setT(w.start + 0.001);
+        }
+    } else if (row && !e.target.closest('.sub-line')) {
+        state.selection.clear();
+        const c = state.clips.find(x => x.id === +row.dataset.clip);
+        if (c && !e.target.closest('.sub-line')) setT(clipStart(c) + 0.001);
+    }
+    if (row) { renderClips(); renderScrubber(); }
+});
+// 자막 줄 편집
+$('#clip-list').addEventListener('focusout', e => {
+    const line = e.target.closest('.sub-line'); if (!line) return;
+    const c = state.clips.find(x => x.id === +line.dataset.clip); if (!c) return;
+    const newText = line.textContent.trim();
+    const oldText = clipText(c) || c.words.map(w => w.text).join(' ');
+    if (newText === oldText) return;
+    if (!newText) { renderClips(); return toast('빈 자막은 저장되지 않았습니다 — 삭제하려면 단어를 컷하세요'); }
+    pushUndo();
+    c.words = distributeWords(newText, clipStart(c), clipEnd(c));
+    renderAll();
+    toast('자막을 수정하고 단어를 다시 배분했습니다');
+});
+$('#clip-list').addEventListener('keydown', e => {
+    if (e.target.closest('.sub-line') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+});
+
+// ── 이벤트: 트랜스포트 ────────────────────────────
+$('#btn-play').addEventListener('click', () => state.playing ? pause() : play());
+$('#btn-stop').addEventListener('click', () => { pause(); setT(0); });
+$('#speed-select').addEventListener('change', e => {
+    state.speed = +e.target.value;
+    if (state.video.loaded) video.playbackRate = state.speed;
+});
+$('#scrubber').addEventListener('pointerdown', e => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const seek = ev => setT((ev.clientX - rect.left) / rect.width * state.video.duration);
+    seek(e);
+    const up = () => { window.removeEventListener('pointermove', seek); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', seek); window.addEventListener('pointerup', up);
+});
+window.addEventListener('resize', applySubtitleStyle);
+
+// ── 이벤트: 상단/모달/단축키 ──────────────────────
+$('#btn-export').addEventListener('click', () => $('#modal-export').classList.add('open'));
+$('#btn-save-project').addEventListener('click', saveProject);
+$('#exp-srt').addEventListener('click', () => { download('vrew-subtitles.srt', buildSrt()); toast('SRT 자막을 저장했습니다 (컷 반영 타임라인)'); });
+$('#exp-cutjson').addEventListener('click', () => { download('vrew-cutlist.json', buildCutJson(), 'application/json'); toast('컷 편집 데이터를 저장했습니다'); });
+$('#exp-xml').addEventListener('click', () => {
+    download('vrew-sequence.xml', buildXmeml(), 'application/xml;charset=utf-8');
+    toast('편집툴 XML을 저장했습니다 — 원본 영상과 같은 폴더에 두고 프리미어/리졸브에서 가져오세요');
+});
+$('#exp-project').addEventListener('click', saveProject);
+$('#exp-webm').addEventListener('click', exportWebm);
+$$('.modal-back').forEach(m => {
+    m.addEventListener('click', e => {
+        if (e.target === m || e.target.closest('[data-close]')) {
+            if (m.id === 'modal-export' && state.exporting) return toast('렌더링 중에는 닫을 수 없습니다');
+            if (m.id === 'modal-stt' && sttBusy) return toast('음성 인식 중에는 닫을 수 없습니다');
+            m.classList.remove('open');
+        }
+    });
+});
+window.addEventListener('keydown', e => {
+    if (e.target.closest('[contenteditable], input, textarea, select')) return;
+    if (e.code === 'Space') { e.preventDefault(); state.playing ? pause() : play(); }
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); cutSelection(true); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+});
+
+// ── E2E 테스트 훅 ─────────────────────────────────
+window.__vrew = {
+    state, cutRanges, editedDuration, toEditedTime, buildSrt, buildCutJson, buildXmeml,
+    setT, getT, play, pause, loadDemo, undo, redo,
+    wordsToClips, applyTranscript, extractAudio16k, encodeWav16k,
+};
+
+// ── 시작 ─────────────────────────────────────────
+buildRibbon('edit');
+renderAssets();
+loadDemo();
+</script>
+</body>
+</html>
