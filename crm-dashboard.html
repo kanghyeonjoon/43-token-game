@@ -319,6 +319,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <h3>＋ 환자 등록</h3>
     <div class="field"><label>이름</label><input id="rgName" style="flex:1" placeholder="홍길동"></div>
     <div class="field"><label>차트번호</label><input id="rgChart" style="flex:1" placeholder="21100"></div>
+    <div class="field"><label>전화번호</label><input id="rgPhone" style="flex:1" placeholder="010-1234-5678 (문자 발송에 필요)"></div>
     <div class="field"><label>유입 채널</label><select id="rgCh" style="flex:1"><option>네이버 검색</option><option>카카오톡 채널</option><option>유튜브</option><option>인스타그램</option><option>지인 소개</option><option>기타</option></select></div>
     <div class="field"><label>마케팅 동의</label><select id="rgConsent" style="flex:1"><option value="Y">동의 (Y)</option><option value="N">미동의 (N)</option></select></div>
     <button class="btn pri" style="width:100%;margin-top:10px" onclick="addPatient()">등록</button>
@@ -356,6 +357,28 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <div class="field"><label>6. 내원 경로</label><select id="ikCh" style="flex:1"><option>네이버 검색</option><option>카카오톡 채널</option><option>유튜브</option><option>인스타그램</option><option>지인 소개</option><option>재방문</option><option>기타</option></select></div>
     <div class="field"><label>7. 마케팅 수신</label><select id="ikConsent" style="flex:1"><option value="Y">동의</option><option value="N">미동의</option></select></div>
     <button class="btn pri" style="width:100%;margin-top:10px" onclick="submitIntake()">제출 — 점수 자동 계산</button>
+  </div>
+</div>
+<div id="clinicModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:440px">
+    <h3>병원 정보 수정</h3>
+    <div class="field"><label>병원명</label><input id="ecName" style="flex:1"></div>
+    <div class="field"><label>대표 원장</label><input id="ecDoc" style="flex:1"></div>
+    <div class="field"><label>대표 전화</label><input id="ecPhone" style="flex:1" placeholder="0507-000-0000"></div>
+    <div class="field"><label>진료과</label><select id="ecSpec" style="flex:1"></select></div>
+    <div class="note">⚠ 진료과를 바꾸면 문진 문항·발송 문구·진료항목이 그 진료과 프리셋으로 바뀝니다 (직접 수정한 항목은 유지).</div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="saveClinic()">저장</button>
+  </div>
+</div>
+<div id="customModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div class="help-card" style="max-width:520px">
+    <h3>✏ 진료과 프리셋 편집</h3>
+    <div class="note" style="margin-bottom:10px">쉼표(,)로 구분해 수정하세요 — 저장하면 문진표 문항·개별 발송 문구·트래커에 바로 반영됩니다.</div>
+    <div class="field" style="align-items:flex-start"><label>진료항목</label><textarea id="cuItems" style="flex:1;min-height:44px;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6"></textarea></div>
+    <div class="field" style="align-items:flex-start"><label>문진 증상</label><textarea id="cuSym" style="flex:1;min-height:60px;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6"></textarea></div>
+    <div class="field" style="align-items:flex-start"><label>걱정 항목</label><textarea id="cuWorry" style="flex:1;min-height:44px;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6"></textarea></div>
+    <div class="field" style="align-items:flex-start"><label>프로그램<br><small style="color:var(--mut)">이름:일수</small></label><textarea id="cuProg" style="flex:1;min-height:44px;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12.5px;line-height:1.6" placeholder="15일 집중:15, 30일 기초:30"></textarea></div>
+    <button class="btn pri" style="width:100%;margin-top:10px" onclick="saveCustom()">저장 — 화면 전체에 반영</button>
   </div>
 </div>
 <div id="tplModal" style="position:fixed;inset:0;background:rgba(20,26,22,.5);z-index:150;display:none;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
@@ -399,7 +422,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     <button class="mitem" data-view="env"><span class="ico">⚙</span>환경설정</button>
   </div>
   <button class="mitem" id="logoutBtn" style="display:none" onclick="doLogout()"><span class="ico">🚪</span>로그아웃</button>
-  <div class="side-foot">v0.8 · 실사용(LIVE) 지원<br>기획서 v3.0 기반</div>
+  <div class="side-foot">v0.9 · 자동 발송 지원<br>기획서 v3.0 기반</div>
 </nav>
 
 <!-- ============ MAIN ============ -->
@@ -690,7 +713,7 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
         <div class="field"><label>병원명</label><span class="val" id="hName"></span><button class="btn sm" onclick="editClinic()">수정</button></div>
         <div class="field"><label>진료과</label><span class="val" id="hSpec"></span></div>
         <div class="field"><label>대표 원장</label><span class="val" id="hDoc"></span></div>
-        <div class="field"><label>대표 전화</label><span class="val">0507-000-0000</span></div>
+        <div class="field"><label>대표 전화</label><span class="val" id="hPhone">—</span></div>
         <div class="field"><label>플랜</label><span class="pill p-pri">스타터 (무료 체험)</span></div></div>
       <div class="card"><h2>브랜드 · 초기화</h2><div class="sub">브랜드 색은 버튼·메뉴·차트 포인트에 적용됩니다</div>
         <div class="field"><label>브랜드 색상</label><div class="swatches" id="hColors"></div></div>
@@ -699,10 +722,13 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
     </div>
     <div class="card"><h2>계정 목록</h2><div class="sub">직원별 개인 계정 — 공용 계정 금지, 퇴사 시 당일 회수</div>
       <div class="tblwrap"><table><thead><tr><th>사용</th><th>계정</th><th>표시명</th><th>권한</th></tr></thead>
-      <tbody>
-        <tr><td><span class="pill p-ok">사용 중</span></td><td>owner</td><td id="accDoc">원장</td><td>전체 (원장 뷰)</td></tr>
-        <tr><td><span class="pill p-ok">사용 중</span></td><td>desk01</td><td>데스크</td><td>오늘의 액션 · 내원관리 · 개별 발송</td></tr>
-      </tbody></table></div></div>
+      <tbody id="accTbl"></tbody></table></div></div>
+    <div class="card"><h2>진료과 프리셋 편집</h2><div class="sub">문진 문항·진료항목·프로그램을 우리 병원에 맞게 직접 수정합니다 — 문진표·발송 문구·트래커에 바로 반영</div>
+      <div class="field"><label>진료항목</label><span class="val" id="cuItemsV"></span></div>
+      <div class="field"><label>문진 증상 (1번)</label><span class="val" id="cuSymV"></span></div>
+      <div class="field"><label>걱정 항목 (2·3번)</label><span class="val" id="cuWorryV"></span></div>
+      <div class="field"><label>프로그램</label><span class="val" id="cuProgV"></span></div>
+      <div class="field"><label></label><button class="btn pri sm" onclick="openCustom()">✏ 직접 수정</button><button class="btn sm" onclick="resetCustom()">프리셋 기본값으로</button></div></div>
   </section>
 
   <!-- 담당자 관리 -->
@@ -737,6 +763,10 @@ input[type=checkbox]:focus-visible,button:focus-visible{outline:2px solid var(--
         <div class="field"><label>채널 등록</label><span class="pill p-ok">등록 완료</span><span class="note" id="envCh"></span></div>
         <div class="field"><label>알림톡 템플릿</label><span class="val num">승인 6 · 심사중 2 · 미제출 3</span><button class="btn sm" onclick="go('templates')">관리</button></div>
         <div class="field"><label>내부 알림 번호</label><span class="val num" id="alertNums">010-****-**01 (데스크)</span><button class="btn sm" onclick="addAlertNum('alertNums','내부 알림')">추가</button></div></div>
+      <div class="card"><h2>자동 발송 (솔라피)</h2><div class="sub">[발송하기] → 환자 휴대폰으로 실제 문자 발송 · 단문 ~9원 / 장문 ~27원 (선불)</div>
+        <div class="field"><label>상태</label><span id="solapiSt" class="pill p-gray">미연동 — 문안 복사 모드</span><button class="btn sm pri" onclick="testSolapi()">연동 테스트</button></div>
+        <div class="field"><label>연동 방법</label><span class="note">①솔라피 가입·발신번호 등록 ②Supabase Edge Function 붙여넣기 ③시크릿 3개 — <a href="#" onclick="solapiGuide();return false">순서 안내 보기</a></span></div>
+        <div class="field"><label>야간 차단</label><span class="pill p-ok">21:00~08:00 → 익일 09:00 예약</span><span class="note">법정 준수 — 자동 적용</span></div></div>
       <div class="card"><h2>보고서 · 자동화 점검</h2><div class="sub">일일 헬스체크</div>
         <div class="field"><label>일일 요약 보고</label><button class="toggle on" onclick="this.classList.toggle('on')" aria-label="일일 보고"></button><span class="note">매일 08:30 발송 — 시나리오 상태·미처리 큐</span></div>
         <div class="field"><label>자동화 상태</label><span class="pill p-ok">12개 시나리오 정상</span><span class="note">실패 시 자동 재시도 3회 + 경보</span></div>
@@ -885,12 +915,91 @@ function finishSetup(){
 function resetSetup(){
   if(!confirm('정말 초기화할까요?\n병원 설정과 오늘의 처리 기록이 삭제되며 되돌릴 수 없습니다.'))return;
   localStorage.removeItem('careloop-cfg'); localStorage.removeItem(todayKey());
-  localStorage.removeItem('careloop-role'); localStorage.removeItem('careloop-db'); location.reload();
+  localStorage.removeItem('careloop-role'); localStorage.removeItem('careloop-db');
+  localStorage.removeItem('careloop-custom'); localStorage.removeItem('careloop-mytpl'); location.reload();
 }
 function editClinic(){
-  const n=prompt('병원명을 입력하세요', cfg.name); if(!n)return;
-  const d=prompt('대표 원장님 성함', cfg.doctor)||cfg.doctor;
-  cfg.name=n.trim(); cfg.doctor=d.trim(); saveCfg(); initApp(); toast('병원 정보가 수정되었습니다');
+  document.getElementById('ecName').value=cfg.name;
+  document.getElementById('ecDoc').value=cfg.doctor;
+  document.getElementById('ecPhone').value=cfg.phone||'';
+  document.getElementById('ecSpec').innerHTML=Object.keys(SPECS).map(s=>`<option ${s===cfg.spec?'selected':''}>${s}</option>`).join('');
+  document.getElementById('clinicModal').style.display='flex';
+}
+async function saveClinic(){
+  const n=document.getElementById('ecName').value.trim(), d=document.getElementById('ecDoc').value.trim();
+  const ph=document.getElementById('ecPhone').value.trim(), spNew=document.getElementById('ecSpec').value;
+  if(!n||!d){toast('병원명과 원장님 성함을 입력해 주세요');return}
+  const specChanged=spNew!==cfg.spec;
+  cfg.name=n; cfg.doctor=d; cfg.phone=ph; cfg.spec=spNew; saveCfg();
+  let dbErr=null;
+  if(live&&sb){
+    const {error}=await sb.from('clinics').update({name:n,doctor:d,phone:ph||null,spec:spNew}).eq('id',clinicId);
+    if(error)dbErr=error;
+  }
+  document.getElementById('clinicModal').style.display='none';
+  initApp(); if(live)await loadLive();
+  go('hospital');
+  toast('병원 정보가 수정되었습니다'+(specChanged?' — 진료과 프리셋이 변경됐어요':''));
+  if(dbErr)reportError('병원 정보 서버 저장 실패: '+dbErr.message+' — 화면에는 반영됐지만 다음 로그인 때 되돌아갈 수 있어요 (db/schema-v3-custom.sql 실행 필요 여부 확인)');
+}
+function splitList(s){return s.split(',').map(x=>x.trim()).filter(Boolean)}
+function openCustom(){
+  document.getElementById('cuItems').value=SP.items.join(', ');
+  document.getElementById('cuSym').value=SP.sym.join(', ');
+  document.getElementById('cuWorry').value=SP.worry.join(', ');
+  document.getElementById('cuProg').value=SP.programs.map(pg=>pg[0]+':'+pg[1]).join(', ');
+  document.getElementById('customModal').style.display='flex';
+}
+async function saveCustom(){
+  const items=splitList(document.getElementById('cuItems').value);
+  const sym=splitList(document.getElementById('cuSym').value);
+  const worry=splitList(document.getElementById('cuWorry').value);
+  const programs=splitList(document.getElementById('cuProg').value).map(x=>{const i=x.lastIndexOf(':');return i>0?[x.slice(0,i).trim(),parseInt(x.slice(i+1))||30]:[x.trim(),30]});
+  if(!items.length||!sym.length||!programs.length){toast('진료항목·증상·프로그램은 각 1개 이상 필요해요');return}
+  const cust={items,sym,worry:worry.length?worry:SP.worry,programs};
+  cfg.custom=cust; saveCfg();
+  localStorage.setItem('careloop-custom',JSON.stringify(cust));
+  let dbErr=null;
+  if(live&&sb){
+    const {error}=await sb.from('clinics').update({custom:cust}).eq('id',clinicId);
+    if(error)dbErr=error;
+  }
+  document.getElementById('customModal').style.display='none';
+  initApp(); if(live)await loadLive();
+  go('hospital');
+  toast('프리셋이 수정되었습니다 — 문진표·트래커·문구에 반영');
+  if(dbErr){
+    openChat();
+    aiSay(`⚠ 프리셋을 서버에 저장하지 못했어요 (${esc(dbErr.message)}).\n지금은 <b>이 기기에만</b> 저장돼 있어요. 모든 기기에 적용하려면 Supabase SQL Editor에서 아래 한 줄을 실행해 주세요:\n<code>alter table clinics add column if not exists custom jsonb;</code>\n실행 후 [✏ 직접 수정 → 저장]을 한 번만 다시 눌러주세요.`);
+  }
+}
+async function resetCustom(){
+  if(!confirm('직접 수정한 항목을 지우고 진료과 기본 프리셋으로 되돌릴까요?'))return;
+  cfg.custom=null; saveCfg(); localStorage.removeItem('careloop-custom');
+  if(live&&sb){try{await sb.from('clinics').update({custom:null}).eq('id',clinicId)}catch(e){}}
+  initApp(); if(live)await loadLive();
+  go('hospital');
+  toast('기본 프리셋으로 되돌렸습니다');
+}
+async function testSolapi(){
+  if(!live||!sb){toast('데모 모드에서는 실제 발송이 되지 않아요 — LIVE 연결 후 사용하세요');solapiGuide();return}
+  const to=prompt('테스트 문자를 받을 휴대폰 번호 (원장님 번호 추천)','010-');
+  if(!to)return;
+  try{
+    const {data,error}=await sb.functions.invoke('send-sms',{body:{to,text:`[${cfg.name}] 케어루프 자동 발송 테스트입니다.`}});
+    if(error)throw error;
+    if(data&&data.error)throw new Error(data.error);
+    const st=document.getElementById('solapiSt'); st.textContent='연동 정상'; st.className='pill p-ok';
+    toast('테스트 발송 성공 — 휴대폰을 확인해 보세요');
+    aiSay(`✅ 솔라피 연동 테스트 성공! 이제 개별 발송의 [발송하기]가 환자에게 실제 문자로 나갑니다.`);
+  }catch(e){
+    reportError('솔라피 연동 테스트 실패: '+(e.message||e));
+    solapiGuide();
+  }
+}
+function solapiGuide(){
+  openChat();
+  aiSay(`📮 <b>자동 문자 발송 켜기 (솔라피) — 4단계</b>\n1️⃣ solapi.com 가입 → 콘솔에서 <b>API Key/Secret</b> 발급 + <b>발신번호 등록</b>(통신서비스 가입증명원, 심사 ~1일)\n2️⃣ Supabase 대시보드 → <b>Edge Functions</b> → 새 함수 이름 <b>send-sms</b> → 저장소 <b>db/edge-send-sms.ts</b> 코드 붙여넣기 → Deploy\n3️⃣ Edge Functions → <b>Secrets</b>에 3개: <b>SOLAPI_KEY</b> · <b>SOLAPI_SECRET</b> · <b>SOLAPI_SENDER</b>(발신번호)\n4️⃣ 환경설정 → 자동 발송 카드의 <b>[연동 테스트]</b>\n\n💰 선불 충전, 단문 ~9원 · 장문 ~27원. 연동 전에는 지금처럼 '문안 복사 + 기록'으로 쓰시면 됩니다. 자세한 문서: docs/솔라피-연동-가이드.md`);
 }
 function setColor(i){ cfg.color=i; saveCfg(); applyBrand(); renderHospital(); toast('브랜드 색상이 적용되었습니다'); }
 function applyBrand(){
@@ -904,7 +1013,9 @@ let SP,P,VISITS_TODAY,TEMPLATES;
 function S(i){return SP.sym[i%SP.sym.length]}
 function PR(i){return SP.programs[i%SP.programs.length][0]}
 function buildData(){
-  SP=SPECS[cfg.spec];
+  SP={...SPECS[cfg.spec]};
+  const cust=cfg.custom||(function(){try{return JSON.parse(localStorage.getItem('careloop-custom'))}catch(e){return null}})();
+  if(cust)['items','sym','worry','programs'].forEach(k=>{if(Array.isArray(cust[k])&&cust[k].length)SP[k]=cust[k]});
   P=[
    {id:'P01',chart:'21034',name:'김민정',grp:'상',score:7,pot:4,act:3,consent:'Y',last:'2026-07-02',status:'치료중',flags:[],visits:5,src:'지인 소개(박OO)',spark:[3,3,4,5,5,6,7,7],
     next:`7/7(화) 11:00 · ${PR(0)} 종료 전 재안내 — 친구톡`,
@@ -1118,9 +1229,8 @@ function renderIntake(){
   document.getElementById('intakeTbl').innerHTML=rows.length?rows.slice(0,8).map(r=>`<tr><td><span class="pill ${r[0]==='작성 완료'?'p-ok':'p-gray'}">${r[0]}</span></td><td>${esc(r[1])}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">아직 작성된 문진표가 없습니다 — 우측 상단 [＋ 문진 시작]으로 첫 문진을 받아보세요</td></tr>';
 }
 function explainIntakeEdit(){
-  toast('문진표 편집기는 알림톡 연동 단계에서 제공됩니다');
-  openChat();
-  aiSay(`📝 문진 문항(불편 증상 ${SP.sym.length}종·걱정 항목 등)은 지금은 <b>진료과 프리셋</b>에서 자동으로 구성돼요 — [병원 정보]에서 진료과를 바꾸면 문항도 함께 바뀝니다. 문항을 직접 고치는 편집기는 알림톡 연동 단계에서 만들게요.`);
+  openCustom();
+  toast('문진 증상·걱정 항목을 수정하면 문진표 문항이 바로 바뀝니다');
 }
 function openIntake(){
   if(!P.length){
@@ -1238,7 +1348,7 @@ function showPatient(id){
   document.getElementById('crumb').innerHTML=`환자관리 / 환자DB / <b>${p.name}</b>`;
   document.getElementById('p3Avatar').textContent=p.name[0];
   document.getElementById('p3Name').textContent=p.name;
-  document.getElementById('p3Meta').textContent=`차트 ${p.chart} · 방문 ${p.visits}회 · 마지막 ${p.last} · 유입: ${p.src}`;
+  document.getElementById('p3Meta').textContent=`차트 ${p.chart} · 방문 ${p.visits}회 · 마지막 ${p.last} · 유입: ${p.src}`+(p.phone?` · ☎ ${p.phone}`:'');
   const badges=[`<span class="grp ${p.grp}" style="width:auto;padding:0 8px">관여도 ${p.grp}</span>`];
   p.flags.forEach(f=>badges.push(`<span class="pill ${f==='위기'||f==='발송중단'?'p-red':'p-blue'}">${f}</span>`));
   badges.push(`<span class="pill ${p.status==='중단추정'?'p-amber':p.status==='완료'?'p-ok':'p-blue'}">${p.status}</span>`);
@@ -1310,13 +1420,40 @@ async function doSend(){
   if(p.consent==='N'&&t.ch!=='알림톡')guards.push('마케팅 미동의 — 광고성 발송 불가');
   if(guards.length){toast('⛔ 발송 차단 — '+guards.join(' · '));return}
   if(live&&sb){
-    if(!confirm(`${p.name}님(차트 ${p.chart})에게 '${t.n}' (${t.ch})\n\n자동 발송(솔라피/Make) 연결 전이라, 문안을 복사해 드릴게요.\n카카오채널·문자로 직접 보내신 뒤 → 발송 내역에 기록됩니다.\n\n기록할까요?`))return;
+    let phoneNorm=(p.phone||'').replace(/[^0-9]/g,'');
+    if(phoneNorm.length<10){
+      const n=prompt(`${p.name}님의 휴대폰 번호가 등록돼 있지 않아요.\n번호를 입력하면 저장하고 바로 발송합니다.`,'010-');
+      if(n===null)return;
+      phoneNorm=n.replace(/[^0-9]/g,'');
+      if(phoneNorm.length<10){toast('전화번호 형식을 확인해 주세요');return}
+      p.phone=n.trim();
+      await sb.from('patients').update({phone:p.phone,phone_norm:phoneNorm}).eq('id',p.id);
+    }
+    const text=fillTpl(t,p);
+    if(!confirm(`${p.name}님(${p.phone})에게 문자를 바로 발송합니다.\n\n"${text.slice(0,80)}${text.length>80?'…':''}"\n\n발송할까요? (단문 ~9원 · 장문 ~27원, 야간엔 익일 오전 9시 예약)`))return;
+    let sent=null, fnErr=null;
+    try{
+      const {data,error}=await sb.functions.invoke('send-sms',{body:{to:phoneNorm,text,patientId:p.id}});
+      if(error)fnErr=error; else if(data&&data.error)fnErr=new Error(data.error); else sent=data||{};
+    }catch(e){fnErr=e}
+    if(sent&&sent.ok){
+      const {error}=await sb.from('sends').insert({clinic_id:clinicId,patient_id:p.id,scenario:t.c,template:t.n,content_tag:t.c+'@'+Date.now(),channel:'LMS',status:sent.scheduled?'예약':'성공',message_id:sent.groupId||null,sent_at:new Date().toISOString()});
+      if(error)reportError('발송은 성공했지만 기록 저장 실패: '+error.message);
+      await loadLive();
+      toast(sent.scheduled?'야간이라 내일 오전 9시 예약 발송되었습니다':`${p.name}님에게 문자 발송 완료 (${sent.type||'문자'})`);
+      aiSay(sent.scheduled
+        ?`🌙 지금은 야간(21시~8시)이라 <b>${esc(p.name)}</b>님 문자를 <b>내일 오전 9시 예약</b>으로 걸어뒀어요.`
+        :`📨 <b>${esc(p.name)}</b>님(${esc(p.phone)})에게 '${esc(t.n)}' 문자를 발송했어요 — 발송 내역에 기록됐습니다.`);
+      return;
+    }
+    const reason=String((fnErr&&(fnErr.message||fnErr.name))||'연동 안 됨').slice(0,90);
+    if(!confirm(`자동 발송이 아직 연결되지 않았거나 실패했어요.\n(${reason})\n\n대신 문안을 복사해 드릴 테니 직접 보내고, 발송 내역에 기록할까요?`))return;
     copyTpl();
     const {error}=await sb.from('sends').insert({clinic_id:clinicId,patient_id:p.id,scenario:t.c,template:t.n,content_tag:t.c+'@'+Date.now(),channel:t.ch,status:'성공',sent_at:new Date().toISOString()});
     if(error){reportError('발송 기록 실패: '+error.message);return}
     await loadLive();
-    toast(`${p.name}님 발송 기록 완료 — 발송 내역에서 확인하세요`);
-    aiSay(`📨 <b>${esc(p.name)}</b>님에게 '${esc(t.n)}'(${t.ch}) 발송을 기록했어요. 문안은 복사해 뒀으니 카카오채널/문자에 붙여넣어 보내주세요. 자동 발송은 채널 연동 후 켜집니다.`);
+    toast(`${p.name}님 발송 기록 완료 (수동)`);
+    aiSay(`⚠ 자동 발송이 아직 안 켜져 있어요 — <b>환경설정 → 자동 발송(솔라피)</b>에서 연동하면 [발송하기]가 실제 문자로 나갑니다. 이번 건은 문안을 복사해 뒀으니 직접 보내주세요.`,{buttons:`<button class="btn sm pri" onclick="go('env');document.getElementById('aiPanel').classList.remove('on')">환경설정 열기</button><button class="btn sm" onclick="solapiGuide()">연동 방법 보기</button>`});
     return;
   }
   if(!confirm(`${p.name}님(차트 ${p.chart})에게\n'${t.n}' (${t.ch})를 보냅니다.\n\n발송 시점: ${document.getElementById('sWhen').value}\n계속할까요?`))return;
@@ -1337,7 +1474,7 @@ function cancelSend(){
 function renderRx(){
   document.getElementById('mRx').textContent=`${SP.progLabel} 트래커`;
   document.getElementById('rxTitle').textContent=`${SP.progLabel} 트래커`;
-  document.getElementById('kpiProgLbl').textContent=`${SP.progLabel} 전환율`;
+  const kl=document.getElementById('kpiProgLbl'); if(kl)kl.textContent=`${SP.progLabel} 전환율`;
   CRUMBS.rx=`CRM / ${SP.progLabel} 트래커`;
   document.getElementById('rxKanban').innerHTML=`
     <div class="kcol"><h4>${SP.d1Name} 발송 <span class="num">2</span></h4>
@@ -1420,9 +1557,18 @@ function staffGuide(){
 }
 function renderHospital(){
   document.getElementById('hName').textContent=cfg.name;
-  document.getElementById('hSpec').textContent=`${SPECS[cfg.spec].icon} ${cfg.spec} (프리셋)`;
+  document.getElementById('hSpec').textContent=`${SPECS[cfg.spec].icon} ${cfg.spec}${cfg.custom?' (직접 수정됨)':' (프리셋)'}`;
   document.getElementById('hDoc').textContent=cfg.doctor+' 원장';
-  document.getElementById('accDoc').textContent=cfg.doctor+' 원장';
+  document.getElementById('hPhone').textContent=cfg.phone||'— ([수정]에서 입력)';
+  document.getElementById('cuItemsV').textContent=SP.items.join(' · ');
+  document.getElementById('cuSymV').textContent=SP.sym.join(' · ');
+  document.getElementById('cuWorryV').textContent=SP.worry.join(' · ');
+  document.getElementById('cuProgV').textContent=SP.programs.map(pg=>`${pg[0]}(${pg[1]}일)`).join(' · ');
+  document.getElementById('accTbl').innerHTML=live
+   ?`<tr><td><span class="pill p-ok">사용 중</span></td><td>${esc(authUser?authUser.email:'—')}</td><td>${esc(cfg.doctor)} 원장</td><td>${myRole==='owner'?'전체 (원장 뷰)':'데스크 뷰'}</td></tr>
+      <tr><td><span class="pill p-gray">추가</span></td><td colspan="3"><a href="#" onclick="staffGuide();return false">직원(데스크) 계정 추가 방법 보기</a></td></tr>`
+   :`<tr><td><span class="pill p-ok">사용 중</span></td><td>owner</td><td>${esc(cfg.doctor)} 원장</td><td>전체 (원장 뷰)</td></tr>
+      <tr><td><span class="pill p-ok">사용 중</span></td><td>desk01</td><td>데스크</td><td>오늘의 액션 · 내원관리 · 개별 발송</td></tr>`;
   document.getElementById('hColors').innerHTML=COLORS.map((c,i)=>`<button class="swatch ${i===cfg.color?'on':''}" style="background:${c.pri}" onclick="setColor(${i})" aria-label="${c.n}"></button>`).join('');
   document.getElementById('envCh').textContent=`@${cfg.name.replace(/\s/g,'')}`;
   document.getElementById('blockList').innerHTML=live
@@ -1658,7 +1804,7 @@ async function afterAuth(){
   if(mem){
     clinicId=mem.clinic_id; myRole=mem.role;
     const {data:cl}=await sb.from('clinics').select('*').eq('id',clinicId).single();
-    if(cl){cfg={name:cl.name,spec:SPECS[cl.spec]?cl.spec:'일반의원',doctor:cl.doctor,color:cl.brand_color||0};saveCfg();}
+    if(cl){cfg={name:cl.name,spec:SPECS[cl.spec]?cl.spec:'일반의원',doctor:cl.doctor,color:cl.brand_color||0,phone:cl.phone||'',custom:cl.custom||null};saveCfg();}
     if(myRole==='desk')localStorage.setItem('careloop-role','desk');
     live=true; initApp(); go('today'); await loadLive(); setLiveTag(true); showAuthUi();
     aiSay(`🔐 <b>${esc(user.email)}</b> 로그인 — ${esc(cfg.name)} 데이터로 연결되었습니다.`);
@@ -1673,7 +1819,9 @@ function showAuthUi(){
   if(myRole==='desk')document.getElementById('roleBtn').style.display='none';
 }
 async function doLogout(){
-  try{await sb.auth.signOut()}catch(e){}
+  toast('로그아웃 중…');
+  try{ await Promise.race([ sb.auth.signOut({scope:'local'}), new Promise(r=>setTimeout(r,2500)) ]); }catch(e){}
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k)); }catch(e){}
   localStorage.removeItem('careloop-role'); location.reload();
 }
 async function seedDemo(){
@@ -1699,17 +1847,20 @@ function openVis(){
 async function addPatient(){
   const name=document.getElementById('rgName').value.trim(), chart=document.getElementById('rgChart').value.trim();
   const ch=document.getElementById('rgCh').value, consent=document.getElementById('rgConsent').value;
+  const phone=document.getElementById('rgPhone').value.trim();
   if(!name||!chart){toast('이름과 차트번호를 입력해 주세요');return}
-  const base={grp:'중',score:0,pot:0,act:0,consent,last:localDate(),status:'치료중',flags:[],visits:0,src:ch,spark:[0,0,0,0,0,0,0,0],next:'초진 문진표 대기',tl:[],rec:[],intake:{goal:'표준',ins:'—',worry:[],family:[]},phone:''};
+  const phoneNorm=phone.replace(/[^0-9]/g,'');
+  if(phone&&phoneNorm.length<10){toast('전화번호 형식을 확인해 주세요 (예: 010-1234-5678)');return}
+  const base={grp:'중',score:0,pot:0,act:0,consent,last:localDate(),status:'치료중',flags:[],visits:0,src:ch,spark:[0,0,0,0,0,0,0,0],next:'초진 문진표 대기',tl:[],rec:[],intake:{goal:'표준',ins:'—',worry:[],family:[]},phone};
   if(live&&sb){
-    const {data,error}=await sb.from('patients').insert({clinic_id:clinicId,chart_no:chart,name,channel:ch,consent:consent==='Y',visit_count:0,next_send_label:'초진 문진표 대기'}).select().single();
+    const {data,error}=await sb.from('patients').insert({clinic_id:clinicId,chart_no:chart,name,phone:phone||null,phone_norm:phoneNorm||null,channel:ch,consent:consent==='Y',visit_count:0,next_send_label:'초진 문진표 대기'}).select().single();
     if(error){reportError('환자 등록 실패: '+error.message);return}
     P.unshift({...base,id:data.id,chart,name});
   }else{
     P.unshift({...base,id:'P'+Math.floor(Math.random()*90000+10000),chart,name});
   }
   document.getElementById('regModal').style.display='none';
-  document.getElementById('rgName').value='';document.getElementById('rgChart').value='';
+  document.getElementById('rgName').value='';document.getElementById('rgChart').value='';document.getElementById('rgPhone').value='';
   renderPatients(); renderSendList(); go('patients');
   toast(`${name}님 등록 완료`); aiSay(`🧑 신규 환자 <b>${esc(name)}</b>님(${esc(ch)})을 등록했어요. 문진표를 보내면 관여도 점수가 계산됩니다.`);
 }
@@ -1785,7 +1936,7 @@ async function loadLive(){
     P=pats.map(r=>({id:r.id,chart:r.chart_no,name:r.name,grp:r.grp_override||r.grp,score:r.score,pot:r.pot,act:r.act,
       consent:r.consent?'Y':'N',last:r.last_visit_at||'—',status:r.treat_status,
       flags:[...(r.blocked?['발송중단']:[]),...(r.crisis==='위기'?['위기']:[])],
-      visits:r.visit_count,src:r.channel||'기타',
+      visits:r.visit_count,src:r.channel||'기타',phone:r.phone||'',
       spark:Array(8).fill(r.score),next:r.next_send_label||'—',tl:[],rec:[],created:r.created_at||''}));
   }
   const d0=localDate(); const d1=localDate(new Date(Date.now()+86400000));
@@ -1833,7 +1984,7 @@ let PROGRAMS=[], MONTH_VISITS=[], SENDS=[];
 function phCards(){
   document.querySelectorAll('[data-live=ph]').forEach(c=>{
     if(c.dataset.phed)return; c.dataset.phed='1';
-    [...c.children].forEach(ch=>{if(ch.tagName!=='H2'&&!ch.classList.contains('sub'))ch.remove()});
+    [...c.children].forEach(ch=>{if(ch.tagName!=='H2'&&!ch.classList.contains('sub'))ch.style.display='none'});
     const d=document.createElement('div'); d.className='empty';
     d.textContent='📊 데이터 수집 중 — 발송·정착 데이터가 쌓이면 자동으로 표시됩니다';
     c.appendChild(d);
