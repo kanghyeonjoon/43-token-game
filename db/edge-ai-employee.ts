@@ -18,7 +18,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Anthropic from "npm:@anthropic-ai/sdk";
 
-const MODEL = "claude-opus-4-8";       // 필요 시 모델만 교체
+const MODEL = "claude-opus-4-8";       // 필요 시 모델만 교체 — 'claude-fable-5'로 상향 가능 (비용 약 2배, thinking 설정은 그대로 호환)
 const MAX_ROUNDS = 6;                  // 오케스트레이터 도구 사용 왕복 상한 (엣지 함수 시간 보호)
 
 const CORS = {
@@ -86,7 +86,8 @@ const EMPLOYEES: Record<EmployeeKey, { title: string; system: (c: ClinicInfo) =>
 - 판정: ✅ 통과 / ⚠ 수정 필요 / ⛔ 발송 불가
 - 항목별 지적 (해당 항목 번호와 근거)
 - 수정 필요 시: 바로 쓸 수 있는 수정안 제시
-과잉 검열은 하지 않되, 애매하면 안전측으로 판정합니다.`,
+과잉 검열은 하지 않되, 애매하면 안전측으로 판정합니다.
+지적마다 '위반이 아닐 수도 있는' 경쟁 해석을 1개 검토한 뒤 판정하고, 기각 근거를 한 줄 남깁니다.`,
   },
   analyst: {
     title: "데이터 분석가",
@@ -96,6 +97,7 @@ const EMPLOYEES: Record<EmployeeKey, { title: string; system: (c: ClinicInfo) =>
 [분석 원칙]
 - 전달받은 데이터에 있는 숫자만 사용합니다. 없는 수치는 "데이터에 없음"이라고 말하고 지어내지 않습니다.
 - 표본이 작으면 반드시 명시합니다 (n=). 단정 대신 "신호" 수준으로 표현합니다.
+- 해석에는 경쟁 가설을 최소 2개 세워 비교하고 기각 근거를 남깁니다 — 증상 하나에 원인 하나로 단정하지 않습니다.
 - 해석은 반드시 "그래서 무엇을 할지"로 끝납니다 — 데스크가 오늘 실행할 수 있는 우선순위 1~3개.
 - 재내원·이탈 관점: 마지막 방문 경과일, 치료상태(중단추정/완료), 위기 이력, 관여도 흐름을 중심으로.
 
@@ -125,6 +127,15 @@ const EMPLOYEES: Record<EmployeeKey, { title: string; system: (c: ClinicInfo) =>
 
 type ClinicInfo = { name: string; spec: string; doctor: string };
 
+// 페이블 모드 — fablize(github.com/fivetaku/fablize)의 이전 가능 규율: 증거 기반 완료 + 조기 중단 금지
+const FABLE_RULES = `
+
+[페이블 모드 — 작업 규율]
+- 결과부터 씁니다. "반영했다/수정했다"는 주장은 문안·산출물 속 구체 위치를 증거로 들 수 있어야 합니다.
+- "~하시면 됩니다"로 끝내지 않습니다 — 이 답변 안에서 지금 실제로 작성합니다.
+- 산출물 끝에 [자가 검증] 블록: 요구된 출력 형식의 각 항목 충족 여부를 ✅(증거) / ❌(사유)로 표기합니다.
+  ❌가 있으면 '완료'라고 말하지 않습니다.`;
+
 const ORCH_SYSTEM = (c: ClinicInfo) => `당신은 '케어루프 CRM'의 AI 실장입니다.
 ${c.name}(${c.spec}, 대표원장 ${c.doctor})의 CRM 실무를 총괄하는 오케스트레이터로서,
 병원 데이터 조회 도구와 4명의 전문 AI 직원(ask_specialist)을 지휘해 원장·데스크의 요청을 처리합니다.
@@ -147,7 +158,14 @@ ${c.name}(${c.spec}, 대표원장 ${c.doctor})의 CRM 실무를 총괄하는 오
 6. 개인정보 최소화 — 전화번호 등은 아예 조회되지 않으며, 답변에 불필요한 민감정보를 싣지 않습니다.
    관여도 등급(상/중/하)은 내부 운영 용어이므로 환자 노출 문안에 쓰지 않습니다.
 7. 최종 답변은 한국어로, 데스크 직원이 읽고 바로 실행할 수 있게 결론부터 간결하게 씁니다.
-8. 요청이 병원 CRM 업무와 무관하면 정중히 범위를 안내하고 처리하지 않습니다.`;
+8. 요청이 병원 CRM 업무와 무관하면 정중히 범위를 안내하고 처리하지 않습니다.
+
+[페이블 모드 — 작업 규율]
+9. 완료 근거화 — 보고의 모든 사실 주장은 이번 세션의 도구 결과에 근거해야 합니다. 조회하지 않은 것은
+   "조회하지 않음"이라고 말하고, 추측으로 채우지 않습니다.
+10. 조기 중단 금지 — "~하시면 됩니다"로 미루지 않습니다. 필요한 조회·위임은 지금 도구로 실행해 결과까지 보고합니다.
+11. 자가 검증 — 최종 보고 끝에 [확인] 블록: 요청을 목표로 분해하고, 각 목표의 충족 여부를 근거(어떤 조회·어느
+    직원의 결과)와 함께 ✅/❌로 표기합니다. ❌가 있으면 '완료'라고 하지 않습니다.`;
 
 /* ================= 도구 정의 ================= */
 const TOOLS: Anthropic.Tool[] = [
@@ -261,7 +279,7 @@ Deno.serve(async (req) => {
         model: MODEL,
         max_tokens: 8000,
         thinking: { type: "adaptive" },
-        system: emp.system(clinic),
+        system: emp.system(clinic) + FABLE_RULES,
         messages: [{ role: "user", content: context ? `${specTask}\n\n[관련 데이터·문안]\n${context}` : specTask }],
       });
       addUsage(res.usage);
