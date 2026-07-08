@@ -169,6 +169,22 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 #export-progress .fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
 #export-progress .lbl { font-size: 12px; color: var(--text-sub); margin-top: 6px; }
 
+/* STT 모달 */
+.stt-modes { display: flex; gap: 8px; margin-bottom: 14px; }
+.stt-mode { flex: 1; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; text-align: left; font-size: 13px; color: var(--text-sub); }
+.stt-mode b { display: block; color: var(--text); font-size: 13.5px; margin-bottom: 2px; }
+.stt-mode.on { border-color: var(--accent); background: var(--accent-soft); }
+.stt-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.stt-form label { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-sub); }
+.stt-form label span:first-child { width: 92px; flex-shrink: 0; }
+.stt-form select, .stt-form input[type="text"], .stt-form input[type="password"] {
+    flex: 1; border: 1.5px solid var(--line-strong); border-radius: 8px; padding: 7px 10px; font-family: inherit; font-size: 13px; min-width: 0; }
+.stt-note { font-size: 12px; color: var(--text-faint); line-height: 1.7; background: #f7f9fb; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+#stt-progress { display: none; margin-bottom: 12px; }
+#stt-progress .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+#stt-progress .fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
+#stt-progress .lbl { font-size: 12px; color: var(--text-sub); margin-top: 6px; }
+
 /* 토스트 */
 #toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); background: #26303a;
     color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none;
@@ -186,6 +202,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
     <div class="logo">V</div>
     <button class="menu-tab" data-tab="file">파일</button>
     <button class="menu-tab active" data-tab="edit">편집</button>
+    <button class="menu-tab" data-tab="subtitle">자막</button>
     <button class="menu-tab" data-tab="format">서식</button>
     <button class="menu-tab" data-tab="insert">삽입</button>
     <button class="menu-tab" data-tab="help">도움말</button>
@@ -295,6 +312,59 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
     </div>
 </div>
 
+<!-- AI 자동 자막 모달 -->
+<div class="modal-back" id="modal-stt">
+    <div class="modal">
+        <h2>AI 자동 자막 (음성 인식)</h2>
+        <div class="m-desc">영상의 음성을 인식해 단어 타임스탬프가 달린 클립을 자동 생성합니다. 기존 클립은 대체됩니다(Ctrl+Z로 복구 가능).</div>
+        <div class="stt-modes">
+            <button class="stt-mode on" data-mode="local"><b>🖥️ 브라우저 로컬</b>API 키 불필요 · 무료 · 음성이 밖으로 나가지 않음</button>
+            <button class="stt-mode" data-mode="api"><b>☁️ Whisper API</b>OpenAI 호환 API · 빠르고 정확 · 키 필요</button>
+        </div>
+        <div class="stt-form" id="stt-form-local">
+            <label><span>모델 크기</span>
+                <select id="stt-model-size">
+                    <option value="tiny">tiny — 약 40MB, 빠름, 정확도 낮음</option>
+                    <option value="base" selected>base — 약 80MB, 균형 (권장 시작점)</option>
+                    <option value="small">small — 약 250MB, 느리지만 가장 정확</option>
+                </select></label>
+            <label><span>언어</span>
+                <select id="stt-lang-local">
+                    <option value="korean" selected>한국어</option>
+                    <option value="english">영어</option>
+                    <option value="auto">자동 감지</option>
+                </select></label>
+        </div>
+        <div class="stt-form" id="stt-form-api" style="display:none">
+            <label><span>API 주소</span><input type="text" id="stt-endpoint" value="https://api.openai.com/v1/audio/transcriptions"></label>
+            <label><span>API 키</span><input type="password" id="stt-key" placeholder="sk-..."></label>
+            <label><span>모델</span><input type="text" id="stt-model-api" value="whisper-1"></label>
+            <label><span>언어</span>
+                <select id="stt-lang-api">
+                    <option value="ko" selected>한국어</option>
+                    <option value="en">영어</option>
+                    <option value="">자동 감지</option>
+                </select></label>
+        </div>
+        <div class="stt-note" id="stt-note-local">
+            처음 실행 시 모델을 내려받으며(인터넷 필요) 이후엔 브라우저에 캐시되어 오프라인으로도 동작합니다.
+            인식은 CPU(WASM)에서 실행되어 영상 길이에 따라 수 분이 걸릴 수 있습니다. 한국어는 base 이상을 권장합니다.
+        </div>
+        <div class="stt-note" id="stt-note-api" style="display:none">
+            음성은 16kHz 모노 WAV로 변환되어 입력한 API 주소로만 전송됩니다. 키는 이 브라우저의 localStorage에만 저장됩니다.
+            Groq 등 OpenAI 호환 서버도 주소/모델만 바꾸면 사용할 수 있습니다.
+        </div>
+        <div id="stt-progress">
+            <div class="bar"><div class="fill" id="stt-fill"></div></div>
+            <div class="lbl" id="stt-lbl">준비 중…</div>
+        </div>
+        <div class="close-row">
+            <button class="top-btn" data-close>닫기</button>
+            <button class="top-btn primary" id="btn-stt-start">🎙️ 자막 생성 시작</button>
+        </div>
+    </div>
+</div>
+
 <!-- 도움말 모달 -->
 <div class="modal-back" id="modal-help">
     <div class="modal">
@@ -302,6 +372,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
         <div class="m-desc">Vrew 방식의 "텍스트로 영상 편집" 클론 프로토타입입니다. 모든 처리가 브라우저 안에서만 이루어집니다(업로드 없음).</div>
         <div class="help-body">
             <b>1. 불러오기</b> — 파일 탭에서 영상(mp4/webm)을 불러온 뒤, SRT 자막을 불러오거나 대본을 붙여넣으면 단어 단위 클립이 생성됩니다.<br>
+            <b>1-1. AI 자동 자막</b> — 자막 탭에서 음성 인식으로 클립을 자동 생성할 수 있습니다. 브라우저 로컬(Whisper, 무료·키 불필요) 또는 OpenAI 호환 API 중 선택하세요.<br>
             <b>2. 단어 컷 편집</b> — 단어 칩 클릭으로 선택(<kbd>Shift</kbd> 범위, <kbd>Ctrl</kbd> 다중), <kbd>Delete</kbd> 또는 편집 탭 ✂️로 컷. 컷한 단어의 영상 구간은 재생·내보내기에서 건너뜁니다. 다시 선택해 ♻️ 복원.<br>
             <b>3. 자막 수정</b> — 클립 아래 💬 줄을 클릭해 오타를 고치면 단어 칩이 다시 배분됩니다.<br>
             <b>4. 클립 다듬기</b> — 단어를 선택하고 🧩 분할하면 그 단어부터 새 클립, 🔗 병합은 아래 클립과 합칩니다.<br>
@@ -982,6 +1053,175 @@ async function exportWebm() {
     requestAnimationFrame(drawFrame);
 }
 
+// ── AI 자동 자막 (STT) ────────────────────────────
+// 공통: 오디오 16kHz 모노 추출
+async function extractAudio16k(file) {
+    const buf = await file.arrayBuffer();
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await ac.decodeAudioData(buf);
+    ac.close();
+    const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+    const src = off.createBufferSource();
+    src.buffer = decoded; src.connect(off.destination); src.start();
+    return (await off.startRendering()).getChannelData(0);
+}
+function encodeWav16k(f32) {
+    const n = f32.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 16000, true);
+    v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    ws(36, 'data'); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f32[i])) * 0x7fff, true);
+    return new Blob([buf], { type: 'audio/wav' });
+}
+// 단어 목록 → 클립 그룹핑 (0.6초 이상 휴지 / 문장부호 / 12단어 초과에서 분할)
+function wordsToClips(words) {
+    const ws = (words || [])
+        .map(w => ({ text: String(w.text || '').trim(), start: +w.start, end: +w.end }))
+        .filter(w => w.text && isFinite(w.start))
+        .sort((a, b) => a.start - b.start);
+    for (let i = 0; i < ws.length; i++) {
+        if (!isFinite(ws[i].end) || ws[i].end <= ws[i].start)
+            ws[i].end = ws[i].start + Math.max(0.15, ws[i].text.length * 0.07); // 마지막 단어 end가 null인 whisper 출력 보정
+        if (i > 0 && ws[i].start < ws[i - 1].end) ws[i].start = ws[i - 1].end;
+        if (ws[i].end <= ws[i].start) ws[i].end = ws[i].start + 0.1;
+    }
+    const clips = []; let cur = [];
+    const flush = () => {
+        if (cur.length) clips.push({ id: nid(), words: cur.map(w => ({ id: nid(), text: w.text, start: w.start, end: w.end, cut: false })) });
+        cur = [];
+    };
+    for (const w of ws) {
+        const prev = cur[cur.length - 1];
+        if (prev && (w.start - prev.end > 0.6 || cur.length >= 12 || /[.?!…]$/.test(prev.text))) flush();
+        cur.push(w);
+    }
+    flush();
+    return clips;
+}
+function applyTranscript(words, label) {
+    const clips = wordsToClips(words);
+    if (!clips.length) { toast('인식된 음성이 없습니다'); return 0; }
+    pushUndo();
+    state.clips = clips;
+    if (!state.video.loaded) state.video.duration = Math.max(state.video.duration, clipEnd(clips[clips.length - 1]) + 0.5);
+    state.currentClipId = clips[0].id;
+    state.selection.clear();
+    renderAll();
+    toast(`${label}: 클립 ${clips.length}개 / 단어 ${clips.reduce((a, c) => a + c.words.length, 0)}개 생성`);
+    return clips.length;
+}
+
+let sttBusy = false, sttMode = 'local';
+const sttProgress = (pct, msg) => {
+    $('#stt-progress').style.display = 'block';
+    if (pct != null) $('#stt-fill').style.width = Math.min(100, pct) + '%';
+    $('#stt-lbl').textContent = msg;
+};
+const TRANSFORMERS_CDNS = [
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3/dist/transformers.min.js',
+    'https://unpkg.com/@huggingface/transformers@3.3.3/dist/transformers.min.js',
+];
+let transformersMod = null, asrPipe = null, asrPipeKey = '';
+async function sttLocal() {
+    const size = $('#stt-model-size').value, lang = $('#stt-lang-local').value;
+    sttProgress(2, 'transformers.js 로드 중…');
+    if (!transformersMod) {
+        let lastErr;
+        for (const url of TRANSFORMERS_CDNS) {
+            try { transformersMod = await import(url); break; } catch (e) { lastErr = e; }
+        }
+        if (!transformersMod) throw new Error('transformers.js 로드 실패 — 인터넷 연결을 확인하세요 (' + (lastErr?.message || '') + ')');
+    }
+    const key = 'Xenova/whisper-' + size;
+    if (!asrPipe || asrPipeKey !== key) {
+        const files = {};
+        asrPipe = await transformersMod.pipeline('automatic-speech-recognition', key, {
+            dtype: 'q8',
+            progress_callback: p => {
+                if (p.status === 'progress' && p.total) {
+                    files[p.file] = [p.loaded, p.total];
+                    const [l, t] = Object.values(files).reduce((a, b) => [a[0] + b[0], a[1] + b[1]], [0, 0]);
+                    sttProgress(l / t * 60, `모델 다운로드 중… ${(l / 1048576).toFixed(1)} / ${(t / 1048576).toFixed(1)} MB (최초 1회, 이후 캐시)`);
+                }
+            },
+        });
+        asrPipeKey = key;
+    }
+    sttProgress(62, '오디오 추출 중…');
+    const audio = await extractAudio16k(state.video.file);
+    sttProgress(70, `음성 인식 중… (${size} 모델, CPU 실행이라 다소 걸립니다)`);
+    const out = await asrPipe(audio, {
+        language: lang === 'auto' ? null : lang, task: 'transcribe',
+        return_timestamps: 'word', chunk_length_s: 30, stride_length_s: 5,
+    });
+    sttProgress(95, '클립 생성 중…');
+    return (out.chunks || []).map(c => ({ text: c.text, start: c.timestamp?.[0], end: c.timestamp?.[1] }));
+}
+async function sttApi() {
+    const endpoint = $('#stt-endpoint').value.trim(), key = $('#stt-key').value.trim();
+    const model = $('#stt-model-api').value.trim() || 'whisper-1', lang = $('#stt-lang-api').value;
+    if (!endpoint) throw new Error('API 주소를 입력하세요');
+    if (!key) throw new Error('API 키를 입력하세요');
+    localStorage.setItem('vrew-clone-stt', JSON.stringify({ endpoint, key, model }));
+    sttProgress(10, '오디오 추출 → 16kHz WAV 변환 중…');
+    const wav = encodeWav16k(await extractAudio16k(state.video.file));
+    if (wav.size > 25 * 1048576) throw new Error(`오디오가 ${(wav.size / 1048576).toFixed(0)}MB로 API 한도(25MB)를 넘습니다 — 영상을 나눠주세요`);
+    sttProgress(35, `API 전송 중… (${(wav.size / 1048576).toFixed(1)}MB)`);
+    const form = new FormData();
+    form.append('file', wav, 'audio.wav');
+    form.append('model', model);
+    form.append('response_format', 'verbose_json');
+    form.append('timestamp_granularities[]', 'word');
+    form.append('timestamp_granularities[]', 'segment');
+    if (lang) form.append('language', lang);
+    const res = await fetch(endpoint, { method: 'POST', headers: { Authorization: 'Bearer ' + key }, body: form });
+    if (!res.ok) throw new Error(`API 오류 ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    sttProgress(85, '응답 해석 중…');
+    const data = await res.json();
+    if (Array.isArray(data.words) && data.words.length)
+        return data.words.map(w => ({ text: w.word, start: w.start, end: w.end }));
+    // 단어 타임스탬프 미지원 서버 → 세그먼트를 글자 수 비례로 배분
+    if (Array.isArray(data.segments))
+        return data.segments.flatMap(s => distributeWords(s.text || '', s.start, s.end)
+            .map(w => ({ text: w.text, start: w.start, end: w.end })));
+    throw new Error('응답에 words/segments가 없습니다');
+}
+async function runStt() {
+    if (sttBusy) return;
+    if (!state.video.loaded || !state.video.file) { toast('영상 파일을 먼저 불러오세요 (파일 탭)'); return; }
+    sttBusy = true;
+    $('#btn-stt-start').disabled = true;
+    try {
+        const words = sttMode === 'local' ? await sttLocal() : await sttApi();
+        const n = applyTranscript(words, sttMode === 'local' ? '브라우저 음성 인식' : 'Whisper API');
+        if (n) $('#modal-stt').classList.remove('open');
+    } catch (e) {
+        sttProgress(0, '실패: ' + e.message);
+        toast('자막 생성 실패: ' + e.message);
+    } finally {
+        sttBusy = false;
+        $('#btn-stt-start').disabled = false;
+        setTimeout(() => { if (!sttBusy) $('#stt-progress').style.display = 'none'; }, 4000);
+    }
+}
+function openSttModal(mode) {
+    sttMode = mode;
+    $$('.stt-mode').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    $('#stt-form-local').style.display = mode === 'local' ? '' : 'none';
+    $('#stt-note-local').style.display = mode === 'local' ? '' : 'none';
+    $('#stt-form-api').style.display = mode === 'api' ? '' : 'none';
+    $('#stt-note-api').style.display = mode === 'api' ? '' : 'none';
+    $('#modal-stt').classList.add('open');
+}
+$$('.stt-mode').forEach(b => b.addEventListener('click', () => openSttModal(b.dataset.mode)));
+$('#btn-stt-start').addEventListener('click', runStt);
+try {
+    const saved = JSON.parse(localStorage.getItem('vrew-clone-stt') || 'null');
+    if (saved) { $('#stt-endpoint').value = saved.endpoint || $('#stt-endpoint').value; $('#stt-key').value = saved.key || ''; $('#stt-model-api').value = saved.model || 'whisper-1'; }
+} catch (e) { /* 저장값 손상 시 기본값 유지 */ }
+
 // ── 애셋 데이터 ──────────────────────────────────
 const ASSETS = [
     { char: '🥣', name: '그릭 요거트', tags: '그릭 요거트 요거트 식사 아침', cat: 'image', bg: '#fdf1e0' },
@@ -1068,6 +1308,13 @@ const RIBBONS = {
         { ico: '🧩', label: '클립 분할<br>(선택 단어 앞)', act: splitClip },
         { ico: '🔗', label: '아래 클립과<br>병합', act: mergeClip },
         { ico: '🗑️', label: '클립 전체<br>컷', act: cutWholeClip },
+    ],
+    subtitle: [
+        { ico: '🤖', label: 'AI 자동 자막<br>(브라우저 로컬)', act: () => openSttModal('local') },
+        { ico: '☁️', label: 'AI 자동 자막<br>(Whisper API)', act: () => openSttModal('api') },
+        { sep: true },
+        { ico: '💬', label: 'SRT 자막<br>불러오기', act: () => $('#file-srt').click() },
+        { ico: '📝', label: '대본으로<br>클립 만들기', act: () => $('#modal-script').classList.add('open') },
     ],
     insert: [
         { ico: '🖼️', label: '무료 이미지<br>·비디오', act: () => { $('#asset-pane').classList.remove('hidden'); assetCat = 'all'; syncCat(); renderAssets(); } },
@@ -1202,6 +1449,7 @@ $$('.modal-back').forEach(m => {
     m.addEventListener('click', e => {
         if (e.target === m || e.target.closest('[data-close]')) {
             if (m.id === 'modal-export' && state.exporting) return toast('렌더링 중에는 닫을 수 없습니다');
+            if (m.id === 'modal-stt' && sttBusy) return toast('음성 인식 중에는 닫을 수 없습니다');
             m.classList.remove('open');
         }
     });
@@ -1218,6 +1466,7 @@ window.addEventListener('keydown', e => {
 window.__vrew = {
     state, cutRanges, editedDuration, toEditedTime, buildSrt, buildCutJson,
     setT, getT, play, pause, loadDemo, undo, redo,
+    wordsToClips, applyTranscript, extractAudio16k, encodeWav16k,
 };
 
 // ── 시작 ─────────────────────────────────────────
