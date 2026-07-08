@@ -538,8 +538,28 @@ function setT(t) {
 function play() {
     if (getT() >= state.video.duration - 0.02) setT(firstKeptTime(0));
     state.playing = true;
-    if (state.video.loaded) { video.playbackRate = state.speed; video.play(); }
+    if (state.video.loaded) {
+        video.playbackRate = state.speed;
+        // 내보내기에서 오디오를 AudioContext로 라우팅한 뒤 컨텍스트가 잠들면 소리가 사라짐
+        if (audioRouted && audioRouted.ac.state === 'suspended') audioRouted.ac.resume();
+        const p = video.play();
+        if (p) p.catch(e => { pause(); toast('재생이 차단되었습니다: ' + e.message); });
+        checkAudioPresence();
+    }
     $('#btn-play').textContent = '❚❚';
+}
+// 재생 시작 후에도 오디오가 전혀 디코딩되지 않으면 원인을 안내 (파일별 1회)
+let audioWarnedFor = '';
+function checkAudioPresence() {
+    if (video.webkitAudioDecodedByteCount === undefined) return; // 크롬 계열 외에는 감지 불가
+    if (audioWarnedFor === state.video.name) return;
+    setTimeout(() => {
+        if (!state.playing || !state.video.loaded || audioWarnedFor === state.video.name) return;
+        if (video.currentTime > 0.8 && video.webkitAudioDecodedByteCount === 0) {
+            audioWarnedFor = state.video.name;
+            toast('⚠️ 이 영상에서 오디오가 감지되지 않습니다 — 오디오 트랙이 없거나 브라우저가 지원하지 않는 코덱(AC-3 등)일 수 있어요. 영상을 AAC 오디오의 MP4로 변환해 보세요.');
+        }
+    }, 1800);
 }
 function pause() {
     state.playing = false;
@@ -825,6 +845,7 @@ $('#file-video').addEventListener('change', e => {
     const url = URL.createObjectURL(f);
     video.src = url;
     const ready = dur => {
+        video.muted = false; video.volume = 1;
         state.video = { loaded: true, name: f.name, duration: dur, url, file: f };
         $('#stage-video').style.display = 'block';
         $('#stage-demo').style.display = 'none';
@@ -998,7 +1019,8 @@ function saveProject() {
 let audioRouted = null;
 async function exportWebm() {
     if (state.exporting) return;
-    if (!state.clips.length) return toast('클립이 없습니다');
+    // 자막 클립 없이 무음 컷만 한 영상도 내보낼 수 있어야 함
+    if (!state.clips.length && !state.video.loaded) return toast('영상을 불러오거나 클립을 만들어주세요');
     const canvas = $('#export-canvas'), ctx = canvas.getContext('2d');
     const vStream = canvas.captureStream(30);
     const vTrack = vStream.getVideoTracks()[0];
