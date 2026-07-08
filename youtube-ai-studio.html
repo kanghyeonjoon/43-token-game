@@ -100,6 +100,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 .topic .ti i{display:inline-block;width:5px;height:5px;border-radius:99px;background:var(--mut);margin-right:3px;animation:blink 1s infinite}
 .topic .ti i:nth-child(2){animation-delay:.2s}.topic .ti i:nth-child(3){animation-delay:.4s}
 #stopBtn{border-color:var(--pri);color:var(--pri)}
+/* ---- 스트리밍 커서 · 회의 구분선 · 스코어 추이 ---- */
+.cur{display:inline-block;width:2px;margin-left:1px;color:var(--pri);animation:blink 1s infinite;font-weight:800}
+.mdiv{text-align:center;color:var(--mut);font-size:11.5px;margin:12px 0;letter-spacing:.2px}
+.scd{font-size:10.5px;font-weight:800;margin-left:5px;font-variant-numeric:tabular-nums}
+.scd.up{color:var(--ok)}.scd.dn{color:var(--pri)}
+.r2lab{display:none;align-items:center;gap:5px;font-size:11.5px;color:var(--ink2);font-weight:600;cursor:pointer;white-space:nowrap}
+.r2lab input{accent-color:var(--pri)}
 .runallbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 /* ---- modal ---- */
 .modal{position:fixed;inset:0;background:rgba(20,18,15,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
@@ -183,7 +190,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <div class="stagehead">
         <span class="emp" id="stEmp"></span>
         <span class="pill p-gray" id="stStatus">대기</span>
+        <span class="pill" id="stVerdict" style="display:none"></span>
         <span class="sp"></span>
+        <label class="r2lab" id="meetR2Wrap" title="쟁점이 갈릴 때 — 전원이 서로의 발언을 반박·보완하는 라운드를 한 번 더 (호출 +5회)"><input type="checkbox" id="meetR2">🔁 반박 라운드</label>
+        <button class="btn sm" id="prevMeetBtn" style="display:none" onclick="togglePrevMeet()">🗂 이전 회의록</button>
         <button class="btn sm pri" id="stRunBtn" onclick="runStage(curStage)">🤖 맡기기</button>
         <button class="btn sm" onclick="reviewStage(curStage)">🔍 검수</button>
         <button class="btn sm" onclick="restorePrev(curStage)">↩ 이전 버전</button>
@@ -214,7 +224,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
   <div class="mbox">
     <h2>⚙ 설정 — AI 연결</h2>
     <div class="sub" style="font-size:12px;color:var(--mut);margin-bottom:14px">Anthropic Claude API로 동작합니다 · 키 발급: console.anthropic.com → API Keys</div>
-    <div class="field"><label style="width:70px">API 키</label><input id="setKey" type="password" placeholder="sk-ant-..."></div>
+    <div class="field"><label style="width:70px">API 키</label><input id="setKey" type="password" placeholder="sk-ant-..."><button class="btn sm" onclick="const k=document.getElementById('setKey');k.type=k.type==='password'?'text':'password';this.textContent=k.type==='password'?'👁':'🙈'" title="키 표시/숨김">👁</button></div>
     <div class="field"><label style="width:70px">상태</label><span class="pill p-gray" id="setSt">미연결 — 데모 모드</span>
       <button class="btn sm pri" onclick="testKey()">연결 테스트</button>
       <button class="btn sm" onclick="clearKey()">키 삭제</button></div>
@@ -223,7 +233,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
       <b>본인 PC에서만</b> 사용하세요 — 파일을 팀에 공유하거나 웹에 올릴 때는 키를 삭제하고,
       서버 프록시(예: Supabase Edge Function) 방식으로 전환해야 합니다.
       Anthropic 콘솔에서 <b>월 사용 한도(Spend limit)</b>를 걸어두는 것을 권장합니다.</div>
-    <div class="note" style="margin-bottom:14px">모델: claude-opus-4-8 · 업무 1건 = 호출 1회 · 전체 실행 = 4회. 사용량은 상단에 표시됩니다.</div>
+    <div class="note" style="margin-bottom:14px">모델: claude-opus-4-8 · 업무 1건 = 호출 1회 · 회의 = 6회(반박 라운드 시 11회) · 전체 실행 = 5회 · 주제 발굴 = 1회. 사용량은 상단에 표시됩니다.</div>
     <div style="text-align:right"><button class="btn" onclick="closeSettings()">닫기</button></div>
   </div>
 </div>
@@ -498,7 +508,7 @@ function newProject(name){
   return {name:name||'새 프로젝트',
     brief:{channel:'',category:'',target:'',tone:'',banned:'',sponsor:'',topic:'',length:'',doc:''},
     stages:{meet:{content:'',prev:''},plan:{content:'',prev:''},script:{content:'',prev:''},edit:{content:'',prev:''},pack:{content:'',prev:''},upload:{content:'',prev:''}},
-    meeting:[], topics:[], scores:null, log:[], usage:{inp:0,out:0,calls:0}};
+    meeting:[], meetingPrev:[], topics:[], scores:null, scoresPrev:null, log:[], usage:{inp:0,out:0,calls:0}};
 }
 function demoProject(){
   const p=newProject('예시 — 첫 ETF 가이드');
@@ -512,7 +522,7 @@ function load(){
   try{const d=JSON.parse(localStorage.getItem(LS_PROJ));if(d&&d.projects&&d.projects.length){
     projects=d.projects;curIdx=Math.min(d.curIdx||0,projects.length-1);
     // 마이그레이션 — 이전 버전 프로젝트에 없는 단계·회의록 보강
-    projects.forEach(p=>{ORDER.forEach(k=>{if(!p.stages[k])p.stages[k]={content:'',prev:''}});if(!p.meeting)p.meeting=[];if(!p.topics)p.topics=[];if(p.scores===undefined)p.scores=null;if(p.brief.doc===undefined)p.brief.doc=''});
+    projects.forEach(p=>{ORDER.forEach(k=>{if(!p.stages[k])p.stages[k]={content:'',prev:''}});if(!p.meeting)p.meeting=[];if(!p.meetingPrev)p.meetingPrev=[];if(!p.topics)p.topics=[];if(p.scores===undefined)p.scores=null;if(p.scoresPrev===undefined)p.scoresPrev=null;if(p.brief.doc===undefined)p.brief.doc=''});
     return}}catch(e){}
   projects=[demoProject()];curIdx=0;
 }
@@ -554,6 +564,16 @@ function renderStage(){
   const pill=document.getElementById('stStatus');
   if(st.content){pill.textContent=meet?'합의서 확정 · 수정 가능':'작성됨 · 수정 가능';pill.className='pill p-ok'}
   else{pill.textContent=meet?'회의 전':'대기';pill.className='pill p-gray'}
+  // 업로드 판정 배지 (ToT P2)
+  const vb=document.getElementById('stVerdict');
+  const verdict=(curStage==='upload'&&st.content)?parseVerdict(st.content):null;
+  if(verdict){vb.textContent=verdict.label;vb.className='pill '+verdict.c;vb.style.display=''}
+  else vb.style.display='none';
+  // 회의 전용 컨트롤 — 반박 라운드 체크박스 · 이전 회의록 토글
+  document.getElementById('meetR2Wrap').style.display=meet?'inline-flex':'none';
+  const pmb=document.getElementById('prevMeetBtn');
+  pmb.style.display=(meet&&(P().meetingPrev||[]).length)?'':'none';
+  pmb.textContent=showPrevMeet?'↩ 현재 회의록':'🗂 이전 회의록';
   document.getElementById('stReview').style.display='none';
   document.getElementById('stFb').value='';
   renderMeetChat();
@@ -563,22 +583,41 @@ function renderStage(){
 function bubbleHTML(meta,name,title,sayHtml){
   return '<div class="cb" style="border-left-color:'+meta.c+'"><span class="who"><span class="avatar" style="background:'+meta.c+'">'+meta.ico+'</span><span>'+esc(name)+'<small>'+esc(title)+'</small></span></span><span class="say">'+sayHtml+'</span></div>';
 }
-function renderMeetChat(typingKey){
-  const c=document.getElementById('meetChat');
-  const m=P().meeting||[];
-  if(curStage!=='meet'||(!m.length&&!typingKey)){c.style.display='none';c.innerHTML='';return}
-  c.style.display='block';
-  let html=m.map(x=>{
+let showPrevMeet=false;
+function togglePrevMeet(){showPrevMeet=!showPrevMeet;renderMeetChat();
+  const b=document.getElementById('prevMeetBtn');if(b)b.textContent=showPrevMeet?'↩ 현재 회의록':'🗂 이전 회의록'}
+function transcriptHTML(m){
+  return m.map(x=>{
+    if(x.key==='sys')return '<div class="mdiv">'+esc(x.text)+'</div>';
     const k=x.key||OLDROLE[x.who];
     const meta=HUMANS[k]||{ico:'🤖',c:'#8b877e',name:x.who,title:''};
     return bubbleHTML(meta,HUMANS[k]?HUMANS[k].name:x.who,HUMANS[k]?HUMANS[k].title:'',esc(x.text));
   }).join('');
+}
+function renderMeetChat(typingKey,liveText){
+  const c=document.getElementById('meetChat');
+  const m=P().meeting||[];
+  if(curStage!=='meet'||(!m.length&&!typingKey&&!showPrevMeet)){c.style.display='none';c.innerHTML='';return}
+  c.style.display='block';
+  if(showPrevMeet&&!typingKey){ // 이전 회의록 보기 (재회의 비교용, ToT P2)
+    const pm=P().meetingPrev||[];
+    c.innerHTML='<div class="mdiv">🗂 이전 회의록 — 재회의 전 기록 (읽기 전용)</div>'+(pm.length?transcriptHTML(pm):'<div class="mdiv">이전 회의록이 없습니다</div>');
+    c.scrollTop=0;return;
+  }
+  let html=transcriptHTML(m);
   if(typingKey){
     const h=HUMANS[typingKey];
-    html+=bubbleHTML(h,h.name,h.title,'<span class="ti"><i></i><i></i><i></i></span> <span style="color:var(--mut)">'+(typingKey==='plan'&&m.length>=5?'회의록을 정리해 합의서를 쓰는 중':'생각을 정리해 발언하는 중')+'…</span>');
+    if(liveText)html+=bubbleHTML(h,h.name,h.title,'<span id="liveSay">'+esc(liveText)+'</span><span class="cur">▍</span>');
+    else html+=bubbleHTML(h,h.name,h.title,'<span class="ti"><i></i><i></i><i></i></span> <span style="color:var(--mut)">'+(typingKey==='plan'&&m.length>=5?'회의록을 정리해 합의서를 쓰는 중':'생각을 정리해 발언하는 중')+'…</span>');
   }
   c.innerHTML=html;
   c.scrollTop=c.scrollHeight;
+}
+/* 발언 스트리밍 — 델타마다 마지막 말풍선만 갱신 (전체 리렌더 없이) */
+function meetLive(key,text){
+  const el=document.getElementById('liveSay');
+  if(el){el.textContent=text;const c=document.getElementById('meetChat');c.scrollTop=c.scrollHeight}
+  else renderMeetChat(key,text);
 }
 /* ---- 팀 현황 (실시간 상태) ---- */
 function crewSet(k,label,on){const el=document.getElementById('cst-'+k);if(el)el.innerHTML='<span class="cdot'+(on?' on':'')+'"></span>'+esc(label)}
@@ -597,16 +636,33 @@ function parseScores(txt){
   return{sheet:String(txt).replace(m[0],'').trim(),scores:sc};
 }
 function renderScore(){
-  const card=document.getElementById('scoreCard'),sc=P().scores;
+  const card=document.getElementById('scoreCard'),sc=P().scores,pv=P().scoresPrev;
   if(curStage!=='meet'||!sc){card.style.display='none';return}
   card.style.display='block';
   const total=Math.round((sc.trend+sc.value+sc.buzz+sc.feas+sc.safe)*2);
-  document.getElementById('scTotal').textContent='팀 자평 총점 '+total+'/100';
+  let totalTxt='팀 자평 총점 '+total+'/100';
+  if(pv){ // 재회의 시 이전 점수와 비교 (ToT P2)
+    const pt=Math.round((pv.trend+pv.value+pv.buzz+pv.feas+pv.safe)*2),d=total-pt;
+    if(d)totalTxt+=' ('+(d>0?'▲+':'▼')+d+')';
+  }
+  document.getElementById('scTotal').textContent=totalTxt;
   const anyLow=AXES.some(([k])=>sc[k]<=4);
-  document.getElementById('scBars').innerHTML=AXES.map(([k,label,desc])=>
-    '<div class="scrow" title="'+esc(desc)+'"><span class="scl">'+label+(sc[k]<=4?' ⚠':'')+'</span><span class="sct"><span class="scf" style="width:'+(sc[k]*10)+'%"></span></span><span class="scv num">'+sc[k]+'</span></div>'
-  ).join('');
-  document.getElementById('scComment').textContent=(sc.comment?'💬 '+sc.comment:'')+(anyLow?' · ⚠ 4점 이하 축은 보완(회의 재논의 또는 합의서 수정) 후 제작 권장':'');
+  document.getElementById('scBars').innerHTML=AXES.map(([k,label,desc])=>{
+    let delta='';
+    if(pv&&pv[k]!==undefined&&pv[k]!==sc[k]){const d=sc[k]-pv[k];delta='<span class="scd '+(d>0?'up':'dn')+'">'+(d>0?'▲+':'▼')+d+'</span>'}
+    return '<div class="scrow" title="'+esc(desc)+'"><span class="scl">'+label+(sc[k]<=4?' ⚠':'')+'</span><span class="sct"><span class="scf" style="width:'+(sc[k]*10)+'%"></span></span><span class="scv num">'+sc[k]+delta+'</span></div>';
+  }).join('');
+  document.getElementById('scComment').textContent=(sc.comment?'💬 '+sc.comment:'')+(anyLow?' · ⚠ 4점 이하 축은 보완(회의 재논의 또는 합의서 수정) 후 제작 권장':'')+(pv?' · 추이는 직전 회의 대비':'');
+}
+/* ---- 업로드 판정 배지 (ToT P2) — 검수 실장의 판정을 UI 배지로 승격 ---- */
+function parseVerdict(t){
+  const m=String(t||'').match(/판정[^\n]*/);
+  if(!m)return null;
+  const line=m[0];
+  if(line.includes('⛔')||line.includes('보류'))return{c:'p-red',label:'⛔ 게시 보류'};
+  if(line.includes('⚠')||line.includes('조건부'))return{c:'p-amber',label:'⚠ 조건부 게시'};
+  if(line.includes('✅')||line.includes('가능'))return{c:'p-ok',label:'✅ 게시 가능'};
+  return null;
 }
 function renderLog(){
   const l=P().log;
@@ -638,7 +694,7 @@ function bindBrief(){
     });
   });
 }
-function switchProj(i){curIdx=+i;save();renderAll()}
+function switchProj(i){curIdx=+i;showPrevMeet=false;save();renderAll()}
 function newProj(){
   const n=prompt('프로젝트 이름 (예: 클라이언트A — 3월 2편)','새 프로젝트');
   if(n===null)return;
@@ -678,7 +734,7 @@ function delProj(){
   if(!confirm(`'${P().name}' 프로젝트를 삭제할까요? 산출물도 함께 삭제됩니다.`))return;
   projects.splice(curIdx,1);curIdx=0;save();renderAll();
 }
-function switchStage(k){curStage=k;renderStage()}
+function switchStage(k){curStage=k;showPrevMeet=false;renderStage()}
 function saveStageText(){P().stages[curStage].content=document.getElementById('stOut').value;save();renderTabs()}
 function copyStage(){
   const txt=P().stages[curStage].content;
@@ -721,6 +777,66 @@ async function callClaude(system,user,maxTokens){
   let txt=(out.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
   if(out.stop_reason==='max_tokens')txt+='\n\n[⚠ 길이 제한으로 잘렸습니다 — "이어서 계속"으로 수정 지시하거나 업무를 나눠주세요]';
   return txt;
+}
+/* 스트리밍 호출 — 발언·산출물이 타이핑되듯 실시간으로 표시됩니다 (onText는 누적 전체 텍스트를 받음) */
+async function callClaudeStream(system,user,maxTokens,onText){
+  const key=localStorage.getItem(LS_KEY);
+  aborter=new AbortController();
+  let res;
+  try{
+    res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:MODEL,max_tokens:maxTokens||16000,thinking:{type:'adaptive'},stream:true,system,messages:[{role:'user',content:user}]}),
+      signal:aborter.signal,
+    });
+  }catch(err){
+    if(err&&(err.name==='AbortError'||stopReq))throw new Error('중단됨');
+    throw err;
+  }
+  if(!res.ok){
+    const out=await res.json().catch(()=>({}));
+    if(res.status===401)throw new Error('API 키가 올바르지 않습니다 — ⚙ 설정에서 다시 확인해 주세요');
+    if(res.status===429)throw new Error('사용량 한도 초과 — 잠시 후 다시 시도해 주세요');
+    throw new Error((out&&out.error&&out.error.message)||('HTTP '+res.status));
+  }
+  const reader=res.body.getReader(),dec=new TextDecoder();
+  let buf='',txt='',stop=null,inp=0,outk=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        let ev;try{ev=JSON.parse(line.slice(5))}catch(e){continue}
+        if(ev.type==='content_block_delta'&&ev.delta&&ev.delta.type==='text_delta'){
+          txt+=ev.delta.text;if(onText)onText(txt);
+        }else if(ev.type==='message_start'&&ev.message&&ev.message.usage){
+          inp=ev.message.usage.input_tokens||0;
+        }else if(ev.type==='message_delta'){
+          if(ev.usage)outk=ev.usage.output_tokens||outk;
+          if(ev.delta&&ev.delta.stop_reason)stop=ev.delta.stop_reason;
+        }else if(ev.type==='error'){
+          throw new Error((ev.error&&ev.error.message)||'스트리밍 오류');
+        }
+      }
+    }
+  }catch(err){
+    if(err&&(err.name==='AbortError'||stopReq))throw new Error('중단됨');
+    throw err;
+  }
+  const u=P().usage;u.inp+=inp;u.out+=outk;u.calls++;save();renderUsage();
+  if(stop==='refusal')throw new Error('요청이 정책상 처리되지 않았습니다 — 내용을 바꿔 다시 시도해 주세요');
+  if(stop==='max_tokens'){txt+='\n\n[⚠ 길이 제한으로 잘렸습니다 — "이어서 계속"으로 수정 지시하거나 업무를 나눠주세요]';if(onText)onText(txt)}
+  return txt;
+}
+/* 데모용 타자 효과 — 완성 텍스트를 조금씩 흘려보냄 (중지 즉시 반응) */
+async function typeOut(full,onText){
+  const step=Math.max(4,Math.round(full.length/42));
+  for(let i=step;i<full.length;i+=step){onText(full.slice(0,i));await sleepAbort(34)}
+  onText(full);
 }
 
 /* ================= 업무 지시문 조립 ================= */
@@ -804,11 +920,14 @@ async function runStage(k,feedback,silentUI){
   log(s.emp,feedback?`[${s.name}] 수정 지시 반영 중: ${feedback.slice(0,40)}`:`[${s.name}] 작성 시작`);
   try{
     let outTxt;
+    const ta=document.getElementById('stOut');
+    const liveOut=t=>{if(curStage===k){ta.value=t;ta.scrollTop=ta.scrollHeight}};   // 산출물도 타이핑되듯 실시간 표시
     if(hasKey()){
-      outTxt=await callClaude(k==='meet'?MEET_SYNTH:SYSTEMS[k],stageTask(k,feedback));
+      outTxt=await callClaudeStream(k==='meet'?MEET_SYNTH:SYSTEMS[k],stageTask(k,feedback),16000,liveOut);
     }else{
-      await sleepAbort(900);
+      await sleepAbort(450);
       outTxt=demoOut(k,feedback);
+      await typeOut(outTxt,liveOut);
     }
     const st=P().stages[k];
     if(st.content)st.prev=st.content;
@@ -842,10 +961,11 @@ async function reviewStage(k){
   try{
     let rv;
     if(hasKey()){
-      rv=await callClaude(SYSTEMS.review,`${briefText()}\n\n[검수 대상: ${STAGES[k].name}]\n${st.content}\n\n위 산출물을 검수해줘.`);
+      rv=await callClaudeStream(SYSTEMS.review,`${briefText()}\n\n[검수 대상: ${STAGES[k].name}]\n${st.content}\n\n위 산출물을 검수해줘.`,16000,t=>{box.textContent=t});
     }else{
-      await sleepAbort(900);
+      await sleepAbort(450);
       rv=DEMO_REVIEW;
+      await typeOut(rv,t=>{box.textContent=t});
     }
     box.textContent=rv+(hasKey()?'':'\n\n(데모 예시 — 실제 검수 아님)');
     log('서정우 실장',`[${STAGES[k].name}] 검수 완료${hasKey()?'':' (데모)'}`);
@@ -858,38 +978,52 @@ async function reviewStage(k){
 async function runMeeting(){
   if(busy){toast('이전 업무가 아직 진행 중이에요');return false}
   if(hasKey()&&!P().brief.topic){toast('대표 가이드라인(영상 주제)을 먼저 입력해 주세요 — [💡 주제 발굴]로 후보를 받을 수도 있어요');return false}
-  busy=true;beginWork();
+  busy=true;beginWork();showPrevMeet=false;
   if(curStage!=='meet')switchStage('meet');
   const btn=document.getElementById('stRunBtn');btn.disabled=true;
   const pill=document.getElementById('stStatus');
-  log('스튜디오','제작 킥오프 회의 시작 — 대표 가이드라인 기준, 전원 참석');
+  const r2el=document.getElementById('meetR2');
+  const round2=!!(r2el&&r2el.checked);   // 반박 라운드 (선택제, 호출 +5회 — ToT P2)
+  log('스튜디오','제작 킥오프 회의 시작 — 대표 가이드라인 기준, 전원 참석'+(round2?' + 반박 라운드':''));
+  if((P().meeting||[]).length)P().meetingPrev=P().meeting;   // 회의록 히스토리 — 재회의 시 이전 기록 보존 (ToT P2)
   P().meeting=[];save();renderMeetChat();
   MEET_ROLES.forEach(k=>crewSet(k,'회의 참석',false));
+  // 발언 1회 — 라이브는 SSE 스트리밍, 데모는 타자 효과로 실시간 표시 (ToT P2)
+  const speak=async(key,extra,label)=>{
+    const h=HUMANS[key];
+    pill.textContent='⏳ '+h.name+' '+h.title+' '+label+'…';pill.className='pill p-amber';
+    crewSet(key,label+'…',true);renderMeetChat(key);
+    let text;
+    if(hasKey())text=await callClaudeStream(MEET_PERSONA[key]+BRAINS[key]+MEET_RULES,meetTask(h.name+' ('+h.title+')')+extra,4000,t=>meetLive(key,t));
+    else{text=extra?DEMO_MEETING2[key]:DEMO_MEETING[key];await typeOut(text,t=>meetLive(key,t))}
+    P().meeting.push({key,who:h.name+' '+h.title,text});save();renderMeetChat();
+    crewSet(key,'회의 참석',false);
+    log(h.s,extra?'반박 라운드 발언':'회의 발언');
+  };
   try{
     // 1) 전원 발언 — 각자 앞선 발언을 읽고 반응하며 방향을 좁힌다
-    for(const key of MEET_ROLES){
-      const h=HUMANS[key];
-      pill.textContent='⏳ '+h.name+' '+h.title+' 발언 중…';pill.className='pill p-amber';
-      crewSet(key,'발언 중…',true);renderMeetChat(key);
-      let text;
-      if(hasKey())text=await callClaude(MEET_PERSONA[key]+BRAINS[key]+MEET_RULES,meetTask(h.name+' ('+h.title+')'),4000);
-      else{await sleepAbort(850);text=DEMO_MEETING[key]}
-      P().meeting.push({key,who:h.name+' '+h.title,text});save();renderMeetChat();
-      crewSet(key,'회의 참석',false);
-      log(h.s,'회의 발언');
+    for(const key of MEET_ROLES)await speak(key,'','발언 중');
+    // 1.5) 반박·보완 라운드 (선택)
+    if(round2){
+      P().meeting.push({key:'sys',who:'',text:'🔁 반박·보완 라운드 — 전원이 서로의 발언을 반박하거나 자기 안을 수정합니다'});save();renderMeetChat();
+      const R2='\n\n[반박·보완 라운드] 위 회의록 전체를 다시 읽으세요. 이번 발언에서는 딱 하나만: 동의하지 않는 지점을 근거와 함께 반박하거나, 다른 사람의 지적을 받아들여 자기 안을 수정·강화하세요. 이미 합의된 부분 반복 금지, 새 주제 금지. 3~5문장으로 짧게.';
+      for(const key of MEET_ROLES)await speak(key,R2,'반박 중');
     }
     // 2) 기획 PD가 회의록을 종합해 제작 방향 합의서 작성 + 팀 평가 점수
     pill.textContent='⏳ 차민준 PD — 합의서 정리 중…';
     crewSet('plan','합의서 정리 중…',true);renderMeetChat('plan');
+    const ta=document.getElementById('stOut');
+    const liveSheet=t=>{if(curStage==='meet'){ta.value=t;ta.scrollTop=ta.scrollHeight}};
     let sheet,scores;
     if(hasKey()){
-      const raw=await callClaude(MEET_SYNTH,meetTask('차민준 (기획 PD)')+'\n\n이제 발언이 아니라, 위 회의록 전체를 종합한 제작 방향 합의서를 작성하세요. 마지막 줄의 SCORES 형식을 지키세요.');
+      const raw=await callClaudeStream(MEET_SYNTH,meetTask('차민준 (기획 PD)')+'\n\n이제 발언이 아니라, 위 회의록 전체를 종합한 제작 방향 합의서를 작성하세요. 마지막 줄의 SCORES 형식을 지키세요.',16000,liveSheet);
       const p=parseScores(raw);sheet=p.sheet;scores=p.scores;
     }else{
-      await sleepAbort(850);sheet=DEMO_MEET_SHEET;scores={...DEMO_SCORES};
+      await typeOut(DEMO_MEET_SHEET,liveSheet);sheet=DEMO_MEET_SHEET;scores={...DEMO_SCORES};
     }
     const st=P().stages.meet;
     if(st.content)st.prev=st.content;
+    if(P().scores)P().scoresPrev=P().scores;   // 스코어 추이 — 직전 회의 점수와 비교 (ToT P2)
     st.content=sheet;P().scores=scores||null;save();
     log('차민준 PD','제작 방향 합의서 + 팀 평가 완료'+(hasKey()?'':' (데모)'));
     renderStage();
@@ -925,7 +1059,7 @@ async function runAll(){
 }
 
 /* ================= 주제 발굴 — 아이템 미팅 (기획 PD × 패키징 매니저) ================= */
-let topicOpen=false, topicBusy=false;
+let topicOpen=false, topicBusy=false, topicDraft=null;
 function closeTopics(){topicOpen=false;renderTopics()}
 function parseTopics(txt){
   const out=[];const re=/TOPIC:\s*(\{[^\n]*\})/g;let m;
@@ -934,18 +1068,21 @@ function parseTopics(txt){
   }
   return out;
 }
+function topicRow(t,i,live){
+  return '<li class="topic"><span class="tbody"><b>'+esc(t.t)+'</b><br><small style="color:var(--mut)">📌 '+esc(t.why)+' · 📦 '+esc(t.hook)+(t.risk&&t.risk!=='-'?' · 🔍 '+esc(t.risk):'')+'</small></span>'+(live?'':'<button class="btn sm pri" style="flex-shrink:0" onclick="pickTopic('+i+')">이 주제로</button>')+'</li>';
+}
 function renderTopics(){
   const card=document.getElementById('topicCard'),list=document.getElementById('topicList');
   const tp=P().topics||[];
   if(!topicOpen||(!topicBusy&&!tp.length)){card.style.display='none';return}
   card.style.display='block';
-  if(topicBusy){
-    list.innerHTML='<li class="topic"><span class="tbody"><span class="ti"><i></i><i></i><i></i></span> <span style="color:var(--mut)">차민준 PD와 한유진 매니저가 아이템 미팅 중'+(hasKey()?'':' (데모)')+'…</span></span></li>';
+  if(topicBusy){ // 미팅 진행 중 — 정리된 후보부터 하나씩 실시간으로 등장
+    const dr=topicDraft||[];
+    list.innerHTML=dr.map((t,i)=>topicRow(t,i,true)).join('')
+      +'<li class="topic"><span class="tbody"><span class="ti"><i></i><i></i><i></i></span> <span style="color:var(--mut)">'+(dr.length?'다음 후보를 논의하는 중':'차민준 PD와 한유진 매니저가 아이템 미팅 중'+(hasKey()?'':' (데모)'))+'…</span></span></li>';
     return;
   }
-  list.innerHTML=tp.map((t,i)=>
-    '<li class="topic"><span class="tbody"><b>'+esc(t.t)+'</b><br><small style="color:var(--mut)">📌 '+esc(t.why)+' · 📦 '+esc(t.hook)+(t.risk&&t.risk!=='-'?' · 🔍 '+esc(t.risk):'')+'</small></span><button class="btn sm pri" style="flex-shrink:0" onclick="pickTopic('+i+')">이 주제로</button></li>'
-  ).join('');
+  list.innerHTML=tp.map((t,i)=>topicRow(t,i,false)).join('');
 }
 async function topicIdeate(fb){
   if(busy){toast('이전 업무가 아직 진행 중이에요');return}
@@ -962,12 +1099,15 @@ async function topicIdeate(fb){
         +((b.topic||'').trim()?'\n\n[참고 — 대표가 적어둔 주제 메모. 이 방향이 좋으면 발전시키고, 아니면 더 나은 각을 제안]\n'+b.topic:'')
         +(fb?'\n\n[대표 피드백 — 이 방향에 맞는 후보로 전부 다시]\n'+fb:'')
         +'\n\n채널 브리프에 맞는 이번 영상 주제 후보 6개를 내주세요.';
-      const raw=await callClaude(TOPIC_SYS,user,4000);
+      const raw=await callClaudeStream(TOPIC_SYS,user,4000,t=>{
+        const ts=parseTopics(t);   // 후보 줄이 완성될 때마다 카드에 실시간 추가
+        if(ts.length!==(topicDraft?topicDraft.length:0)){topicDraft=ts;renderTopics()}
+      });
       topics=parseTopics(raw);
       if(!topics.length)throw new Error('후보 형식을 읽지 못했어요 — [🔄 다시 발굴]을 다시 눌러주세요');
     }else{
-      await sleepAbort(1100);
-      topics=DEMO_TOPICS.map(t=>({...t}));
+      topics=[];
+      for(const t of DEMO_TOPICS){await sleepAbort(430);topics.push({...t});topicDraft=topics.slice();renderTopics()}
     }
     P().topics=topics;save();
     log('차민준·한유진','주제 후보 '+topics.length+'개 제출'+(hasKey()?'':' (데모 예시)'));
@@ -975,7 +1115,7 @@ async function topicIdeate(fb){
   }catch(e){
     if(isStop(e)){log('차민준·한유진','아이템 미팅 중지 — 대표 지시');toast('⏹ 아이템 미팅을 중지했어요')}
     else{log('차민준·한유진','주제 발굴 실패: '+e.message);toast('주제 발굴 실패: '+e.message)}
-  }finally{busy=false;topicBusy=false;crewIdle();endWork();renderTopics()}
+  }finally{busy=false;topicBusy=false;topicDraft=null;crewIdle();endWork();renderTopics()}
 }
 function pickTopic(i){
   const t=(P().topics||[])[i];if(!t)return;
@@ -1191,6 +1331,14 @@ script:`방향 좋아요. 시청자가 지식이 아니라 '해냈다'를 가져
 edit:`세아 작가님 리액션체 좋은데요, 그거 살리려면 리액션마다 줌인 걸어야 해서 컷이 확 늘어나요. 뭐, 하겠습니다. 대신 부탁 셋만요. 훅에 체결 화면 쓰려면 촬영 전에 매수가 끝나 있어야 해요 — 본편 먼저 찍고 훅 컷은 마지막에 갑시다. 화면 녹화는 4K 원본으로 주세요. 마스킹하고 확대하면 1080은 다 깨져요, 그거 후반에서 지옥입니다. 그리고 바구니 그래픽은 우리가 그리죠. 남의 이미지 가져다 쓰면 나중에 골치 아파요. 컷 호흡은 훅 1.5초, 본편 4초로 보고 있습니다.`,
 pack:`솔직히 말할게요 — 이 주제, 유익한데 공유할 이유가 없어요. "야 이거 봐봐" 하고 보낼 트리거가 비어 있다는 거죠. 그래서 '퇴근길 12분 챌린지'로 프레임 하나 얹자는 제안입니다. 그러면 친구한테 보내는 영상이 돼요. 제목은 "첫 ETF, 퇴근길 12분이면 끝납니다" — 약속이 명확한 놈으로요. 오길비 영감님이 봤으면 좋아하셨을 겁니다. 도현 편집님, 훅 컷 찍을 때 썸네일 스틸 하나만 같이 부탁해요. 썸네일이랑 첫 장면이 같아야 클릭하고 나서 안 도망갑니다. 수익률 어그로는 금지사항이니까 애초에 버려요.`,
 review:`유진 매니저님 챌린지 프레임, 화제성엔 좋습니다. 선 하나만 긋죠 — "따라 하면 된다"로 읽히는 순간 문제예요. 금융이라 더요. 12분은 제목이랑 썸네일에 다 걸리는 약속이니까 실측 필수고, 크게 어긋나면 "점심시간 안에"로 바꿉니다. 이건 미결로 올릴게요. 손실 고지는 대본 첫 화면하고 설명문에 두 번. '고르는 기준'은 일반 기준까지만 — 특정 상품 찍어주는 순간 아웃입니다. BGM은 라이선스 확인 전에 픽스하지 마시고요. 그 문구들, 민원 오면 답변서 쓰는 건 접니다. 이대로면 갑니다.`,
+};
+/* 데모 반박 라운드 — 서로의 발언을 실제로 반박·수정하는 2라운드 예시 */
+const DEMO_MEETING2={
+plan:`정우 실장님 '점심시간 안에' 대체 카피, 저는 반대예요. 숫자가 흐려지는 순간 컨셉 전체가 물러집니다. 실측이 어긋나면 카피를 바꿀 게 아니라 값만 고치죠 — '15분이면 끝납니다'처럼. 자, 정리하면 — 숫자는 지키고 값만 조정. 이게 제 수정안입니다.`,
+script:`민준 PD님 기준 3개로 자르자는 거, 다시 보니 하나 걸려요. '보수'는 초보한테 용어부터 벽이거든요. 제가 환산 문장을 깔게요 — "1년 맡기면 커피 한 잔 값이 빠져나간다" 이런 식으로요. 그러면 기준 3개 유지해도 안 늘어져요.`,
+edit:`유진 매니저님 챌린지 프레임, 편집 입장에선 솔직히 부담이었어요. 타이머 오버레이 전 구간 유지는 화면이 계속 시끄럽습니다. 대신 시작이랑 끝 두 지점만 타이머 박고, 중간은 코너 스탬프로 가죠. 그 절충이면 저 찬성으로 돌아섭니다.`,
+pack:`도현 편집님 절충안 받을게요. 솔직히 말하면 전 구간 타이머는 저도 욕심이었어요. 대신 하나는 못 물러요 — 썸네일과 훅 첫 장면은 무조건 같은 그림이어야 합니다. 그게 깨지면 챌린지 프레임 자체가 안 살아요.`,
+review:`세아 작가님 커피 한 잔 값 비유, 좋은데 선 하나만 긋죠. 수치 비유엔 기준 시점이 필요해요 — '2026년 평균 보수 기준' 자막 한 줄 답니다. 민준 PD님 숫자 조정안은 동의합니다, 실측 후 값만 바꾸는 걸로. 이대로면 갑니다.`,
 };
 const DEMO_SCORES={trend:8,value:9,buzz:6,feas:8,safe:9,comment:'가치·안전은 탄탄. 약점은 화제성(6) — 챌린지 프레임 채택 여부를 미결에서 확정하면 7~8까지 올라갈 각.'};
 const DEMO_MEET_SHEET=`[데모 예시 — 제작 방향 합의서 · 실제 연결 시 회의록을 종합해 새로 작성됩니다]
