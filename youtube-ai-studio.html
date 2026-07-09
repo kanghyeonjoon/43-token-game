@@ -48,8 +48,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 .crew{list-style:none}
 .crew li{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.3px;align-items:baseline}
 .crew li:last-child{border-bottom:0}
+.crew li.ghost{opacity:.55}
+.crew .cinfo{flex:1;min-width:0}
 .crew .who{width:104px;flex-shrink:0;font-weight:800;color:var(--ink2)}
 .crew .what{color:var(--mut)}
+.cfire{margin-left:6px;border:0;background:none;color:var(--mut);font-size:11px;cursor:pointer;flex-shrink:0}
+.cfire:hover{color:var(--pri)}
 /* ---- log ---- */
 .log{list-style:none;max-height:300px;overflow-y:auto}
 .log li{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px;align-items:baseline}
@@ -72,11 +76,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 .reviewbox{white-space:pre-wrap;border:1px dashed var(--line2);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:12.5px;background:#fffdf7;display:none}
 /* ---- 회의록 ---- */
 .chat{display:none;margin-bottom:12px;max-height:440px;overflow-y:auto}
-.cb{display:flex;gap:10px;padding:10px 13px;border:1px solid var(--line);border-left-width:3px;border-radius:12px;background:#fcfbf9;margin-bottom:8px;font-size:12.5px;line-height:1.7}
-.cb .who{width:104px;flex-shrink:0;font-weight:800;color:var(--ink2);display:flex;gap:7px;align-items:flex-start}
-.cb .who small{display:block;font-weight:600;color:var(--mut);font-size:10.5px}
-.cb .say{white-space:pre-wrap;flex:1;min-width:0}
+.cb{padding:8px 12px;border:1px solid var(--line);border-left-width:3px;border-radius:10px;background:#fcfbf9;margin-bottom:6px;font-size:12.5px;line-height:1.55}
+.cb .who{display:flex;gap:6px;align-items:center;font-weight:800;color:var(--ink2);margin-bottom:3px}
+.cb .who small{font-weight:600;color:var(--mut);font-size:10.5px}
+.cb .say{white-space:pre-wrap}
 .avatar{width:26px;height:26px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0}
+.cb .avatar{width:20px;height:20px;font-size:10px}
 .cb .say .ti i{display:inline-block;width:5px;height:5px;border-radius:99px;background:var(--mut);margin-right:3px;animation:blink 1s infinite}
 .cb .say .ti i:nth-child(2){animation-delay:.2s}.cb .say .ti i:nth-child(3){animation-delay:.4s}
 @keyframes blink{50%{opacity:.15}}
@@ -228,9 +233,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(196,48,43,.25);bo
 
     <div class="card"><h2>🤖 AI 직원 팀 <span class="pill p-blue">회의 → 합의서 → 파이프라인</span></h2><div class="sub">대표 가이드라인으로 <b>킥오프 회의</b>(서로 발언을 읽고 반응) → 합의서 확정 → 전 직원이 같은 방향으로 제작합니다</div>
       <ul class="crew" id="crewList"></ul>
-      <div class="note" id="hireRow" style="margin-top:10px"></div>
-      <div class="note" style="margin-top:8px">🧠 = 빌려온 뇌 — 해당 분야 대가들의 공개된 원칙을 판단 기준으로 씁니다 (사칭이 아니라 기준 차용). 회의에서는 트렌드·콘텐츠 가치·화제성을 의무적으로 논의합니다.</div>
-      <div class="note" style="margin-top:10px">🔒 AI는 업로드 버튼을 누르지 않습니다 — 세팅 시트를 유튜브 스튜디오에 옮기고 게시하는 건 사람입니다.</div>
+      <div class="note" id="hireRow"></div>
+      <div class="note" style="margin-top:10px">🔒 AI는 업로드 버튼을 누르지 않습니다 — 게시는 사람이 합니다.</div>
     </div>
 
     <div class="card"><h2>📥 업무 보드 <span class="pill p-blue">대표 → 직원 자유 업무</span></h2>
@@ -375,13 +379,13 @@ const HUMANS={
 };
 /* 팀 카드 소개문 — 동적 렌더용 */
 const CREW_INFO={
-  plan:'컨셉·훅·구성안 — 🧠 미스터비스트 · 패디 갤러웨이 · 나영석',
-  script:'타임코드 풀 대본 — 🧠 케이시 나이스탯 · 로버트 맥키 · 이우정',
-  edit:'편집 지시서·챕터 — 🧠 월터 머치 · 미스터비스트 편집실 · 예능 자막 문법',
-  pack:'제목·썸네일·설명문 — 🧠 데이비드 오길비 · 미스터비스트 · 세스 고딘',
-  review:'검수·<b>업로드 세팅 시트</b> — 🧠 버핏 원칙 · 방송 심의 · 공정위/브랜드 세이프티',
-  design:'썸네일 시안·문구 — 🧠 미스터비스트 썸네일 원칙 · 모바일 퍼스트 · 오길비',
-  comm:'고정댓글·커뮤니티 운영·악플 대응 — 🧠 세스 고딘(부족) · 커뮤니티 실무',
+  plan:'컨셉·훅·구성안',
+  script:'타임코드 풀 대본',
+  edit:'편집 지시서·챕터',
+  pack:'제목·썸네일·설명문',
+  review:'검수·<b>업로드 세팅 시트</b>',
+  design:'썸네일 시안·문구',
+  comm:'고정댓글·커뮤니티·악플 대응',
 };
 const OLDROLE={'기획 PD':'plan','방송 작가':'script','편집 디렉터':'edit','패키징 매니저':'pack','검수 실장':'review'}; // 구버전 회의록 호환
 const STAGES={
@@ -775,7 +779,7 @@ function renderStage(){
   renderTabs();
 }
 function bubbleHTML(meta,name,title,sayHtml){
-  return '<div class="cb" style="border-left-color:'+meta.c+'"><span class="who"><span class="avatar" style="background:'+meta.c+'">'+meta.ico+'</span><span>'+esc(name)+'<small>'+esc(title)+'</small></span></span><span class="say">'+sayHtml+'</span></div>';
+  return '<div class="cb" style="border-left-color:'+meta.c+'"><div class="who"><span class="avatar" style="background:'+meta.c+'">'+meta.ico+'</span>'+esc(name)+' <small>'+esc(title)+'</small></div><div class="say">'+sayHtml+'</div></div>';
 }
 let showPrevMeet=false;
 function togglePrevMeet(){showPrevMeet=!showPrevMeet;renderMeetChat();
@@ -821,15 +825,16 @@ function crewIdle(){teamRoles().forEach(k=>crewSet(k,'대기',false))}
 function renderCrew(){
   const ul=document.getElementById('crewList');if(!ul)return;
   const hired=hiredList();
-  ul.innerHTML=teamRoles().map(k=>{
+  ul.innerHTML=MEET_ROLES.concat(HIRABLE).map(k=>{
     const h=HUMANS[k];
-    const fire=HIRABLE.includes(k)?'<button class="btn sm" style="margin-left:6px;padding:2px 7px;font-size:10px" onclick="hireToggle(\''+k+'\')" title="퇴사 처리">✖</button>':'';
-    return '<li><span class="avatar" style="background:'+h.c+'">'+h.ico+'</span><span style="flex:1;min-width:0"><b>'+esc(h.name)+'</b> <small style="color:var(--mut)">'+esc(h.title)+'</small>'+fire+'<br><span class="what">'+CREW_INFO[k]+'</span></span><span class="cstat" id="cst-'+k+'"><span class="cdot"></span>대기</span></li>';
+    const info='<span class="cinfo"><b>'+esc(h.name)+'</b> <small style="color:var(--mut)">'+esc(h.title)+'</small><br><span class="what">'+CREW_INFO[k]+'</span></span>';
+    const av='<span class="avatar" style="background:'+h.c+'">'+h.ico+'</span>';
+    if(HIRABLE.includes(k)&&!hired.includes(k))   // 미채용 — 고스트 행 + 채용 버튼
+      return '<li class="ghost">'+av+info+'<button class="btn sm" onclick="hireToggle(\''+k+'\')" title="회의 참석·업무 배정 가능해져요">＋ 채용</button></li>';
+    const fire=HIRABLE.includes(k)?'<button class="cfire" onclick="hireToggle(\''+k+'\')" title="퇴사 처리">✕</button>':'';
+    return '<li>'+av+info+fire+'<span class="cstat" id="cst-'+k+'"><span class="cdot"></span>대기</span></li>';
   }).join('');
-  const open=HIRABLE.filter(k=>!hired.includes(k));
-  document.getElementById('hireRow').innerHTML=open.length
-    ?'🎓 채용 가능: '+open.map(k=>'<button class="btn sm" onclick="hireToggle(\''+k+'\')">'+HUMANS[k].ico+' '+esc(HUMANS[k].name)+' · '+esc(HUMANS[k].title)+' 채용</button>').join(' ')+' <span style="color:var(--mut)">— 채용하면 회의에 참석(발언 +1회)하고 업무 배정이 가능해져요</span>'
-    :'👥 전원 채용 완료 — 회의 발언 '+teamRoles().length+'명 + 합의서 1회';
+  document.getElementById('hireRow').innerHTML='';
 }
 function renderTaskWho(){
   const sel=document.getElementById('tqWho');if(!sel)return;
