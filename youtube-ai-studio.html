@@ -1636,8 +1636,9 @@ async function runMeeting(){
 async function runAll(){
   if(busy){toast('이전 업무가 아직 진행 중이에요');return}
   if(!P().stages.meet.content){
-    if(!confirm('제작 회의 없이 바로 진행할까요?\n\n[🗣 제작 회의]를 먼저 하면 AI 직원들이 서로 대화하며 방향을 합의하고, 전 단계가 그 합의서를 기준으로 진행되어 재작업이 줄어듭니다.\n\n확인 = 회의 없이 바로 진행 / 취소 = 회의부터'))
-      {switchStage('meet');return}
+    // 전체 실행 = 회의부터 자동 (회의록이 없을 때만) — 회의 실패·중지·주제 미입력 시 파이프라인 미진행
+    const r=await runMeeting();
+    if(!r||stopReq)return;
   }
   const btn=document.getElementById('runAllBtn');btn.disabled=true;btn.innerHTML='<span class="spin">⏳</span> 파이프라인 진행 중…';
   log('스튜디오','전체 파이프라인 시작 — 기획 → 대본 → 편집 → 패키징 → 업로드 세팅'+(P().stages.meet.content?' (합의서 기준)':''));
