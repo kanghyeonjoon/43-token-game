@@ -6,67 +6,69 @@
 <title>튜브크루 — 유튜브 대행 AI 직원 스튜디오</title>
 <style>
 :root{
---bg:#e8eaef;--bg2:#eef0f4;--card:#ffffff;--ink:#181b22;--ink2:#434a54;--mut:#79808b;--line:#e4e7ec;--line2:#cfd4db;
---pri:#e5372c;--pri-soft:#fdece9;--pri-deep:#b52c22;--ok:#12794a;--ok-soft:#e1f3e9;--amber:#af6a09;--amber-soft:#fbf0d9;
---blue:#1f5fa6;--blue-soft:#e7f1fb;--gray-soft:#eaedf1;--top:#14161c;--top-ink:#c3c8d2;--top-line:#2a2d36;
---ring:0 0 0 3px rgba(229,55,44,.20);
---sh-sm:0 1px 2px rgba(20,24,33,.06);
---sh-md:0 1px 2px rgba(20,24,33,.05),0 10px 24px -12px rgba(20,24,33,.20);
---sh-lg:0 24px 60px -18px rgba(20,24,33,.34);
---r:15px}
+--bg:#0e1013;--panel:#16181d;--panel2:#1c1f27;--card:#16181d;
+--ink:#f1f3f6;--ink2:#b7bec9;--mut:#7c838f;--line:#282c34;--line2:#373c46;
+--pri:#ff453a;--pri-soft:rgba(255,69,58,.15);--pri-deep:#e0342b;
+--ok:#30d158;--ok-soft:rgba(48,209,88,.16);--amber:#ffb340;--amber-soft:rgba(255,179,64,.16);
+--blue:#4aa3ff;--blue-soft:rgba(74,163,255,.16);--gray-soft:rgba(255,255,255,.06);
+--top:#0c0e12;--top-ink:#c3c8d2;--top-line:#23262e;
+--mono:ui-monospace,'SF Mono','SFMono-Regular',Menlo,Consolas,monospace;
+--ring:0 0 0 3px rgba(255,69,58,.25);
+--glow:0 10px 30px -16px rgba(0,0,0,.75);
+--r:14px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:linear-gradient(180deg,#edeef2,#e6e8ee);background-attachment:fixed;color:var(--ink);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-variant-numeric:tabular-nums}
+body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:radial-gradient(1200px 620px at 50% -12%,#1a1e26,#0e1013 62%);background-attachment:fixed;color:var(--ink);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-variant-numeric:tabular-nums;min-height:100vh}
 button{font-family:inherit;cursor:pointer}
-input,select,textarea{font-family:inherit;font-size:13px;border:1px solid var(--line2);border-radius:10px;padding:9px 12px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+input,select,textarea{font-family:inherit;font-size:13px;border:1px solid var(--line2);border-radius:10px;padding:9px 12px;background:var(--panel2);color:var(--ink);transition:border-color .15s,box-shadow .15s}
 textarea{line-height:1.7;resize:vertical}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:var(--ring)}
-::placeholder{color:#aab0b9}
+::placeholder{color:#5c6470}
 /* ---- topbar ---- */
 .topbar{position:sticky;top:0;z-index:20;background:var(--top);color:var(--top-ink);display:flex;align-items:center;gap:10px;padding:11px 20px;flex-wrap:wrap;border-bottom:1px solid var(--top-line)}
 .topbar .logo{font-weight:800;font-size:15.5px;color:#fff;display:flex;align-items:center;gap:9px;letter-spacing:-.3px}
-.topbar .logo small{font-weight:600;font-size:9.5px;color:#8b909b;letter-spacing:1.4px}
-.topbar select{background:#22252d;color:#e7e9ee;border-color:#34373f;border-radius:9px}
+.topbar .logo small{font-family:var(--mono);font-weight:500;font-size:9px;color:#6c7380;letter-spacing:1.6px}
+.topbar select{background:var(--panel2);color:#e7e9ee;border-color:var(--line2);border-radius:9px}
 .topbar select:focus{box-shadow:none;border-color:#4a4f59}
-.modetag{font-size:10.5px;font-weight:800;border-radius:99px;padding:3px 11px;background:#2c2f38;color:#b9bdc7;letter-spacing:.2px}
-.modetag.live{background:rgba(30,196,130,.16);color:#4ecb8c}
+.modetag{font-size:10.5px;font-weight:800;border-radius:99px;padding:3px 11px;background:var(--panel2);color:#9aa1ad;letter-spacing:.2px;border:1px solid var(--line2)}
+.modetag.live{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .topbar .sp{flex:1}
-.topbar .usage{font-size:11px;color:#8b909b}
-.tbtn{background:#22252d;color:#e7e9ee;border:1px solid #34373f;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;transition:background .15s,border-color .15s}
-.tbtn:hover{background:#2d313b;border-color:#474c56}
+.topbar .usage{font-family:var(--mono);font-size:11px;color:#727986}
+.tbtn{background:var(--panel2);color:#e7e9ee;border:1px solid var(--line2);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;transition:background .15s,border-color .15s}
+.tbtn:hover{background:#252932;border-color:#454b57}
 /* ---- page nav ---- */
-.pagenav{display:flex;gap:5px;background:var(--card);border-bottom:1px solid var(--line);box-shadow:var(--sh-sm);padding:9px 16px;overflow-x:auto;white-space:nowrap}
-.pnav{border:1px solid transparent;background:transparent;border-radius:10px;padding:8px 15px;font-size:13px;font-weight:700;color:var(--mut);flex-shrink:0;transition:background .15s,color .15s,box-shadow .15s}
+.pagenav{display:flex;gap:5px;background:var(--panel);border-bottom:1px solid var(--line);padding:9px 16px;overflow-x:auto;white-space:nowrap}
+.pnav{border:1px solid transparent;background:transparent;border-radius:10px;padding:8px 15px;font-size:13px;font-weight:700;color:var(--mut);flex-shrink:0;transition:background .15s,color .15s}
 .pnav:hover{background:var(--gray-soft);color:var(--ink2)}
-.pnav.on{background:var(--top);color:#fff;box-shadow:var(--sh-sm)}
+.pnav.on{background:#eef1f6;color:#14161c;box-shadow:0 1px 8px -2px rgba(238,241,246,.25)}
 .page{display:none}
 .page.on{display:block;animation:fadein .28s ease}
-@keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .pagewrap{max-width:1180px;margin:0 auto;padding:22px 18px}
 /* ---- card ---- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;box-shadow:var(--sh-md)}
-.card h2{font-size:15px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),var(--glow)}
+.card h2{font-size:15px;font-weight:800;letter-spacing:-.2px;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .card .sub{font-size:12px;color:var(--mut);margin:4px 0 14px;line-height:1.55}
 .field{display:flex;align-items:center;gap:10px;margin-bottom:9px}
 .field label{width:84px;flex-shrink:0;font-size:12px;color:var(--ink2);font-weight:700}
 .field input,.field select,.field textarea{flex:1;min-width:0}
 .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 10px;white-space:nowrap;letter-spacing:.1px}
-.p-ok{background:var(--ok-soft);color:var(--ok)}.p-red{background:var(--pri-soft);color:var(--pri-deep)}
+.p-ok{background:var(--ok-soft);color:var(--ok)}.p-red{background:var(--pri-soft);color:#ff6b62}
 .p-amber{background:var(--amber-soft);color:var(--amber)}.p-gray{background:var(--gray-soft);color:var(--mut)}.p-blue{background:var(--blue-soft);color:var(--blue)}
-.btn{border:1px solid var(--line2);background:#fff;border-radius:10px;padding:9px 15px;font-size:12.5px;font-weight:700;color:var(--ink2);box-shadow:var(--sh-sm);transition:background .15s,border-color .15s,transform .06s}
-.btn:hover{background:#fbfbfc;border-color:#bdc3cb}
+.btn{border:1px solid var(--line2);background:var(--panel2);border-radius:10px;padding:9px 15px;font-size:12.5px;font-weight:700;color:var(--ink2);transition:background .15s,border-color .15s,transform .06s}
+.btn:hover{background:#252932;border-color:#464c58;color:var(--ink)}
 .btn:active{transform:translateY(1px)}
-.btn.pri{background:linear-gradient(180deg,#ec463b,#e5372c);border-color:#cf2c22;color:#fff;box-shadow:0 1px 2px rgba(150,30,22,.35),inset 0 1px 0 rgba(255,255,255,.2)}
-.btn.pri:hover{background:linear-gradient(180deg,#e5372c,#cf2c22);border-color:#b52c22}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 0 18px -4px rgba(255,69,58,.55)}
+.btn.pri:hover{background:#ff5850;border-color:#ff5850}
 .btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
-.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 .note{font-size:11.5px;color:var(--mut);line-height:1.55}
 /* ---- team ---- */
 .crew{list-style:none}
-.crew li{display:flex;gap:11px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center;border-radius:8px;transition:background .12s}
-.crew li:hover{background:var(--bg2)}
+.crew li{display:flex;gap:11px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:12.5px;align-items:center;border-radius:8px;transition:background .12s}
+.crew li:hover{background:var(--panel2)}
 .crew li:last-child{border-bottom:0}
-.crew li.ghost{opacity:.5}
-.crew li.ghost:hover{opacity:.75;background:var(--bg2)}
+.crew li.ghost{opacity:.45}
+.crew li.ghost:hover{opacity:.7;background:var(--panel2)}
 .crew .cinfo{flex:1;min-width:0}
 .crew .who{width:104px;flex-shrink:0;font-weight:800;color:var(--ink2)}
 .crew .what{color:var(--mut)}
@@ -78,44 +80,44 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
 .log li:last-child{border-bottom:0}
 .log .who{width:92px;flex-shrink:0;font-weight:800;color:var(--ink2);white-space:nowrap}
 .log .msg{color:var(--ink2)}
-.log .tm{margin-left:auto;color:var(--mut);font-size:10.5px;white-space:nowrap}
+.log .tm{margin-left:auto;color:var(--mut);font-size:10.5px;white-space:nowrap;font-family:var(--mono)}
 /* ---- pipeline ---- */
 .ptabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.ptab{border:1px solid var(--line2);background:#fff;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;color:var(--ink2);display:flex;align-items:center;gap:7px;box-shadow:var(--sh-sm);transition:background .15s,border-color .15s,color .15s}
-.ptab:hover{border-color:#bdc3cb}
-.ptab .dot{width:8px;height:8px;border-radius:99px;background:var(--line2);transition:background .15s}
-.ptab.done .dot{background:var(--ok)}
-.ptab.active{background:var(--top);color:#fff;border-color:var(--top)}
-.ptab.active .dot{background:#fff}
+.ptab{border:1px solid var(--line2);background:var(--panel2);border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;color:var(--ink2);display:flex;align-items:center;gap:7px;transition:background .15s,border-color .15s,color .15s}
+.ptab:hover{border-color:#464c58;color:var(--ink)}
+.ptab .dot{width:8px;height:8px;border-radius:99px;background:#3b414c;transition:background .15s}
+.ptab.done .dot{background:var(--ok);box-shadow:0 0 8px rgba(48,209,88,.6)}
+.ptab.active{background:#eef1f6;color:#14161c;border-color:#eef1f6}
+.ptab.active .dot{background:#14161c}
 .stagehead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .stagehead .emp{font-size:12.5px;font-weight:800;color:var(--ink2)}
 .stagehead .sp{flex:1}
-#stOut{width:100%;min-height:380px;font-size:13px;background:#fbfcfd;line-height:1.75}
+#stOut{width:100%;min-height:380px;font-size:13px;background:var(--panel2);line-height:1.75}
 .fbrow{display:flex;gap:8px;margin-top:12px}
 .fbrow input{flex:1}
-.reviewbox{white-space:pre-wrap;border:1px dashed var(--line2);border-radius:12px;padding:13px 15px;margin-top:12px;font-size:12.5px;background:#f8faf6;display:none}
+.reviewbox{white-space:pre-wrap;border:1px dashed var(--line2);border-radius:12px;padding:13px 15px;margin-top:12px;font-size:12.5px;background:var(--panel2);display:none}
 /* ---- 회의록 ---- */
 .chat{display:none;margin-bottom:14px;max-height:460px;overflow-y:auto}
-.cb{padding:10px 13px;border:1px solid var(--line);border-left-width:3px;border-radius:11px;background:#f9fafb;margin-bottom:7px;font-size:12.5px;line-height:1.6;box-shadow:var(--sh-sm)}
-.cb .who{display:flex;gap:7px;align-items:center;font-weight:800;color:var(--ink2);margin-bottom:4px}
+.cb{padding:10px 13px;border:1px solid var(--line);border-left-width:3px;border-radius:11px;background:var(--panel2);margin-bottom:7px;font-size:12.5px;line-height:1.6}
+.cb .who{display:flex;gap:7px;align-items:center;font-weight:800;color:var(--ink);margin-bottom:4px}
 .cb .who small{font-weight:600;color:var(--mut);font-size:10.5px}
-.cb .say{white-space:pre-wrap}
-.avatar{width:26px;height:26px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;box-shadow:0 1px 2px rgba(20,24,33,.22)}
+.cb .say{white-space:pre-wrap;color:var(--ink2)}
+.avatar{width:26px;height:26px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.5)}
 .cb .avatar{width:21px;height:21px;font-size:10px}
 .cb .say .ti i{display:inline-block;width:5px;height:5px;border-radius:99px;background:var(--mut);margin-right:3px;animation:blink 1s infinite}
 .cb .say .ti i:nth-child(2){animation-delay:.2s}.cb .say .ti i:nth-child(3){animation-delay:.4s}
 @keyframes blink{50%{opacity:.15}}
 /* ---- 팀 현황 ---- */
 .cstat{margin-left:auto;font-size:10.5px;color:var(--mut);white-space:nowrap;flex-shrink:0;font-weight:600}
-.cdot{display:inline-block;width:7px;height:7px;border-radius:99px;background:var(--line2);margin-right:5px;vertical-align:1px}
-.cdot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(18,121,74,.18);animation:pulse 1.1s infinite}
+.cdot{display:inline-block;width:7px;height:7px;border-radius:99px;background:#3b414c;margin-right:5px;vertical-align:1px}
+.cdot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(48,209,88,.2);animation:pulse 1.1s infinite}
 @keyframes pulse{50%{opacity:.4}}
 /* ---- 스코어보드 ---- */
 .scrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .scl{width:98px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--ink2)}
-.sct{flex:1;height:9px;background:var(--gray-soft);border-radius:99px;overflow:hidden}
-.scf{display:block;height:100%;background:linear-gradient(90deg,#2f74be,#1f5fa6);border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-.scv{width:24px;text-align:right;font-weight:800;font-size:12px;color:var(--ink2)}
+.sct{flex:1;height:9px;background:#0f1116;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.scf{display:block;height:100%;background:linear-gradient(90deg,#3d8bff,#4aa3ff);border-radius:99px;box-shadow:0 0 12px rgba(74,163,255,.45);transition:width .5s cubic-bezier(.4,0,.2,1)}
+.scv{width:24px;text-align:right;font-weight:800;font-size:12px;color:var(--ink);font-family:var(--mono)}
 /* ---- 주제 발굴 ---- */
 #topicList{list-style:none}
 .topic{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:12.5px}
@@ -123,37 +125,37 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
 .topic .tbody{flex:1;min-width:0;line-height:1.65}
 .topic .ti i{display:inline-block;width:5px;height:5px;border-radius:99px;background:var(--mut);margin-right:3px;animation:blink 1s infinite}
 .topic .ti i:nth-child(2){animation-delay:.2s}.topic .ti i:nth-child(3){animation-delay:.4s}
-#stopBtn{border-color:var(--pri);color:var(--pri);background:var(--pri-soft)}
+#stopBtn{border-color:var(--pri);color:#ff6b62;background:var(--pri-soft)}
 /* ---- 스트리밍 커서 · 구분선 · 추이 ---- */
 .cur{display:inline-block;width:2px;margin-left:1px;color:var(--pri);animation:blink 1s infinite;font-weight:800}
 .mdiv{display:flex;align-items:center;gap:10px;text-align:center;color:var(--mut);font-size:11px;margin:14px 2px;letter-spacing:.3px;font-weight:600}
 .mdiv::before,.mdiv::after{content:'';flex:1;height:1px;background:var(--line)}
 .scd{font-size:10.5px;font-weight:800;margin-left:5px;font-variant-numeric:tabular-nums}
-.scd.up{color:var(--ok)}.scd.dn{color:var(--pri)}
+.scd.up{color:var(--ok)}.scd.dn{color:#ff6b62}
 .r2lab{display:none;align-items:center;gap:5px;font-size:11.5px;color:var(--ink2);font-weight:600;cursor:pointer;white-space:nowrap}
 .r2lab input{accent-color:var(--pri)}
 .runallbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 /* ---- modal ---- */
-.modal{position:fixed;inset:0;background:rgba(16,18,24,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{position:fixed;inset:0;background:rgba(4,5,7,.62);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
 .modal.on{display:flex;animation:fadein .2s ease}
-.mbox{background:#fff;border-radius:18px;padding:24px 26px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+.mbox{background:var(--panel);border-radius:18px;padding:24px 26px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 40px 90px -30px #000;border:1px solid var(--line2)}
 .mbox h2{font-size:15.5px;font-weight:800;margin-bottom:4px;letter-spacing:-.2px}
-/* ---- 오피스 뷰 (가상 사무실) ---- */
+/* ---- 오피스 뷰 (밝은 세트 — 어두운 프레임 속 조명) ---- */
 #officeCard{margin:0}
 #officeCard .card{padding:16px 18px 18px}
 .ohead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .ohead h2{font-size:15px;font-weight:800;letter-spacing:-.2px}
-.ochip{font-size:11px;font-weight:700;background:var(--gray-soft);color:var(--ink2);border-radius:99px;padding:3px 11px;white-space:nowrap}
+.ochip{font-family:var(--mono);font-size:11px;font-weight:700;background:var(--panel2);color:var(--ink2);border:1px solid var(--line2);border-radius:99px;padding:3px 11px;white-space:nowrap}
 .ochip b{color:var(--ink)}
 #office{position:relative;height:340px;border-radius:14px;overflow:hidden;
-  background:linear-gradient(#efe0c3,#ead8b6);border:1px solid rgba(20,24,33,.08);box-shadow:inset 0 2px 10px rgba(120,90,50,.14),var(--sh-sm)}
+  background:linear-gradient(#efe0c3,#ead8b6);border:1px solid #2a2f39;box-shadow:0 0 0 1px rgba(255,255,255,.03),0 20px 50px -22px rgba(0,0,0,.8)}
 .room{position:absolute;border:2px dashed rgba(140,110,70,.35);border-radius:10px;pointer-events:none}
 .room i{position:absolute;top:-9px;left:10px;font-style:normal;font-size:10.5px;font-weight:800;color:#a4670a;background:#efe0c3;padding:0 6px;letter-spacing:.4px}
 .desk{position:absolute;width:64px;height:10px;background:#8a6440;border-radius:3px;box-shadow:0 3px 0 #6f4f31}
 .desk .mon{position:absolute;top:-11px;width:14px;height:10px;background:#2e3b36;border:2px solid #55504a;border-radius:2px}
 .mtable{position:absolute;width:150px;height:64px;background:#9a7248;border-radius:50%;box-shadow:0 4px 0 #7c5a37;border:3px solid #b08a5c}
 .mtable::after{content:'';position:absolute;inset:10px;border-radius:50%;background:#a87e50}
-.rug{position:absolute;width:230px;height:120px;border-radius:50%;background:rgba(229,55,44,.08)}
+.rug{position:absolute;width:230px;height:120px;border-radius:50%;background:rgba(229,55,44,.09)}
 .deco{position:absolute;font-size:16px;pointer-events:none}
 .per{position:absolute;width:80px;margin-left:-40px;text-align:center;cursor:pointer;z-index:5;
   transition:left 1.4s cubic-bezier(.45,0,.25,1),top 1.4s cubic-bezier(.45,0,.25,1)}
@@ -162,34 +164,34 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
 .per.work .fig{animation:pwork 1.1s infinite}
 @keyframes pwalk{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-2px) rotate(2deg)}}
 @keyframes pwork{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
-.per .ptag{display:inline-block;margin-top:1px;background:#fff;border:1px solid var(--line2);border-radius:8px;padding:2px 6px 3px;font-size:9.5px;line-height:1.35;box-shadow:0 2px 5px rgba(20,24,33,.12)}
+.per .ptag{display:inline-block;margin-top:1px;background:#fff;border:1px solid #d9d6cf;border-radius:8px;padding:2px 6px 3px;font-size:9.5px;line-height:1.35;color:#1c1b18;box-shadow:0 2px 6px rgba(0,0,0,.28)}
 .per .ptag b{font-size:10px;display:block}
 .per .prole{font-weight:800;font-size:9px;white-space:nowrap;display:block}
-.per .pst{color:var(--mut);font-weight:600;white-space:nowrap}
+.per .pst{color:#8b877e;font-weight:600;white-space:nowrap}
 .per .pst .pdot{display:inline-block;width:5px;height:5px;border-radius:99px;background:#c9c5bc;margin-right:3px;vertical-align:1px}
-.per.work .pst .pdot{background:var(--amber);animation:blink 1s infinite}
+.per.work .pst .pdot{background:#a4670a;animation:blink 1s infinite}
 .bub{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;max-width:170px;width:max-content;
-  background:#fff;border:1.5px solid var(--line2);border-radius:10px;padding:4px 8px;font-size:10px;line-height:1.5;text-align:left;
-  box-shadow:0 3px 8px rgba(20,24,33,.14);display:none;z-index:9}
+  background:#fff;border:1.5px solid #d9d6cf;border-radius:10px;padding:4px 8px;font-size:10px;line-height:1.5;text-align:left;color:#1c1b18;
+  box-shadow:0 3px 10px rgba(0,0,0,.32);display:none;z-index:9}
 .bub::after{content:'';position:absolute;top:100%;left:50%;margin-left:-4px;border:4px solid transparent;border-top-color:#fff}
 .bub.on{display:block}
-.bub.ok{border-color:var(--ok);color:var(--ok);font-weight:800}
+.bub.ok{border-color:var(--ok);color:#12794a;font-weight:800}
 .bub.err{border-color:var(--pri);color:var(--pri);font-weight:800;animation:pwork .6s infinite}
 @media(max-width:820px){#office{height:290px}.room i{font-size:9px}}
 /* ---- 업무 보드 · 배속·일시정지 ---- */
 .tq{list-style:none;margin-top:6px}
 .tq li{display:flex;align-items:center;gap:8px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer;border-radius:8px;transition:background .12s}
-.tq li:hover{background:var(--bg2)}
+.tq li:hover{background:var(--panel2)}
 .tq li:last-child{border-bottom:0}
 .tq .tqtxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tq .who{color:var(--mut);font-weight:700;font-size:11px;white-space:nowrap}
-.spdchip{font-size:11px;font-weight:800;border:1px solid var(--line2);background:#fff;border-radius:99px;padding:4px 10px;cursor:pointer;color:var(--ink2);user-select:none;transition:background .15s,border-color .15s,color .15s}
-.spdchip:hover{border-color:#bdc3cb}
+.spdchip{font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid var(--line2);background:var(--panel2);border-radius:99px;padding:4px 10px;cursor:pointer;color:var(--ink2);user-select:none;transition:background .15s,border-color .15s,color .15s}
+.spdchip:hover{border-color:#464c58}
 .spdchip.on{background:var(--pri);border-color:var(--pri);color:#fff}
 #pauseBtn.on{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
 #office.paused .fig{animation-play-state:paused}
 /* ---- toast ---- */
-#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--top);color:#fff;font-size:12.5px;font-weight:600;padding:11px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;max-width:90vw;box-shadow:var(--sh-lg)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#20242c;color:#fff;font-size:12.5px;font-weight:600;padding:11px 20px;border-radius:99px;border:1px solid var(--line2);opacity:0;pointer-events:none;transition:opacity .25s;z-index:60;max-width:90vw;box-shadow:0 20px 50px -18px #000}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
 </style>
 </head>
@@ -220,8 +222,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
     <div class="card">
       <div class="runallbar">
         <h2 style="margin-right:4px">🎬 제작 파이프라인</h2>
-        <button class="btn" onclick="runStage('meet')">🗣 제작 회의 (전원)</button>
-        <button class="btn pri" id="runAllBtn" onclick="runAll()">🚀 전체 실행 (기획→대본→편집→패키징→업로드 세팅)</button>
+        <button class="btn" onclick="runStage('meet')">🗣 제작 회의</button>
+        <button class="btn pri" id="runAllBtn" onclick="runAll()">🚀 전체 실행</button>
         <button class="btn" onclick="exportAll()" title="브리프+전 단계 산출물을 마크다운 파일로 저장">⬇ 내보내기</button>
         <button class="btn" id="stopBtn" style="display:none" onclick="requestStop()">⏹ 중지</button>
         <button class="btn sm" id="pauseBtn" onclick="togglePause()">⏸ 일시정지</button>
@@ -246,26 +248,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
         <button class="btn sm" onclick="copyStage()">📋 복사</button>
       </div>
       <div class="chat" id="meetChat"></div>
-      <div id="scoreCard" style="display:none;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#fcfbf9">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><b style="font-size:13px">📊 팀 평가 스코어보드</b><span class="pill p-blue" id="scTotal"></span><span class="note">0~10 · 회의 시점 팀 자평</span></div>
+      <div id="scoreCard" style="display:none;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:var(--panel2)">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><b style="font-size:13px">📊 팀 평가 스코어보드</b><span class="pill p-blue" id="scTotal"></span></div>
         <div id="scBars"></div>
         <div class="note" id="scComment" style="margin-top:8px"></div>
       </div>
-      <textarea id="stOut" placeholder="아직 산출물이 없어요 — [🤖 맡기기]를 누르거나 직접 작성·수정하세요. 수정한 내용은 자동 저장됩니다." oninput="saveStageText()"></textarea>
+      <textarea id="stOut" placeholder="산출물이 여기에 표시됩니다 · [🤖 맡기기] 또는 직접 작성" oninput="saveStageText()"></textarea>
       <div class="fbrow">
-        <input id="stFb" placeholder="수정 지시 — 예: 훅을 더 자극적으로, 3번 구간은 절반으로 줄여줘" onkeydown="if(event.key==='Enter'&&!event.isComposing)applyFeedback()">
+        <input id="stFb" placeholder="수정 지시 — 예: 훅 더 강하게" onkeydown="if(event.key==='Enter'&&!event.isComposing)applyFeedback()">
         <button class="btn sm" onclick="applyFeedback()">✏ 수정 반영</button>
       </div>
       <div class="reviewbox" id="stReview"></div>
     </div>
-    <div class="card" style="background:#fbfaf7"><h2 style="font-size:13px">ℹ 사용 순서</h2>
-      <div class="note" style="line-height:1.9">① 채널 브리프 입력 — 자주 쓰는 채널은 <b>[💾 저장]</b>해두면 다음부터 선택만, <b>이미 기획안이 있으면 [📋 기획안·자료 넣기]</b>로 통째로 첨부 (팀이 그걸 기준으로 검토·보강) → ② [🗣 제작 회의] — AI 직원 5명이 서로의 발언에 반응하며 방향을 합의하고 <b>제작 방향 합의서</b>를 작성 (합의서는 직접 고칠 수 있고, '미결 사항'은 대표가 결정) → ③ [🚀 전체 실행] — 전 단계가 합의서를 기준으로 제작되어 재작업이 줄어듭니다 → ④ 산출물 수정은 '수정 지시'로, 방향 자체가 바뀌면 회의를 다시 → ⑤ 마지막 [📤 업로드 세팅] 시트대로 게시.<br>
-      데모 모드에서는 실제 AI 호출 없이 예시 산출물로 흐름을 체험합니다. ⚙ 설정에서 Anthropic API 키를 넣으면 브리프 기반 실제 제작으로 전환됩니다.</div>
-    </div>
 </div></section>
 
 <section class="page" id="page-brief"><div class="pagewrap">
-    <div class="card"><h2>📋 채널 브리프</h2><div class="sub">AI 직원 전원이 이 브리프를 기준으로 일합니다 — 구체적일수록 결과가 좋아요</div>
+    <div class="card"><h2>📋 채널 브리프</h2>
       <div class="field"><label>저장 채널</label><select id="chSel" style="flex:1" onchange="applyChannel(this.value)"><option value="">— 저장된 채널 —</option></select>
         <button class="btn sm" onclick="saveChannel()" title="현재 채널 정보(채널명·카테고리·타깃·톤·금지·협찬)를 저장 — 다음 프로젝트부터 선택만 하면 됩니다">💾 저장</button>
         <button class="btn sm" onclick="delChannel()" title="선택한 저장 채널 삭제">🗑</button></div>
@@ -277,24 +275,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
       <div class="field"><label>금지사항</label><input id="bBanned" placeholder="예: 수익 보장 표현, 특정 종목 추천"></div>
       <div class="field"><label>협찬</label><input id="bSponsor" placeholder="없음 / 있음: 브랜드명"></div>
       <div style="border-top:1px solid var(--line);margin:12px 0 10px"></div>
-      <div class="field"><label>영상 주제</label><textarea id="bTopic" style="min-height:52px" placeholder="예: 월급 300 직장인이 첫 ETF를 시작하는 법 — 계좌 개설부터 첫 매수까지"></textarea></div>
-      <div class="field"><label></label><button class="btn sm" onclick="topicIdeate()">💡 주제 발굴 — 팀에게 후보 받기</button><span class="note">주제가 없거나 애매하면 채널 브리프만으로 후보 6개를 만들어 드려요</span></div>
+      <div class="field"><label>영상 주제</label><textarea id="bTopic" style="min-height:52px" placeholder="예: 첫 ETF 시작하는 법"></textarea></div>
+      <div class="field"><label></label><button class="btn sm" onclick="topicIdeate()">💡 주제 발굴</button></div>
       <div class="field"><label>목표 길이</label><input id="bLength" placeholder="예: 8~10분"></div>
-      <div class="field"><label>기획안</label><button class="btn sm" onclick="openDoc()">📋 기획안·자료 넣기</button><span class="note" id="bDocChip" style="cursor:pointer" onclick="openDoc()">없음 — 팀이 브리프만으로 기획합니다</span></div>
-      <div class="note" id="bDocNote" style="display:none">📎 대표 기획안 첨부됨 — 회의는 이 자료의 검토·보강으로 진행되고, 기획안 단계는 대표 안 기준 '실행 기획안'을 만듭니다. (완성된 기획안을 그대로 쓰려면 기획안 탭 산출물 칸에 직접 붙여넣어도 됩니다)</div>
+      <div class="field"><label>기획안</label><button class="btn sm" onclick="openDoc()">📋 기획안·자료 넣기</button><span class="note" id="bDocChip" style="cursor:pointer" onclick="openDoc()">없음</span></div>
+      <div class="note" id="bDocNote" style="display:none">📎 기획안 첨부됨 — 팀이 이 자료를 기준으로 제작합니다.</div>
     </div>
 
-    <div class="card" id="topicCard" style="display:none;margin-bottom:14px"><h2>💡 주제 후보 <span class="pill p-blue">차민준 PD × 한유진 매니저 아이템 미팅</span></h2>
-      <div class="sub">마음에 드는 후보를 고르면 영상 주제로 확정됩니다 — 고른 뒤 [🗣 제작 회의]로 방향을 잡으세요</div>
+    <div class="card" id="topicCard" style="display:none;margin-bottom:14px"><h2>💡 주제 후보</h2>
       <ul id="topicList"></ul>
-      <div class="fbrow"><input id="topicFb" placeholder="피드백 — 예: 숫자 훅 말고 스토리형으로, 초보자 대상만" onkeydown="if(event.key==='Enter'&&!event.isComposing)topicIdeate(this.value.trim())">
+      <div class="fbrow"><input id="topicFb" placeholder="피드백 — 예: 스토리형으로" onkeydown="if(event.key==='Enter'&&!event.isComposing)topicIdeate(this.value.trim())">
         <label class="r2lab" style="display:inline-flex" title="후보를 내기 전에 웹 검색으로 이 카테고리의 최신 트렌드·이슈를 조사합니다 (라이브 전용 · 검색 비용 추가)"><input type="checkbox" id="topicWeb">🔎 트렌드 검색</label>
         <button class="btn sm" onclick="topicIdeate(document.getElementById('topicFb').value.trim())">🔄 다시 발굴</button>
         <button class="btn sm" onclick="closeTopics()">닫기</button></div></div>
 </div></section>
 
 <section class="page" id="page-team"><div class="pagewrap">
-    <div class="card"><h2>🤖 AI 직원 팀 <span class="pill p-blue">회의 → 합의서 → 파이프라인</span></h2><div class="sub">대표 가이드라인으로 <b>킥오프 회의</b>(서로 발언을 읽고 반응) → 합의서 확정 → 전 직원이 같은 방향으로 제작합니다</div>
+    <div class="card"><h2>🤖 AI 직원 팀</h2>
       <ul class="crew" id="crewList"></ul>
       <div class="note" id="hireRow"></div>
       <div class="note" style="margin-top:10px">🔒 AI는 업로드 버튼을 누르지 않습니다 — 게시는 사람이 합니다.</div>
@@ -312,7 +309,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
       <span class="ochip">산출물 <b id="oDone">0</b>/6</span>
       <span class="ochip">대기 업무 <b id="oQueue">0</b></span>
       <span class="ochip" id="oCost">호출 0</span>
-      <span class="note" style="margin-left:auto">회의가 시작되면 전원이 테이블로 모입니다 · 캐릭터를 누르면 담당 단계로 이동</span>
     </div>
     <div id="office"></div>
   </div>
@@ -320,8 +316,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
 </div></section>
 
 <section class="page" id="page-tasks"><div class="pagewrap">
-    <div class="card"><h2>📥 업무 보드 <span class="pill p-blue">대표 → 직원 자유 업무</span></h2>
-      <div class="sub">회의·파이프라인과 별개로 급한 업무를 던지면, 직원이 한가해질 때 순서대로 집어갑니다 — 항목을 누르면 결과 확인</div>
+    <div class="card"><h2>📥 업무 보드</h2>
       <div class="fbrow"><input id="tqIn" placeholder="예: 썸네일 문구 5개만 더 뽑아줘" onkeydown="if(event.key==='Enter'&&!event.isComposing)addTask()">
         <select id="tqWho" style="max-width:112px"><option value="auto">🤖 자동 배정</option><option value="plan">차민준</option><option value="script">윤세아</option><option value="edit">박도현</option><option value="pack">한유진</option><option value="review">서정우</option></select>
         <button class="btn sm pri" onclick="addTask()">던지기</button></div>
@@ -330,7 +325,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
       <ul class="tq" id="tqDone"></ul>
     </div>
 
-    <div class="card"><h2>🗒 작업 로그</h2><div class="sub">누가 무엇을 했는지 — 오케스트레이션 트레이스</div>
+    <div class="card"><h2>🗒 작업 로그</h2>
       <ul class="log" id="logList"><li><span class="msg" style="color:var(--mut)">아직 작업 기록이 없어요 — 오른쪽에서 업무를 맡겨보세요</span></li></ul>
     </div>
 </div></section>
@@ -340,7 +335,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
 <div class="modal" id="setModal">
   <div class="mbox">
     <h2>⚙ 설정 — AI 연결</h2>
-    <div class="sub" style="font-size:12px;color:var(--mut);margin-bottom:14px">Anthropic Claude API로 동작합니다 · 키 발급: console.anthropic.com → API Keys</div>
+    <div class="sub" style="font-size:12px;color:var(--mut);margin-bottom:14px">키 발급: console.anthropic.com → API Keys</div>
     <div class="field"><label style="width:70px">API 키</label><input id="setKey" type="password" placeholder="sk-ant-..."><button class="btn sm" onclick="const k=document.getElementById('setKey');k.type=k.type==='password'?'text':'password';this.textContent=k.type==='password'?'👁':'🙈'" title="키 표시/숨김">👁</button></div>
     <div class="field"><label style="width:70px">상태</label><span class="pill p-gray" id="setSt">미연결 — 데모 모드</span>
       <button class="btn sm pri" onclick="testKey()">연결 테스트</button>
@@ -348,14 +343,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
     <div class="field"><label style="width:70px">백업</label>
       <button class="btn sm" onclick="backupAll()">💾 전체 백업 (.json)</button>
       <label class="btn sm" style="cursor:pointer">📥 불러오기<input type="file" accept=".json,application/json" style="display:none" onchange="restoreAll(this)"></label></div>
-    <div class="note" style="margin:-2px 0 10px">프로젝트·회의록·업무 기록·채널 프리셋·채용 상태를 파일로 보관/복원합니다 (API 키는 포함 안 됨).
-      데이터가 <b>이 브라우저에만</b> 저장되므로, 브라우저 데이터 삭제에 대비해 주기적으로 백업하세요.</div>
-    <div class="note" style="margin:10px 0 14px;line-height:1.8">
-      ⚠ 키는 <b>이 브라우저(localStorage)에만</b> 저장되고 Anthropic 외 어디로도 전송되지 않습니다.
-      <b>본인 PC에서만</b> 사용하세요 — 파일을 팀에 공유하거나 웹에 올릴 때는 키를 삭제하고,
-      서버 프록시(예: Supabase Edge Function) 방식으로 전환해야 합니다.
-      Anthropic 콘솔에서 <b>월 사용 한도(Spend limit)</b>를 걸어두는 것을 권장합니다.</div>
-    <div class="note" style="margin-bottom:14px">모델: claude-opus-4-8 · 회의 = 발언 인원+1회(반박 라운드 켜면 ×2) · 전체 실행 = 5회 · 주제 발굴·검수·수정·업무 보드 자유 업무 = 각 1회 · 🔎 웹 리서치는 검색 비용($10/1,000회)과 토큰이 추가됩니다. 사용량은 상단에 표시됩니다.</div>
+    <div class="note" style="margin:-2px 0 10px">프로젝트·기록·프리셋·채용을 파일로 백업/복원 (API 키 제외) · 데이터는 이 브라우저에만 저장됩니다.</div>
+    <div class="note" style="margin:10px 0 14px;line-height:1.7">⚠ 키는 이 브라우저에만 저장되고 Anthropic 외 전송되지 않습니다 · 본인 PC에서만, 공유 전 삭제 · 콘솔에서 월 한도 권장.</div>
+    <div class="note" style="margin-bottom:14px">모델 claude-opus-4-8 · 회의=인원+1콜 · 전체 실행=5콜 · 그 외 각 1콜 · 🔎 웹 리서치는 검색 비용 추가.</div>
     <div style="text-align:right"><button class="btn" onclick="closeSettings()">닫기</button></div>
   </div>
 </div>
@@ -364,8 +354,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box
 <div class="modal" id="docModal">
   <div class="mbox" style="max-width:780px">
     <h2>📋 대표 기획안·자료</h2>
-    <div class="sub" style="font-size:12px;color:var(--mut);margin-bottom:10px">이미 만든 기획안·구성 메모·레퍼런스를 통째로 넣으세요. 팀은 이 자료를 <b>'기준'</b>으로 회의하고, 기획 PD는 뒤집는 게 아니라 검토·보강합니다.
-      특히 <b>기능·특징·장점</b>을 적어주면(예: 실리프팅 — 피부 처짐 개선) 팀이 그걸 <b>시청자의 문제·고민</b>으로 변환해 도입부에서 재언급하고, 시청자 질문 리스트를 뽑아 대본이 그 질문에 답하는 구조로 만듭니다.</div>
+    <div class="sub" style="font-size:12px;color:var(--mut);margin-bottom:10px">기획안·메모·레퍼런스를 넣으면 팀이 이 자료를 기준으로 제작합니다. <b>기능·특징·장점</b>을 적으면 시청자 문제로 변환해 대본에 반영해요.</div>
     <textarea id="bDoc" style="width:100%;min-height:45vh;margin-bottom:10px" placeholder="예)&#10;제목: 첫 ETF 12분 완주&#10;타깃: 투자 무경험 사회초년생&#10;구성: ① 훅 — 체결화면 ② 계좌개설 화면녹화 ③ 고르는 기준 3가지 …&#10;레퍼런스: ○○ 채널의 △△ 영상 톤"></textarea>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <label class="btn sm" style="cursor:pointer">📂 파일 열기 (.txt/.md)<input type="file" id="docFile" accept=".txt,.md,.markdown,text/plain,text/markdown" style="display:none" onchange="loadDocFile(this)"></label>
@@ -783,8 +772,8 @@ function renderTabs(){
 }
 function renderStage(){
   const s=STAGES[curStage],st=P().stages[curStage],meet=curStage==='meet';
-  document.getElementById('stEmp').textContent=meet?'🗣 참석: '+teamRoles().map(k=>HUMANS[k].name).join('·')+' (전원)':s.ico+' 담당: '+s.emp;
-  document.getElementById('stRunBtn').textContent=meet?'🗣 회의 시작 (전원)':'🤖 맡기기';
+  document.getElementById('stEmp').textContent=meet?'🗣 참석: '+teamRoles().map(k=>HUMANS[k].name).join('·'):s.ico+' 담당: '+s.emp;
+  document.getElementById('stRunBtn').textContent=meet?'🗣 회의 시작':'🤖 맡기기';
   const ta=document.getElementById('stOut');
   ta.value=st.content;
   ta.placeholder=meet
