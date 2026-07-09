@@ -56,12 +56,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .modetag.live{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .content{min-width:0}
 .pagewrap{max-width:1140px;margin:0 auto;padding:24px 22px}
+.bento{display:grid;gap:16px;align-items:start}
+.bento.split{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.bento>.card{margin-bottom:0}
+@media(max-width:900px){.bento.split{grid-template-columns:minmax(0,1fr)}}
+#page-brief .pagewrap{max-width:860px}
+#page-team .crew{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#page-team .crew li{border:1px solid var(--border);border-radius:var(--r-card);padding:11px 13px;background:var(--surface2)}
+#page-team .crew li:hover{background:var(--surface2);border-color:var(--border2)}
+#page-team .crew li:last-child{border-bottom:1px solid var(--border)}
+@media(max-width:760px){#page-team .crew{grid-template-columns:1fr}}
 .page{display:none}
 .page.on{display:block;animation:fadein .28s var(--ease)}
 @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* ---- card ---- */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:19px 21px;margin-bottom:16px;box-shadow:var(--sh-sm)}
-.card h2{font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2{font-size:15.5px;font-weight:800;letter-spacing:-.02em;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .card .sub{font-size:12px;color:var(--mut);margin:4px 0 14px;line-height:1.5}
 .field{display:flex;align-items:center;gap:10px;margin-bottom:9px}
 .field label{width:84px;flex-shrink:0;font-size:12px;color:var(--ink2);font-weight:700}
@@ -342,6 +352,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 </div></section>
 
 <section class="page" id="page-tasks"><div class="pagewrap">
+  <div class="bento split">
     <div class="card"><h2>📥 업무 보드</h2>
       <div class="fbrow"><input id="tqIn" placeholder="예: 썸네일 문구 5개만 더 뽑아줘" onkeydown="if(event.key==='Enter'&&!event.isComposing)addTask()">
         <select id="tqWho" style="max-width:112px"><option value="auto">🤖 자동 배정</option><option value="plan">차민준</option><option value="script">윤세아</option><option value="edit">박도현</option><option value="pack">한유진</option><option value="review">서정우</option></select>
@@ -354,6 +365,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
     <div class="card"><h2>🗒 작업 로그</h2>
       <ul class="log" id="logList"><li><span class="msg" style="color:var(--mut)">아직 작업 기록이 없어요 — 오른쪽에서 업무를 맡겨보세요</span></li></ul>
     </div>
+  </div>
 </div></section>
 
 
