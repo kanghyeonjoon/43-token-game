@@ -295,6 +295,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
         <button class="btn sm" onclick="applyFeedback()">✏ 수정 반영</button>
       </div>
       <div class="reviewbox" id="stReview"></div>
+      <button class="btn sm" id="reviewApplyBtn" style="display:none;margin-top:8px" onclick="applyReview()">✅ 이 검수 반영</button>
     </div>
 </div></section>
 
@@ -875,6 +876,7 @@ function renderStage(){
   pmb.style.display=(meet&&(P().meetingPrev||[]).length)?'':'none';
   pmb.textContent=showPrevMeet?'↩ 현재 회의록':'🗂 이전 회의록';
   document.getElementById('stReview').style.display='none';
+  document.getElementById('reviewApplyBtn').style.display='none';
   document.getElementById('stFb').value='';
   renderMeetChat();
   renderScore();
@@ -1558,6 +1560,17 @@ function applyFeedback(){
   if(!P().stages[curStage].content){toast('수정할 산출물이 아직 없어요 — 먼저 [🤖 맡기기]');return}
   runStage(curStage,fb);
 }
+// [✅ 이 검수 반영] — 검수 실장의 검수 결과를 수정 지시 삼아 그 단계를 개정 (기존 runStage 재사용)
+function applyReview(){
+  if(busy){toast('이전 업무가 아직 진행 중이에요');return}
+  const rv=document.getElementById('stReview').textContent
+            .replace(/\n*\(데모 예시 — 실제 검수 아님\)\s*$/,'').trim();   // 데모 꼬리표 제거
+  if(!rv){toast('반영할 검수 결과가 없어요 — 먼저 [🔍 검수]');return}
+  if(!P().stages[curStage].content){toast('반영할 산출물이 아직 없어요');return}
+  document.getElementById('reviewApplyBtn').style.display='none';           // 중복 반영 방지
+  const fb=`[검수 실장 검수 결과 — 아래 지적과 '수정안'을 이 산출물에 반영해 개정본을 만들어줘. 지적과 무관한 부분은 유지]\n${rv}`;
+  runStage(curStage,fb);
+}
 async function reviewStage(k){
   if(busy){toast('이전 업무가 아직 진행 중이에요');return}
   const st=P().stages[k];
@@ -1565,6 +1578,7 @@ async function reviewStage(k){
   busy=true;beginWork();
   const box=document.getElementById('stReview');
   box.style.display='block';box.textContent='🔍 서정우 실장이 검토하는 중…';
+  document.getElementById('reviewApplyBtn').style.display='none';
   crewSet('review','검수 중…',true);
   log('서정우 실장',`[${STAGES[k].name}] 검수 시작`);
   try{
@@ -1579,6 +1593,7 @@ async function reviewStage(k){
       await typeOut(rv,liveRv);
     }
     box.textContent=rv+(hasKey()?'':'\n\n(데모 예시 — 실제 검수 아님)');
+    document.getElementById('reviewApplyBtn').style.display='';   // 검수 완료 → 반영 버튼 노출
     log('서정우 실장',`[${STAGES[k].name}] 검수 완료${hasKey()?'':' (데모)'}`);
     officeSay('review','검수 완료 ✓','ok',3200);
   }catch(e){
